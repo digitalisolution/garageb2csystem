@@ -1,0 +1,71 @@
+RewriteEngine on
+
+# Redirect index.php to the clean URL (without index.php)
+RewriteCond %{THE_REQUEST} /index\.php/(.*) [NC]
+RewriteRule ^index\.php/(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
+RewriteRule ^index\.php$ https://%{HTTP_HOST}/ [R=301,L]
+
+# Redirect non-existent files and directories to index.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond $1 !^(index\.php|resources)
+RewriteRule (.*) index.php/$1
+
+#RewriteCond %{HTTP_HOST} ^www\.garage-automation\.com$ [NC]
+#RewriteRule ^(.*)$ https://www.gloucester-tyres.co.uk/$1 [R=301,L]
+
+RewriteCond %{HTTP_HOST} ^www\.tyre2you\.co\.uk$ [NC]
+RewriteRule ^(.*)$ https://tyre2you.co.uk/$1 [R=301,L]
+
+# Redirect HTTP without www to HTTPS with www
+RewriteCond %{HTTPS} off
+RewriteRule .* https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+# Redirect HTTPS without www to HTTPS with www
+RewriteCond %{HTTP_HOST} !^www\. [NC]
+RewriteCond %{HTTP_HOST} !^fastfit\. [NC]
+RewriteCond %{HTTP_HOST} !^cotlygarage\. [NC]
+RewriteCond %{HTTP_HOST} !^mobiletyrefitting\. [NC]
+RewriteCond %{HTTP_HOST} !^demogec\. [NC]
+RewriteCond %{HTTP_HOST} !^iframe\. [NC]
+RewriteCond %{HTTP_HOST} !^tyre2you\. [NC]
+RewriteRule .* https://www.%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+# Prevent Direct Access to files
+<FilesMatch "(?i)((\.tpl|\.ini|\.log|(?<!robots)\.txt))">
+ Order deny,allow
+ Deny from all
+</FilesMatch>
+
+RewriteRule ^robots\.txt$ robots/%{HTTP_HOST}.txt [L]
+RewriteRule ^301\.php$ 301/%{HTTP_HOST}.php [L]
+RewriteRule ^map\.html$ map/%{HTTP_HOST}.html [L]
+
+#RewriteRule ^tyres-size/([^/]*)-([^/]*)-([^/]*)$ search?&width=$1&profile=$2&diameter=$3 [L]
+
+<IfModule mod_deflate.c>
+  # Compress HTML, CSS, JavaScript, Text, XML and fonts
+  AddOutputFilterByType DEFLATE application/javascript
+  AddOutputFilterByType DEFLATE application/rss+xml
+  AddOutputFilterByType DEFLATE application/vnd.ms-fontobject
+  AddOutputFilterByType DEFLATE application/x-font
+  AddOutputFilterByType DEFLATE application/x-font-opentype
+  AddOutputFilterByType DEFLATE application/x-font-otf
+  AddOutputFilterByType DEFLATE application/x-font-truetype
+  AddOutputFilterByType DEFLATE application/x-font-ttf
+  AddOutputFilterByType DEFLATE application/x-javascript
+  AddOutputFilterByType DEFLATE application/xhtml+xml
+  AddOutputFilterByType DEFLATE application/xml
+  AddOutputFilterByType DEFLATE font/opentype
+  AddOutputFilterByType DEFLATE font/otf
+  AddOutputFilterByType DEFLATE font/ttf
+  AddOutputFilterByType DEFLATE font/woff
+  AddOutputFilterByType DEFLATE font/woff2
+  AddOutputFilterByType DEFLATE image/svg+xml
+  AddOutputFilterByType DEFLATE image/x-icon
+  AddOutputFilterByType DEFLATE text/css
+  AddOutputFilterByType DEFLATE text/html
+  AddOutputFilterByType DEFLATE text/javascript
+  AddOutputFilterByType DEFLATE text/plain
+  AddOutputFilterByType DEFLATE text/xml
+</IfModule>

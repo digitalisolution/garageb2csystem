@@ -1,0 +1,4 @@
+<?php
+$uarr['/login'] = 'https://www.digitalideasltd.in/customer/login';
+$uarr['/register'] = 'https://www.digitalideasltd.in/customer/register';
+//$uarr['/auth/login'] = 'https://www.digitalideasltd.in/login';

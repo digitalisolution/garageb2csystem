@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /
+
+Sitemap: https://www.digitalideasltd.co.uk/sitemap.xml

@@ -1,0 +1,73 @@
+.dt-buttons{
+   /*background-color: #4CAF50; /* Green */
+    border: none;
+    padding: 10px 20px;
+    margin-left:300px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+   
+}
+ 
+
+.buttons-csv{
+  background-color: #4CAF50; /* Green */
+    border: none;
+    color: white;
+    padding:5px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    border-radius: 50%;
+    border: 2px solid #4CAF50;
+    box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19); margin:0 3px;
+}
+.buttons-csv:hover, .buttons-print:hover, .buttons-excel:hover, .buttons-pdf:hover{color:#fff;text-decoration:none;background-color:#111;}
+.buttons-pdf{
+  background-color: #008CBA; /* Green */
+    border: none;
+    color: white;
+    padding:5px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    border-radius: 50%;
+    border: 2px solid #008CBA;
+    box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19); margin:0 3px;
+}
+.buttons-excel{
+  background-color: #e7e7e7; /* Green */
+    border: none;
+    color: black;
+    padding:5px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    border-radius: 50%;
+    border: 2px solid #ccc;
+    box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19); margin:0 3px;
+}
+.buttons-print{
+  background-color: #555; /* Green */
+    border: none;
+    color: white;
+    padding:5px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    border-radius: 50%;
+    border: 2px solid #555;
+    box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19); margin:0 3px;
+}
+input[type=search] {  
+   border-radius:15px; 
+    -moz-border-radius:15px; 
+    -webkit-border-radius:15px;border:solid 1px #aaa;
+}
+div.dataTables_length label {
+  font-weight: normal;
+  float: left;
+  text-align: left;
+}
+
+

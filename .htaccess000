@@ -1,0 +1,14 @@
+RewriteEngine On
+
+# Redirect non-secure HTTP to HTTPS
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Redirect main domain (garage-automation.com) to www
+RewriteCond %{HTTP_HOST} ^garage-automation.com$ [NC]
+RewriteRule ^(.*)$ https://www.garage-automation.com/$1 [L,R=301]
+
+# Prevent redirect for subdomains
+RewriteCond %{HTTP_HOST} !^www\. [NC]
+RewriteCond %{HTTP_HOST} ^([a-z0-9-]+)\.garage-automation\.com$ [NC]
+RewriteRule ^ - [L]
