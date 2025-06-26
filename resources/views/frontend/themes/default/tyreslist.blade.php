@@ -329,7 +329,7 @@ $.each(data, function (index, brand) {
 $('#tyreBrand').append(`
 <li>
 <label>
-<input type="checkbox" name="tyreBrand[]" value="${brand.manufacturer_id}">
+<input type="checkbox" name="tyreBrand[]" value="${brand.brand_id}">
 <a>${brand.name}</a>
 </label>
 </li>

@@ -437,7 +437,7 @@ function populateModal(bookingData) {
                     <td>${vehicle.vehicle_front_tyre_size || 'N/A'}</td>
                     <td>${vehicle.vehicle_rear_tyre_size || 'N/A'}</td>
                     <td>${vehicle.vehicle_vin || 'N/A'}</td>
-                    <td>${vehicle.vehicle_vehicle_cc || 'N/A'}</td>
+                    <td>${vehicle.vehicle_cc || 'N/A'}</td>
                     <td>${vehicle.vehicle_engine_number || 'N/A'}</td>
                     <td>${vehicle.vehicle_axle || 'N/A'}</td>
                     <td>${vehicle.vehicle_fuel_type || 'N/A'}</td>

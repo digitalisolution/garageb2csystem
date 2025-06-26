@@ -3,9 +3,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="tyreModalLabel">Select a Tyre</h5>
-                <!-- <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTyreModal">
-    Add New Tyre
-</button> -->
+                <a href="{{ route('AutoCare.tyres.edit', ['product_id' => 'new']) }}" class="btn btn-primary ml-3" target="_blank">Add Tyre</a>
                 <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>

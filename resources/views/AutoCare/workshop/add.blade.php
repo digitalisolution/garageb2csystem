@@ -709,7 +709,7 @@
                                 {{ $value->description }}
                             </td>
                             <td>
-                                <strong>{{ $value->item_ean }}</strong>
+                                <strong>{{ $value->product_ean }}</strong>
                                 {{ $value->description }}
                             </td>
                             <td>

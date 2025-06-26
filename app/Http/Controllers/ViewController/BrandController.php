@@ -15,7 +15,7 @@ class BrandController extends Controller
         $brands = \DB::table('tyre_brands as m')
             ->leftJoin('tyres_product as p', 'm.brand_id', '=', 'p.tyre_brand_id')
             ->select('m.name', 'm.brand_id', 'm.image', 'm.slug')
-            ->where('p.quantity', '>', 0)
+            ->where('p.tyre_quantity', '>', 0)
             ->whereNotNull('m.name')
             ->whereNotNull('p.product_type')
             ->where('m.status', 1)
