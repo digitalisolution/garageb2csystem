@@ -49,7 +49,7 @@
                 <i class="fa fa-trash"></i>
             </a>
     </div>
-@endforeach
+            @endforeach
         </div>
     </div>
 

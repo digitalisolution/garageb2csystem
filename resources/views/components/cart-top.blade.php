@@ -2,6 +2,7 @@
     @if (count($cart) > 0)
         <ul id="cart-items-list">
             @foreach ($cart as $item)
+            
                 <li class="single-shopping-cart" id="cart-item-{{ $item['id'] }}">
                     <div class="shopping-cart-title">
                         <div class="d-flex justify-content-between mb-2">

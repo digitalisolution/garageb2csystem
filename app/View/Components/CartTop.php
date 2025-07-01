@@ -44,9 +44,9 @@ class CartTop extends Component
                         'type' => $item['type'],
                         'desc' => $product->description ?? '',
                         'model' => $product->model ?? ($item['type'] === 'service' ? $product->name : ''),
-                        'price' => $product->price_fullyfitted ?? $product->cost_price,
+                        'price' => $product->tyre_fullyfitted_price ?? $product->cost_price,
                         'quantity' => $item['quantity'],
-                        'total' => ($product->price_fullyfitted ?? $product->cost_price) * $item['quantity'],
+                        'total' => ($product->tyre_fullyfitted_price ?? $product->cost_price) * $item['quantity'],
                         'fitting_type' => $item['fitting_type'] ?? null, // Include fitting type
                         'tax_class_id' => $product->tax_class_id ?? 0, // Include tax class ID
                     ];

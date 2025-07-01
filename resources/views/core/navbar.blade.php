@@ -7,26 +7,26 @@
 $domain = request()->getHost();
 $domain = str_replace('.', '-', $domain);
 // Set the path for domain-specific logo if it exists
-$domainLogoPath = public_path("frontend/{$domain}/img/logo/{$garage->logo}");
-$themeLogoPath = public_path("frontend/themes/{$garage->theme}/img/logo/{$garage->logo}");
+$domainLogoPath = public_path("frontend/{$domain}/img/logo/{$garage->logo}?v={{ time() }}");
+$themeLogoPath = public_path("frontend/themes/{$garage->theme}/img/logo/{$garage->logo}?v={{ time() }}");
 $defaultLogoPath = public_path("frontend/themes/theme/img/logo/logo.png");
 ?>
 
   @if(!empty($garage->logo))
     <!-- If domain-specific logo exists, use it -->
     <a href="/dashboard" class="admin-logo">
-    <img src="{{ asset('frontend/' . $domain . '/img/logo/' . $garage->logo) }}" alt="Logo" width="auto" height="auto">
+    <img src="{{ asset('frontend/' . $domain . '/img/logo/' . $garage->logo) }}?v={{ time() }}" alt="Logo" width="auto" height="auto">
     </a>
   @elseif(!empty($garage->logo) && file_exists($themeLogoPath))
     <!-- If theme-specific logo exists, use it -->
     <a href="/dashboard" class="admin-logo">
-    <img src="{{ asset('frontend/themes/' . $garage->theme . '/img/logo/' . $garage->logo) }}" alt="Logo" width="auto"
+    <img src="{{ asset('frontend/themes/' . $garage->theme . '/img/logo/' . $garage->logo) }}?v={{ time() }}" alt="Logo" width="auto"
       height="auto">
     </a>
   @else
     <!-- Fallback logo if neither domain-specific nor theme-specific logo exists -->
     <a href="/dashboard" class="admin-logo">
-    <img src="{{ asset('frontend/themes/theme/img/logo/logo.png') }}" alt="Logo" width="auto" height="auto">
+    <img src="{{ asset('frontend/themes/theme/img/logo/logo.png') }}?v={{ time() }}" alt="Logo" width="auto" height="auto">
     </a>
   @endif
 

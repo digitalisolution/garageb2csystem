@@ -1,34 +1,29 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Tyre Search Plugin</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        body { font-family: sans-serif; background: #f9f9f9; padding: 10px; }
-        .form-wrap { background: white; padding: 20px; border-radius: 10px; max-width: 400px; margin: auto; }
-        .form-control { width: 100%; padding: 10px; margin-bottom: 10px; }
-        .btn { background: #222; color: white; padding: 10px 20px; border: none; cursor: pointer; }
-    </style>
-</head>
-<body>
+@extends('layouts.plugin')
+@section('content')
 
-<div class="form-wrap">
-    <form id="pluginSearchForm" method="GET" action="{{ route('plugin.search.submit') }}" target="_blank">
-        <input type="hidden" name="client_id" value="{{ request('client_id') }}">
-        <input type="hidden" name="token" value="{{ request('token') }}">
-
-        <input type="text" name="vrm" placeholder="Enter Vehicle Reg" class="form-control" required>
-
-        <label>
-            <input type="radio" name="fitting_type" value="fully_fitted" checked> Fully Fitted
-        </label>
-        <label>
-            <input type="radio" name="fitting_type" value="mobile"> Mobile Fitted
-        </label>
-
-        <button type="submit" class="btn">Search Tyres</button>
-    </form>
+<div class="slider-area">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-lg-4 col-md-7 m-auto">
+                <div class="product-tab-list nav pt-10 pb-20 text-center">
+                    <a class="active" href="#tyres" data-bs-toggle="tab">
+                        <h4>Tyres</h4>
+                    </a>
+                    <a href="#services" data-bs-toggle="tab">
+                        <h4>Services</h4>
+                    </a>
+                </div>
+                <div class="tab-content jump">
+                    <div class="tab-pane active" id="tyres">
+                        @include('plugin/partials/search-tyres')
+                    </div>
+                    
+                    <div class="tab-pane" id="services">
+                         @include('plugin/partials/service-vrm-form')
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-
-</body>
-</html>
+@endsection

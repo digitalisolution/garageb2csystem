@@ -243,7 +243,7 @@ if (isset($workshop->due_out)) {
                                             @endphp
                                             <tr>
                                     <td>{{ $itemIndex++ }}</td>
-                                    <td>{{ $tyre->description }} <br>({{ $tyre->tyre_source }}) ({{ $tyre->product_ean }})</td>
+                                    <td>{{ $tyre->description }} <br>({{ $tyre->product_ean }})</td>
                                     <td align="center">£{{ number_format($price, 2) }}</td>
                                     <td>{{ $vatText }}</td>
                                     <td align="center">{{ $quantity }}</td>
@@ -251,7 +251,7 @@ if (isset($workshop->due_out)) {
                                     <td align="right"><strong>£{{ number_format($totalAmount, 2) }}</strong></td>
                                 </tr>
                                 @endforeach
-                                @if($tyre->fitting_type === 'mobile_fitted')
+                                @if( !empty($tyre) && $tyre->fitting_type === 'mobile_fitted')
                                 <tr>
                                     <!-- <td>{{ $itemIndex++ }}</td> -->
                                      <td>
@@ -418,6 +418,9 @@ if (isset($workshop->due_out)) {
                                     @break
                                 @case(3)
                                     By Cheque
+                                    @break
+                                @case(4)
+                                    By Bank Transfer
                                     @break
                                 @default
                                     Unknown

@@ -10,6 +10,9 @@
         <li><a href="{{ route('customer.invoices') }}"
                 class="{{ request()->routeIs('customer.invoices') ? 'active' : '' }}"><i class="fa fa-files-o"></i>
                 Invoices</a></li>
+        <li><a href="{{ route('customer.statement') }}"
+                class="{{ request()->routeIs('customer.statement') ? 'active' : '' }}"><i class="fa fa-files-o"></i>
+                Statement</a></li>
         <li><a href="{{ route('customer.vehicles') }}"
                 class="{{ request()->routeIs('customer.vehicles') ? 'active' : '' }}"><i class="fa fa-car"></i>
                 Vehicles</a></li>

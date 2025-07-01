@@ -45,10 +45,10 @@ class TyresProductController extends Controller
         $query->where('status', '=', 1);
         $query->orderByRaw("CASE WHEN tyre_supplier_name = 'ownstock' THEN 1 ELSE 2 END")
             ->orderBy('tyre_price', 'asc');
-            
+
         $tyres = $query->paginate(72)->appends($request->except('page'));
         $leadTimes = [];
-         $order_type = $fitting_type ?? $request->input('fitting_type');
+        $order_type = $fitting_type ?? $request->input('fitting_type');
         foreach ($tyres as $tyre) {
             if ($tyre->supplier_id) {
                 $supplierLeadTime = $this->getLeadTime($tyre->supplier_id, $order_type); // Call your method
@@ -70,12 +70,12 @@ class TyresProductController extends Controller
         $metaTitle = str_replace(['$store', '$size'], [$garageName, $size], $metaTitle);
         $metaDescription = str_replace(['$store', '$size'], [$garageName, $size], $metaDescription);
         $metaKeywords = str_replace(['$store', '$size'], [$garageName, $size], $metaKeywords);
-        return view('tyreslist', compact('tyres', 'widths', 'profiles', 'diameters','leadTimes', 'recommendedTyres', 'message', 'metaTitle', 'metaDescription', 'metaKeywords', 'google_tag_manager', 'tag_manager', 'analytics'));
+        return view('tyreslist', compact('tyres', 'widths', 'profiles', 'diameters', 'leadTimes', 'recommendedTyres', 'message', 'metaTitle', 'metaDescription', 'metaKeywords', 'google_tag_manager', 'tag_manager', 'analytics'));
     }
 
 
 
-    public function getLeadTime($supplierId = '', $fittingType='')
+    public function getLeadTime($supplierId = '', $fittingType = '')
     {
         // dd($fittingType);
 
@@ -94,7 +94,7 @@ class TyresProductController extends Controller
         }
 
         $deliveryTimes = $query->get();
-            
+
         foreach ($deliveryTimes as $data) {
             $weekDay = strtolower($data->day);
             $deliveryTimeHours = (int) $data->delivery_time;
@@ -127,7 +127,7 @@ class TyresProductController extends Controller
         return $leadtimeArray;
     }
 
-    
+
     // Fetch Profiles Based on Width
     public function getProfiles(Request $request)
     {
@@ -165,8 +165,8 @@ class TyresProductController extends Controller
     public function getFuelEfficiencyOptions(Request $request)
     {
         $fuelEfficiencies = TyresProduct::whereNotNull('tyre_fuel')
-            ->where('tyre_fuel', '!=', '') 
-            ->where('tyre_fuel', '!=', '-') 
+            ->where('tyre_fuel', '!=', '')
+            ->where('tyre_fuel', '!=', '-')
             ->distinct()
             ->pluck('tyre_fuel');
 
@@ -176,19 +176,19 @@ class TyresProductController extends Controller
 
     public function getSeasonOptions(Request $request)
     {
-        $seasons = TyresProduct::distinct()->where('tyre_season', '!=', '')->pluck('tyre_season'); 
+        $seasons = TyresProduct::distinct()->where('tyre_season', '!=', '')->pluck('tyre_season');
 
         return response()->json($seasons);
     }
-  
+
     public function getWetGripOptions(Request $request)
     {
 
         $wetGripOption = TyresProduct::whereNotNull('tyre_wetgrip')
-            ->where('tyre_wetgrip', '!=', '') 
-            ->where('tyre_wetgrip', '!=', '-') 
+            ->where('tyre_wetgrip', '!=', '')
+            ->where('tyre_wetgrip', '!=', '-')
             ->distinct()
-            ->pluck('tyre_wetgrip'); 
+            ->pluck('tyre_wetgrip');
 
         return response()->json($wetGripOption);
     }
@@ -231,13 +231,17 @@ class TyresProductController extends Controller
         $page = $request->input('page', 1);
         $recommendedTyres = $this->getRecommendedTyres($request);
         $message = empty($recommendedTyres) ? 'No recommended tyres found.' : null;
-        $query = TyresProduct::query();
-        $query->where('tyre_quantity', '>', 0);
-        $query->where('tyre_fullyfitted_price', '>', 0);
-        $query->where('tyres_product.status', '=', '1');
-
-        $query->join('tyre_brands', 'tyre_brands.brand_id', '=', 'tyres_product.tyre_brand_id')
-            ->select('tyres_product.*', 'tyre_brands.recommended_tyre');
+        $tyresModel = new TyresProduct();
+        $tyresTable = $tyresModel->getTable(); // Dynamic table name
+        $brandsTable = (new \App\Models\tyre_brands())->getTable(); // Typically 'tyre_brands'
+        $query = TyresProduct::from("$tyresTable as tp")
+            ->join("$brandsTable as tb", 'tb.brand_id', '=', 'tp.tyre_brand_id')
+            ->select('tp.*', 'tb.recommended_tyre')
+            ->where('tp.tyre_quantity', '>', 0)
+            ->where('tp.tyre_fullyfitted_price', '>', 0)
+            ->where('tp.status', '=', 1);
+        $query->join($brandsTable, 'tb.brand_id', '=', 'tp.tyre_brand_id')
+            ->select('tp.*', 'tb.recommended_tyre');
 
         if ($request->filled('width')) {
             $query->where('tyre_width', $request->input('width'));
@@ -263,8 +267,8 @@ class TyresProductController extends Controller
             $wetGrip = $request->input('wetGrip');
             $query->whereIn('tyre_wetgrip', $wetGrip);
         }
-        $runflat = $request->input('runflat'); 
-        $extraload = $request->input('extraload'); 
+        $runflat = $request->input('runflat');
+        $extraload = $request->input('extraload');
         if ($runflat === '1') {
             $query->where('tyre_runflat', 1);
         }
@@ -273,8 +277,8 @@ class TyresProductController extends Controller
         }
         if ($request->filled('tyreBrand')) {
             $tyreBrandIds = $request->input('tyreBrand');
-            $query->whereIn('tyres_product.tyre_brand_id', $tyreBrandIds)
-                ->orderByRaw('FIELD(tyres_product.tyre_brand_id, ' . implode(',', $tyreBrandIds) . ')');
+            $query->whereIn('tp.tyre_brand_id', $tyreBrandIds)
+                ->orderByRaw('FIELD(tp.tyre_brand_id, ' . implode(',', $tyreBrandIds) . ')');
         }
         $recommendedTyres = [];
         $message = null;
@@ -300,8 +304,8 @@ class TyresProductController extends Controller
         //         'recommendedTyres' => []
         //     ]);
         // }
-          $leadTimes = [];
-         $order_type = $fitting_type ?? $request->input('fitting_type');
+        $leadTimes = [];
+        $order_type = $fitting_type ?? $request->input('fitting_type');
         foreach ($tyres as $tyre) {
             if ($tyre->supplier_id) {
                 $supplierLeadTime = $this->getLeadTime($tyre->supplier_id, $order_type); // Call your method
@@ -310,14 +314,14 @@ class TyresProductController extends Controller
         }
 
         try {
-            $tyresHtml = view('tyre-cards', compact('tyres','leadTimes'))->render();
+            $tyresHtml = view('tyre-cards', compact('tyres', 'leadTimes'))->render();
             $hasMorePages = $tyres->hasMorePages() ? true : false;
-    
+
             // Only render recommended tyres on first load
             $recommendedTyresHtml = $page === 1
                 ? view('recommended-tyres', compact('recommendedTyres'))->render()
                 : '';
-    
+
         } catch (\Exception $e) {
             \Log::error('View Rendering Error: ' . $e->getMessage());
             return response()->json(['error' => 'Unable to render view'], 500);
@@ -333,8 +337,6 @@ class TyresProductController extends Controller
     }
 
 
-
-
     public function getRecommendedTyres(Request $request, $width = null, $profile = null, $diameter = null)
     {
         // Merge route parameters into the request object
@@ -347,8 +349,7 @@ class TyresProductController extends Controller
         }
 
         // Fetch all recommended brands
-        $recommendedBrands = DB::table('tyre_brands')
-            ->where('recommended_tyre', 1)
+        $recommendedBrands = tyre_brands::where('recommended_tyre', 1)
             ->pluck('brand_id')
             ->toArray();
 
@@ -356,83 +357,91 @@ class TyresProductController extends Controller
         $query = collect(); // Using collection to store final data
 
         // Loop through each recommended brand and get the best tyre
+        $tyresModel = new \App\Models\TyresProduct();
+        $brandsModel = new \App\Models\tyre_brands();
+
+        $tyresTable = $tyresModel->getTable();
+        $brandsTable = $brandsModel->getTable();
+        $connection = $tyresModel->getConnectionName();
+
+        $db = \DB::connection($connection);
+        $query = collect();
+
         foreach ($recommendedBrands as $brandId) {
-            // Fetch cheapest tyre from ownstock for this brand
-            $ownstockTyre = DB::table('tyres_product as tp')
-                ->select('tp.*', 'tb.name as brand_name', 'tb.image as brand_logo', 'tb.budget_type as budget_type', 'tb.recommended_tyre')
-                ->join('tyre_brands as tb', 'tb.brand_id', '=', 'tp.tyre_brand_id')
-                ->where('tb.brand_id', $brandId)
-                ->where('tb.recommended_tyre', 1)
-                ->where('tp.tyre_price', '>', 0)
-                ->where('tp.tyre_quantity', '>', 0)
-                ->where('tp.tyre_supplier_name', '=', 'ownstock');
-
-            // Apply filters dynamically
-            if ($request->filled('width')) {
-                $ownstockTyre->where('tp.tyre_width', '=', $request->input('width'));
-            }
-            if ($request->filled('profile')) {
-                $ownstockTyre->where('tp.tyre_profile', '=', $request->input('profile'));
-            }
-            if ($request->filled('diameter')) {
-                $ownstockTyre->where('tp.tyre_diameter', '=', $request->input('diameter'));
-            }
-
-            // Get the cheapest ownstock tyre
-            $ownstockTyre = $ownstockTyre->where('tp.status','=',1)->orderBy('tp.tyre_price', 'asc')->first();
-
-            // If ownstock tyre exists, add it to the collection
-            if ($ownstockTyre) {
-                $query->push($ownstockTyre);
-                continue; // Move to the next brand
-            }
-
-            // If no ownstock tyre, fetch the cheapest supplier tyre
-            $supplierTyre = DB::table('tyres_product as tp')
-                ->select('tp.*', 'tb.name as brand_name', 'tb.image as brand_logo', 'tb.budget_type as budget_type', 'tb.recommended_tyre')
-                ->join('tyre_brands as tb', 'tb.brand_id', '=', 'tp.tyre_brand_id')
-                ->where('tb.brand_id', $brandId)
-                ->where('tb.recommended_tyre', 1)
+            // Try to get cheapest ownstock tyre
+            $ownstockTyre = $db->table("$tyresTable as tp")
+                ->join("$brandsTable as tb", 'tb.brand_id', '=', 'tp.tyre_brand_id')
+                ->select('tp.*', 'tb.name as brand_name', 'tb.image as brand_logo', 'tb.budget_type', 'tb.recommended_tyre')
+                ->where('tp.tyre_supplier_name', 'ownstock')
                 ->where('tp.tyre_price', '>', 0)
                 ->where('tp.tyre_quantity', '>', 0)
                 ->where('tp.status', '=', 1)
-                ->where('tp.tyre_supplier_name', '!=', 'ownstock'); // Only supplier tyres
+                ->where('tb.brand_id', $brandId)
+                ->where('tb.recommended_tyre', 1);
 
-            // Apply filters dynamically
+            // Apply dynamic filters
             if ($request->filled('width')) {
-                $supplierTyre->where('tp.tyre_width', '=', $request->input('width'));
+                $ownstockTyre->where('tp.tyre_width', $request->input('width'));
             }
             if ($request->filled('profile')) {
-                $supplierTyre->where('tp.tyre_profile', '=', $request->input('profile'));
+                $ownstockTyre->where('tp.tyre_profile', $request->input('profile'));
             }
             if ($request->filled('diameter')) {
-                $supplierTyre->where('tp.tyre_diameter', '=', $request->input('diameter'));
+                $ownstockTyre->where('tp.tyre_diameter', $request->input('diameter'));
             }
 
-            // Get the cheapest supplier tyre
+            $ownstockTyre = $ownstockTyre->orderBy('tp.tyre_price', 'asc')->first();
+
+            if ($ownstockTyre) {
+                $query->push($ownstockTyre);
+                continue;
+            }
+
+            // Fallback to cheapest supplier tyre
+            $supplierTyre = $db->table("$tyresTable as tp")
+                ->join("$brandsTable as tb", 'tb.brand_id', '=', 'tp.tyre_brand_id')
+                ->select('tp.*', 'tb.name as brand_name', 'tb.image as brand_logo', 'tb.budget_type', 'tb.recommended_tyre')
+                ->where('tp.tyre_supplier_name', '!=', 'ownstock')
+                ->where('tp.tyre_price', '>', 0)
+                ->where('tp.tyre_quantity', '>', 0)
+                ->where('tp.status', '=', 1)
+                ->where('tb.brand_id', $brandId)
+                ->where('tb.recommended_tyre', 1);
+
+            // Apply dynamic filters
+            if ($request->filled('width')) {
+                $supplierTyre->where('tp.tyre_width', $request->input('width'));
+            }
+            if ($request->filled('profile')) {
+                $supplierTyre->where('tp.tyre_profile', $request->input('profile'));
+            }
+            if ($request->filled('diameter')) {
+                $supplierTyre->where('tp.tyre_diameter', $request->input('diameter'));
+            }
+
             $supplierTyre = $supplierTyre->orderBy('tp.tyre_price', 'asc')->first();
 
-            // If supplier tyre exists, add it to the collection
             if ($supplierTyre) {
                 $query->push($supplierTyre);
             }
         }
 
+
         // Convert the collection into the final response format
         $recommendedTyres = $query->sortBy('tyre_price')->values();
         $leadTimes = [];
-         $order_type = $request->input('fitting_type');
-            foreach ($recommendedTyres as $tyre) {
-                if ($tyre->supplier_id) {
-                    $supplierLeadTime = $this->getLeadTime($tyre->supplier_id, $order_type);
-                    $leadTime = $supplierLeadTime[$tyre->supplier_id] ?? null;
-                } else {
-                    $leadTime = null;
-                }
-
-                // Attach lead_time to the tyre object
-                $tyre->lead_time = $leadTime;
+        $order_type = $request->input('fitting_type');
+        foreach ($recommendedTyres as $tyre) {
+            if ($tyre->supplier_id) {
+                $supplierLeadTime = $this->getLeadTime($tyre->supplier_id, $order_type);
+                $leadTime = $supplierLeadTime[$tyre->supplier_id] ?? null;
+            } else {
+                $leadTime = null;
             }
+
+            // Attach lead_time to the tyre object
+            $tyre->lead_time = $leadTime;
+        }
 
         //dd($recommendedTyres);
         // Return the results
@@ -444,43 +453,41 @@ class TyresProductController extends Controller
     {
         // Extract tyre ID from query string
         $tyreId = $request->query('tyre');
-    
+
         if (!$tyreId) {
             abort(404);
         }
-    
+
         // Fetch tyre by ID
         $tyre = TyresProduct::with('brand') // Assuming you have a relation called brandRelation
             ->findOrFail($tyreId);
-    
+
         // Optional: Verify that brand matches
         if ($tyre->brand && strtolower($tyre->brand->slug) !== $brand) {
             abort(404); // Prevent mismatched URLs
         }
-    
+
         return view('tyre-productDetails', compact('tyre', 'brand', 'model', 'size'));
     }
 
 
     public function getTyreSizes()
-    {
-        // Query to fetch distinct tyre sizes
-        $tyreSizes = DB::table('tyres_product as tp')
-            ->select('tp.tyre_width', 'tp.tyre_profile', 'tp.tyre_diameter')
-            ->distinct()
-            ->join('tyre_brands as m', 'm.brand_id', '=', 'tp.tyre_brand_id')
-            ->where('tp.tyre_width', '>', 0)
-            ->where('tp.tyre_quantity', '>', 0)
-            ->where('tp.tyre_fullyfitted_price', '>', 0)
-            ->where('tp.status', '=', 1)
-            ->groupBy('m.brand_id', 'tp.tyre_width', 'tp.tyre_profile', 'tp.tyre_diameter')
-            ->orderBy('tp.tyre_width')
-            ->orderBy('tp.tyre_profile')
-            ->orderBy('tp.tyre_diameter')
-            ->get();
+{
+    $tyreSizes = TyresProduct::select('tyre_width', 'tyre_profile', 'tyre_diameter')
+        ->with('brand') // optional: loads brand relation if needed
+        ->where('tyre_width', '>', 0)
+        ->where('tyre_quantity', '>', 0)
+        ->where('tyre_fullyfitted_price', '>', 0)
+        ->where('status', 1)
+        ->distinct()
+        ->groupBy('tyre_width', 'tyre_profile', 'tyre_diameter')
+        ->orderBy('tyre_width')
+        ->orderBy('tyre_profile')
+        ->orderBy('tyre_diameter')
+        ->get();
 
-        return response()->json($tyreSizes);
-    }
+    return response()->json($tyreSizes);
+}
 
 
 

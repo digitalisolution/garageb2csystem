@@ -27,7 +27,7 @@ class ImportCsvAutomatically extends Command
         foreach ($sitesConfig as $siteIdentifier => $siteConfig) {
             // Set the site-specific database configuration
             $this->setSiteDatabaseConfig($siteIdentifier);
-
+            $_SERVER['APP_FAKE_HOST'] = $siteIdentifier;
             // Fetch all suppliers (or use a condition if you want specific ones)
             $suppliers = Supplier::all();
 

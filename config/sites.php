@@ -1,13 +1,15 @@
 <?php
 
 return [
+
+    // sites for crown jobs || supplier installing
     'sites' => [
 
-        'www.garage-automation.com' => [
-            'database' => 'garageauto',
-            'app_name' => 'Garage Automation',
+        'www.digitalideasltd.in' => [
+            'database' => 'hydronewtyre',
+            'app_name' => 'Digital ideas',
         ],
-        'fastfit.garage-automation.com' => [
+        /*'fastfit.garage-automation.com' => [
             'database' => 'fastfitauto_live',
             'app_name' => 'Fast Fit Tyres',
         ],
@@ -22,6 +24,13 @@ return [
         'iframe.cotlygarage.co.uk' => [
             'database' => 'cotlygarage_live',
             'app_name' => 'Cotly Garage',
-        ],
+        ],*/
+    ],
+
+    // plugin_domains for plugins redirecting '/' to plugin/search 
+    'plugin_domains' => [
+        'tyreservepro.co.uk',
+        'digitalideasltd.co.uk',
+        'gktmotcentre.tyreservepro.co.uk'
     ],
 ];

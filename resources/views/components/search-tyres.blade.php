@@ -10,7 +10,7 @@
     <div class="tab-content jump">
         <!-- Form -->
         <div class="tab-pane active" id="search-by-reg">
-            <form id="vrmSearchForm" action="/vehicle-data" method="GET" target="_blank">
+            <form id="vrmSearchForm" action="/vehicle-data" method="GET">
                 <div class="plate_wrap mb-3">
                     <img src="frontend/themes/default/img/icon-img/reg_icon.png" alt="uk icon" width="42" height="48" loading="lazy">
                     <input class="vehicle_plate" type="text" placeholder="Vehicle Reg" id="reg_number" name="vrm"

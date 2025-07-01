@@ -280,7 +280,6 @@ class MobileTyrePricingController extends Controller
                     'error' => 'Unable to calculate distance for the given postcode. Error: ' . ($distanceData['error_message'] ?? 'Unknown error')
                 ], 500);
             }
-
             $distanceInMeters = $distanceData['rows'][0]['elements'][0]['distance']['value'];
             $distanceInMiles = $this->convertMetersToMiles($distanceInMeters);
 

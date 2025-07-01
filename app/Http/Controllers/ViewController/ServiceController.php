@@ -29,7 +29,6 @@ class ServiceController extends Controller
         // Get services from the database
         $services = \DB::table('car_services')->where('status', 1)->get();
         $vehicleData = Session::get('vehicleData', []);
-
         return view('service', compact('services', 'vehicleData'));
     }
 

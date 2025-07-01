@@ -11,25 +11,57 @@ class TyresProduct extends Model
 
     // use SoftDeletes;
     protected $connection = 'mysql_vehicle_details';
-    protected $table = 'tyres_product';
     // Disable automatic timestamps
     public $timestamps = true;
 
     protected $primaryKey = 'product_id';
     // Fillable fields for mass assignment
 
-    public function getConnectionName()
+  public function getConnectionName()
+{
+    $sharedDomains = ['www.digitalideasltd.in', 'b2b.garage-automation.com'];
+
+    // If CLI (e.g., schedule, artisan command)
+    if (app()->runningInConsole()) {
+        // Use fake host override if provided
+        $cliHost = $_SERVER['APP_FAKE_HOST'] ?? null;
+
+        if ($cliHost && in_array($cliHost, $sharedDomains)) {
+            return 'mysql_vehicle_details';
+        }
+
+        return config('database.default'); // fallback
+    }
+
+    // Web-based
+    $host = request()->getHost();
+    if (in_array($host, $sharedDomains)) {
+        return 'mysql_vehicle_details';
+    }
+
+    return config('database.default'); // default fallback
+}
+
+ public function getTable()
     {
-        // Domains that use the shared tyre inventory
-        $sharedDomains = ['www.digitalideasltd.in', 'b2b.garage-automation.com'];
+        if (app()->runningInConsole()) {
+            $cliHost = $_SERVER['APP_FAKE_HOST'] ?? null;
+
+            return match ($cliHost) {
+                'b2b.garage-automation.com'     => 'tyres_product_gloucester',
+                'www.digitalideasltd.in'        => 'tyres_product_gloucester',
+                default                         => 'tyres_product',
+            };
+        }
 
         $host = request()->getHost();
 
-        if (in_array($host, $sharedDomains)) {
-            return 'mysql_vehicle_details';
-        }
+        return match ($host) {
+            'b2b.garage-automation.com'     => 'tyres_product_gloucester',
+            'www.digitalideasltd.in'        => 'tyres_product_gloucester',
+            default                         => 'tyres_product',
+        };
     }
-
 
     protected $fillable = [
         'product_id',

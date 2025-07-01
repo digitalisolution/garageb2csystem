@@ -370,8 +370,8 @@
 
                         <div class="form-group col-lg-3 col-md-6 col-12">
                             <label for="tyre_collection_price">Price Collection:</label>
-                            <input type="text" name="tyre_collection_price" id="tyre_collection_price" class="form-control"
-                                value="{{ isset($tyre) ? number_format($tyre->tyre_collection_price ?? 0, 2) : number_format(old('tyre_collection_price', 0.00), 2) }}"
+                           <input type="text" name="tyre_collection_price" id="tyre_collection_price" class="form-control"
+                                value="{{ isset($tyre) ? $tyre->tyre_collection_price ?? '0.00' : old('tyre_collection_price', '0.00') }}"
                                 required>
                         </div>
 
@@ -452,7 +452,7 @@
         document.getElementById('tyre_fullyfitted_price').value = fullyFitted.toFixed(2);
         document.getElementById('tyre_mobilefitted_price').value = fullyFitted.toFixed(2);
         document.getElementById('tyre_mailorder_price').value = fullyFitted.toFixed(2);
-        document.getElementById('trade_costprice').value = tradeprice.toFixed(2);
+        document.getElementById('tyre_collection_price').value = fullyFitted.toFixed(2);
     }
 
     document.getElementById('tyre_price').addEventListener('input', calculateFullyFitted);

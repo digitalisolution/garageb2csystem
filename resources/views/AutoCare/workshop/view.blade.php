@@ -337,7 +337,7 @@ $itemIndex = 1;
                                     <td align="right"><strong>£{{ number_format($totalAmount, 2) }}</strong></td>
                                 </tr>
                                 @endforeach
-                                @if($tyre->fitting_type === 'mobile_fitted')
+                                @if( !empty($tyre) && $tyre->fitting_type === 'mobile_fitted')
                                 <tr>
                                     <!-- <td>{{ $itemIndex++ }}</td> -->
                                      <td>

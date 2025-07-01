@@ -1281,7 +1281,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const year = document.getElementById('car_year').value;
 
         if (make && model && year) {
-            fetch(`{{ route('engines') }}?make=${make}&model=${model}&year=${year}`)
+            fetch(`/engines?make=${make}&model=${model}&year=${year}`)
                 .then(response => response.json())
                 .then(engines => {
                     const engineSelect = document.getElementById('car_engine');

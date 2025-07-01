@@ -69,12 +69,12 @@
                     <h3 class="text-white mb-4">Your Vehicle</h3>
                     <div class="vehicle_bank" id="vehicleInfo">
                         <h4 class="text-uppercase"><strong id="vehicleReg"></strong></h4>
+                        @if(isset($vehicleData['regNumber']) && !empty($vehicleData['regNumber']))
+                        <p class="mb-0"><strong id="vehicleEngine" class="text-uppercase badge-dark rounded">{{$vehicleData['regNumber']}}</strong></p>
+                       @endif
                         <p class="mb-0"><strong id="vehicleMake">{{$vehicleData['make']}}</strong></p>
                         <p class="mb-0"><strong id="vehicleModel">{{$vehicleData['model']}}</strong></p>
                         <p class="mb-0"><strong id="vehicleYear">{{$vehicleData['year']}}</strong></p>
-                       @if($vehicleData['regNumber'])
-                        <p class="mb-0"><strong id="vehicleEngine" class="text-uppercase badge-dark p-1 rounded px-2">{{$vehicleData['regNumber']}}</strong></p>
-                       @endif
                         <p class="mb-0"><strong id="vehicleEnginecc">{{$vehicleData['engine']}}</strong></p>
                     </div>
                 </div>

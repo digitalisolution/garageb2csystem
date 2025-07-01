@@ -71,6 +71,38 @@ class VrmController extends Controller
         return response()->json(['success' => false, 'error' => $result['error'] ?? 'Failed to fetch data.'], 400);
     }
 
+    public function showVehicleSearch(Request $request)
+{
+    $vrm = $request->input('vrm');
+    $fitting_type = $request->input('fitting_type');
+    $packages = ['TyreData', 'VehicleAndMotHistory'];
+        $tyreSizes = [];
+
+    if (empty($vrm) || empty($packages)) {
+        return back()->withErrors(['vrm' => 'VRM is required']);
+    }
+
+    // Fetch vehicle details from service
+    $result = $this->vehicleLookupService->lookupVehicleDetailsForPackages($vrm, $packages);
+
+    // Optional: Save data into database
+    if ($result['success'] && !empty($fitting_type)) {
+        $this->saveVehicleDetails($vrm, $result['data']);
+        $tyreSizes = collect($result['data']['TyreDetails']['TyreDetailsList'] ?? [])
+            ->flatMap(function ($record) {
+                return [
+                    $record['Front']['Tyre']['SizeDescription'] ?? '',
+                    $record['Rear']['Tyre']['SizeDescription'] ?? ''
+                ];
+            })
+            ->filter()
+            ->unique()
+            ->values();
+    }
+
+    // Pass data to Blade view
+    return view('plugin.vrm_details', compact('vrm','fitting_type', 'result','tyreSizes'));
+}
     /**
      * Save vehicle details into the VehicleDetail table.
      *

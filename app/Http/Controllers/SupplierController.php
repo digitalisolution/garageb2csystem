@@ -5,13 +5,15 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Supplier;
 use App\Models\HeaderLink;
+use App\Models\TyresProduct;
+use App\Models\tyre_brands;
+use App\Models\DeliveryTime;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\File;
-use App\Models\DeliveryTime;
 
 
 class SupplierController extends Controller
@@ -28,7 +30,8 @@ class SupplierController extends Controller
         $viewData['optionValue1'] = "AutoCare/supplier/add";
         $viewData['option2'] = 'Add Product Detail';
         $viewData['optionValue2'] = "AutoCare/product/add";
-       $viewData['fullyFittedItems'] = DeliveryTime::where('supplier', $id)
+        $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
+         $viewData['fullyFittedItems'] = DeliveryTime::where('supplier', $id)
         ->where('delivery_type', 'fully_fitted')
         ->get()
         ->toArray();
@@ -37,19 +40,17 @@ class SupplierController extends Controller
         ->where('delivery_type', 'mobile_fitted')
         ->get()
         ->toArray();
-        $viewData['id'] = $id;
+
         // Fill data for update if id is provided
         if (isset($id) && $id != null) {
             $getFormAutoFillup = Supplier::whereId($id)->first()->toArray();
-            
+
             // Decode JSON for api_order_details if exists
             if (isset($getFormAutoFillup['api_order_details']) && !empty($getFormAutoFillup['api_order_details'])) {
                 $getFormAutoFillup['api_order_details'] = json_decode($getFormAutoFillup['api_order_details'], true);
             } else {
                 $getFormAutoFillup['api_order_details'] = []; // Set as empty if not available
             }
-            
-           // dd($viewData['fully_items']);
             return view('AutoCare.supplier.add', $viewData)->with($getFormAutoFillup);
         } else if ((!isset($id) && $id == null) && !$request->isMethod('post')) {
             return view('AutoCare.supplier.add', $viewData);
@@ -91,8 +92,6 @@ class SupplierController extends Controller
             }
         }
     }
-
-
     public function view(Request $request)
     {
         if ($request->isMethod('post')) {
@@ -223,16 +222,18 @@ class SupplierController extends Controller
         $supplierId = $request->input('supplier_id', 1); // Default to 50 if not provided
         $supplierName = $request->input('supplier_name', 'ownstock'); // Default to 50 if not provided
 
-        // Step 1: Delete existing tyres for the supplier and tyre_source 'ownstock'
+        // Step 1: Delete existing tyres for the supplier and tyre_supplier_name 'ownstock'
 
         if ($request->has('delete_existing') && $request->delete_existing == 1) {
-            // Delete existing tyres for the supplier and tyre_source 'ownstock'
-            DB::table('tyres_product')
-                ->where('tyre_supplier_name', $supplierName)
-                ->where('supplier_id', $supplierId)
-                ->delete();
+            // Delete existing tyres for the supplier and tyre_supplier_name 'ownstock'
+            TyresProduct::where('tyre_supplier_name', $supplierName)->where('supplier_id', $supplierId)->delete();
             // Reset AUTO_INCREMENT for the table
-            DB::statement("ALTER TABLE tyres_product AUTO_INCREMENT = 1");
+            $tableName = (new TyresProduct)->getTable();
+            $connection = (new TyresProduct)->getConnectionName() ?? config('database.default');
+
+            if (TyresProduct::count() === 0) {
+               DB::connection($connection)->statement("ALTER TABLE {$tableName} AUTO_INCREMENT = 1");
+            }
         }
 
         $insertData = [];
@@ -245,17 +246,17 @@ class SupplierController extends Controller
             $brandName = $row['BRAND'] ?? null;
 
             // If brand name exists, fetch the corresponding manufacturer_id from the tyre_brand table
-            $brandId = null;
+            $manufacturerId = null;
             if ($brandName) {
                 // Try to find the brand in the tyre_brand table
-                $brand = DB::table('tyre_brands')->where('name', '=', $brandName)->first();
+                $brand = tyre_brands::where('name', '=', $brandName)->first();
 
                 if ($brand) {
                     // Brand found, use the existing manufacturer_id
-                    $brandId = $brand->brand_id;
+                    $manufacturerId = $brand->manufacturer_id;
                 } else {
                     // Brand not found, create a new brand entry
-                    $newBrand = DB::table('tyre_brands')->insertGetId([
+                    $newBrand = tyre_brands::insertGetId([
                         'name' => $brandName,
                         'slug' => Str::slug($brandName),
                         'promoted' => 0,
@@ -268,31 +269,32 @@ class SupplierController extends Controller
                     ]);
 
                     // After inserting, get the manufacturer_id for the new brand
-                    $brandId = $newBrand;
+                    $manufacturerId = $newBrand;
                 }
             }
-           
+
             // Prepare the data to insert into tyres_product table
             $insertData[] = [
                 'tyre_sku' => $row['SKU'] ?? null,
                 'tyre_ean' => $row['EAN'] ?? null,
                 'tyre_quantity' => ($row['STOCKBAL'] ?? 0) >= 1 ? $row['STOCKBAL'] : 0,
                 'tyre_price' => $row['COST_PRICE'] ?? 0,
-                'tyre_brand_id' => $brandId,
+                'tyre_brand_id' => $manufacturerId,
                 'tyre_season' => $row['SEASON'] ?? null,
                 'tyre_width' => $row['SECTION'] ?? null,
                 'tyre_profile' => $row['PROFILE'] ?? null,
                 'tyre_diameter' => $row['RIM'] ?? null,
                 'tyre_speed' => $row['SPEED'] ?? null,
                 'status' => ($row['STOCKBAL'] ?? 0) >= 1 ? 1 : 0,
-                'tyre_fullyfitted_price' => ($row['PRICE'] ?? 0) + 20,
+                'tyre_fullyfitted_price' => ($row['PRICE_FULLYFITTED'] ?? 0) + 20,
+                'trade_costprice' => $row['PRICE_FULLYFITTED'],
                 'tyre_brand_name' => $brandName,
                 'tyre_model' => $row['PATTERN'] ?? null,
-                'tyre_description' => $row['PATTERN'] . ' ' . ($row['SECTION'] ?? '') . '/' . ($row['PROFILE'] ?? '') . 'R' . ($row['RIM'] ?? '') . ' ' . $row['LOAD_INDEX'] . $row['SPEED'],
+                'tyre_description' =>$row['SEASON'] . 'Tyre ' . $row['PATTERN'] . ' ' . ($row['SECTION'] ?? '') . '/' . ($row['PROFILE'] ?? '') . 'R' . ($row['RIM'] ?? '') . ' ' . $row['LOAD_INDEX'] . $row['SPEED'],
                 'tyre_loadindex' => $row['LOAD_INDEX'] ?? null,
                 'created_at' => now(),
                 'updated_at' => now(),
-                'tyre_noisedb' => $normalized_row['noise'] ?? $normalized_row['noisedb'] ?? '',
+                'tyre_noisedb' => $row['NOISE'] ?? $normalized_row['noisedb'] ?? '',
                 'tyre_fuel' => $row['FUEL'] ?? null,
                 'tyre_wetgrip' => $row['WET'] ?? '',
                 'tyre_runflat' => ($row['RFT'] === 'Yes' || $row['RFT'] === 'RFT') ? 1 : 0,
@@ -304,21 +306,20 @@ class SupplierController extends Controller
                 'instock' => 1,
                 'date_available' => now(),
                 'tyre_image' => $row['IMAGE'] ?? null,
-                'tyre_collection_price' => ($row['PRICE'] ?? 0) + 20,
                 'supplier_id' => $supplierId,  // Add supplier_id here
                 'tyre_supplier_name' => $supplierName, // Add supplier_name here
             ];
 
             // Insert in batches
             if (count($insertData) >= $batchSize) {
-                DB::table('tyres_product')->insert($insertData);
+                TyresProduct::insert($insertData);
                 $insertData = []; // Reset the batch
             }
         }
 
         // Insert remaining data if any
         if (!empty($insertData)) {
-            DB::table('tyres_product')->insert($insertData);
+            TyresProduct::insert($insertData);
         }
 
         return redirect()->back()->with('message.level', 'success')->with('message.content', 'Tyres imported successfully!');
@@ -408,8 +409,7 @@ class SupplierController extends Controller
 
     // Read the file content
     return file_get_contents($localFile);
-}
- 
+    }
 
     public function store(Request $request, $id)
     {
@@ -449,45 +449,44 @@ class SupplierController extends Controller
     }
 
 
-private function processDeliveryTimeData(Request $request, $supplierId, $prefix, $deliveryType)
-{
-    $days = $request->{$prefix . 'day'} ?? [];
-    $submittedIds = [];
-    $count = count($days);
+    private function processDeliveryTimeData(Request $request, $supplierId, $prefix, $deliveryType)
+    {
+        $days = $request->{$prefix . 'day'} ?? [];
+        $submittedIds = [];
+        $count = count($days);
 
-    for ($i = 0; $i < $count; $i++) {
-        // Skip if day is empty
-        if (empty($days[$i])) continue;
+        for ($i = 0; $i < $count; $i++) {
+            // Skip if day is empty
+            if (empty($days[$i])) continue;
 
-        $data = [
-            'supplier'       => $supplierId,
-            'delivery_type'  => $deliveryType,
-            'day'            => $request->{$prefix . 'day'}[$i] ?? null,
-            'start_hours'     => $request->{$prefix . 'start_hours'}[$i] ?? null,
-            'start_minutes'      => $request->{$prefix . 'start_minutes'}[$i] ?? null,
-            'end_hours'       => $request->{$prefix . 'end_hours'}[$i] ?? null,
-            'end_minutes'        => $request->{$prefix . 'end_minutes'}[$i] ?? null,
-            'delivery_time'  => $request->{$prefix . 'delivery_time'}[$i] ?? null,
-        ];
+            $data = [
+                'supplier'       => $supplierId,
+                'delivery_type'  => $deliveryType,
+                'day'            => $request->{$prefix . 'day'}[$i] ?? null,
+                'start_hours'     => $request->{$prefix . 'start_hours'}[$i] ?? null,
+                'start_minutes'      => $request->{$prefix . 'start_minutes'}[$i] ?? null,
+                'end_hours'       => $request->{$prefix . 'end_hours'}[$i] ?? null,
+                'end_minutes'        => $request->{$prefix . 'end_minutes'}[$i] ?? null,
+                'delivery_time'  => $request->{$prefix . 'delivery_time'}[$i] ?? null,
+            ];
 
-        // Update or Create
-        $rowId = $request->{$prefix . 'row_id'}[$i] ?? null;
-        if ($rowId && $existing = DeliveryTime::where('id', $rowId)->where('supplier', $supplierId)->first()) {
-            $existing->update($data);
-            $submittedIds[] = $existing->id;
-        } else {
-            $new = DeliveryTime::create($data);
-            $submittedIds[] = $new->id;
+            // Update or Create
+            $rowId = $request->{$prefix . 'row_id'}[$i] ?? null;
+            if ($rowId && $existing = DeliveryTime::where('id', $rowId)->where('supplier', $supplierId)->first()) {
+                $existing->update($data);
+                $submittedIds[] = $existing->id;
+            } else {
+                $new = DeliveryTime::create($data);
+                $submittedIds[] = $new->id;
+            }
         }
+
+        // Delete rows that were removed in the form for the current delivery type
+        DeliveryTime::where('supplier', $supplierId)
+            ->where('delivery_type', $deliveryType)
+            ->whereNotIn('id', $submittedIds)
+            ->delete();
     }
-
-    // Delete rows that were removed in the form for the current delivery type
-    DeliveryTime::where('supplier', $supplierId)
-        ->where('delivery_type', $deliveryType)
-        ->whereNotIn('id', $submittedIds)
-        ->delete();
-}
-
 
 }
 

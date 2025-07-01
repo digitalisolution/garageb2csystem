@@ -26,142 +26,82 @@
                 </div>
                 <form action="{{ route('AutoCare.customer.update-profile', ['id' => $customer->id]) }}" method="POST">
                     @csrf
-    <!-- Customer Type -->
-    <div class="mb-4">
-        <label for="customerType">Customer Type</label>
-        <select id="customerType" name="customer_type" class="form-control" required>
-            <option value="">-- Select --</option>
-            <option value="individual" {{ old('customer_type', $customer->customer_type ?? '') == 'individual' ? 'selected' : '' }}>
-                Individual
-            </option>
-            <option value="trade" {{ old('customer_type', $customer->customer_type ?? '') == 'trade' ? 'selected' : '' }}>
-                Trade
-            </option>
-        </select>
-    </div>
-
-    <!-- Conditional Fields -->
-    <div id="individualFields">
-        <div class="row">
-            <div class="col-lg-3 col-md-3 col-12">
-                <div class="form-group">
-                    <label>First Name</label>
-                    <input class="form-control" type="text" name="customer_name"
-                        value="{{ old('customer_name', $customer->customer_name ?? '') }}" required minlength="2"
-                        maxlength="50">
-                    @error('customer_name')
-                        <div class="text-danger">{{ $message }}</div>
-                    @enderror
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-3 col-12">
-                <div class="form-group">
-                    <label>Last Name</label>
-                    <input class="form-control" type="text" name="customer_last_name"
-                        value="{{ old('customer_last_name', $customer->customer_last_name ?? '') }}"
-                        minlength="2" maxlength="50">
-                    @error('customer_last_name')
-                        <div class="text-danger">{{ $message }}</div>
-                    @enderror
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-3 col-12">
-                <div class="form-group">
-                    <label>Email Address</label>
-                    <input class="form-control" type="email" name="customer_email"
-                        value="{{ old('customer_email', $customer->customer_email) }}" required>
-                    @error('customer_email')
-                        <div class="text-danger">{{ $message }}</div>
-                    @enderror
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-3 col-12">
-                <div class="form-group">
-                    <label>Telephone</label>
-                    <input class="form-control" type="text" name="customer_contact_number"
-                        value="{{ old('customer_contact_number', $customer->customer_contact_number) }}" required minlength="10" maxlength="15">
-                    @error('customer_contact_number')
-                        <div class="text-danger">{{ $message }}</div>
-                    @enderror
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-3 col-12">
-                <div class="form-group">
-                    <label>Alternate Telephone</label>
-                    <input class="form-control" type="text" name="customer_alt_number"
-                        value="{{ old('customer_alt_number', $customer->customer_alt_number) }}" minlength="10" maxlength="15">
-                    @error('customer_alt_number')
-                        <div class="text-danger">{{ $message }}</div>
-                    @enderror
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="tradeFields" style="display: none;">
-        <div class="row">
-            <div class="col-lg-3 col-md-3 col-12">
-                <div class="form-group">
-                    <label>Company Name</label>
-                    <input class="form-control" type="text" name="company_name"
-                        value="{{ old('company_name', $customer->company_name ?? '') }}" required>
-                    @error('company_name')
-                        <div class="text-danger">{{ $message }}</div>
-                    @enderror
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-3 col-12">
-                <div class="form-group">
-                    <label>VAT Number</label>
-                    <input class="form-control" type="text" name="vat_number"
-                        value="{{ old('vat_number', $customer->vat_number ?? '') }}">
-                    @error('vat_number')
-                        <div class="text-danger">{{ $message }}</div>
-                    @enderror
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-3 col-12">
-                <div class="form-group">
-                    <label>Company Registration Number</label>
-                    <input class="form-control" type="text" name="company_registration_number"
-                        value="{{ old('company_registration_number', $customer->company_registration_number ?? '') }}">
-                    @error('company_registration_number')
-                        <div class="text-danger">{{ $message }}</div>
-                    @enderror
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-3 col-12">
-                <div class="form-group">
-                    <label>Website</label>
-                    <input class="form-control" type="url" name="company_website"
-                        value="{{ old('company_website', $customer->company_website ?? '') }}" placeholder="https://example.com"> 
-                    @error('company_website')
-                        <div class="text-danger">{{ $message }}</div>
-                    @enderror
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-3 col-12">
-                <div class="form-group">
-                    <label>Contact Name</label>
-                    <input class="form-control" type="text" name="contact_person"
-                        value="{{ old('contact_person', $customer->contact_person ?? '') }}" required>
-                    @error('contact_person')
-                        <div class="text-danger">{{ $message }}</div>
-                    @enderror
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-3 col-12">
-                <div class="form-group">
-                    <label>Contact Email</label>
-                    <input class="form-control" type="email" name="contact_email"
-                        value="{{ old('contact_email', $customer->contact_email ?? '') }}" required>
-                    @error('contact_email')
-                        <div class="text-danger">{{ $message }}</div>
-                    @enderror
-                </div>
-            </div>
-        </div>
-    </div>
+                    <div class="row">
+                        <div class="col-lg-3 col-md-3 col-12">
+                            <div class="form-group">
+                                <label>First Name</label>
+                                <input class="form-control" type="text" name="customer_name"
+                                    value="{{ old('customer_name', $customer->customer_name) }}" required minlength="2"
+                                    maxlength="50">
+                                @error('customer_name')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-3 col-12">
+                            <div class="form-group">
+                                <label>Last Name</label>
+                                <input class="form-control" type="text" name="customer_last_name"
+                                    value="{{ old('customer_last_name', $customer->customer_last_name) }}"
+                                    minlength="2" maxlength="50">
+                                @error('customer_last_name')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-3 col-12">
+                            <div class="form-group">
+                                <label>Email Address</label>
+                                <input class="form-control" type="email" name="customer_email"
+                                    value="{{ old('customer_email', $customer->customer_email) }}" required>
+                                @error('customer_email')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-3 col-12">
+                            <div class="form-group">
+                                <label>Telephone</label>
+                                <input class="form-control" type="text" name="customer_contact_number"
+                                    value="{{ old('customer_contact_number', $customer->customer_contact_number) }}"
+                                    required minlength="10" maxlength="15">
+                                @error('customer_contact_number')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-3 col-12">
+                            <div class="form-group">
+                                <label>Alternate Telephone</label>
+                                <input class="form-control" type="text" name="customer_alt_number"
+                                    value="{{ old('customer_alt_number', $customer->customer_alt_number) }}" minlength="10"
+                                    maxlength="15">
+                                @error('customer_alt_number')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-3 col-12">
+                            <div class="form-group">
+                                <label>Company Name</label>
+                                <input class="form-control" type="text" name="company_name"
+                                    value="{{ old('company_name', $customer->company_name) }}" maxlength="100">
+                                @error('company_name')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-3 col-12">
+                            <div class="form-group">
+                                <label>Website</label>
+                                <input class="form-control" type="text" name="company_website"
+                                    value="{{ old('company_website', $customer->company_website) }}" maxlength="100">
+                                @error('company_website')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
                     <div class="text-center mt-3"><button type="submit" class="btn btn-primary">Update Profile</button>
                     </div>
                 </form>
@@ -381,49 +321,4 @@
             }
         });
     </script>
-    <script>
-document.addEventListener("DOMContentLoaded", function () {
-    const customerTypeSelect = document.getElementById('customerType');
-    const individualFields = document.getElementById('individualFields');
-    const tradeFields = document.getElementById('tradeFields');
-
-    // Function to toggle visibility
-    function toggleFields() {
-        const selected = customerTypeSelect.value;
-
-        if (selected === 'individual') {
-            individualFields.style.display = 'block';
-            tradeFields.style.display = 'none';
-
-            // Remove required from trade fields
-            document.querySelectorAll('#tradeFields input').forEach(input => {
-                input.required = false;
-            });
-
-            // Add required back to individual fields
-            document.querySelector('input[name="customer_name"]').required = true;
-            document.querySelector('input[name="customer_last_name"]').required = false; // Optional
-            document.querySelector('input[name="company_name"]').required = false;
-        } else if (selected === 'trade') {
-            individualFields.style.display = 'none';
-            tradeFields.style.display = 'block';
-
-            // Remove required from individual fields
-            document.querySelector('input[name="customer_name"]').required = false;
-            document.querySelector('input[name="customer_last_name"]').required = false;
-
-            // Add required to trade fields
-            document.querySelector('input[name="company_name"]').required = true;
-            document.querySelector('input[name="contact_person"]').required = true;
-            document.querySelector('input[name="contact_email"]').required = true;
-        }
-    }
-
-    // Initial check
-    toggleFields();
-
-    // Listen for change
-    customerTypeSelect.addEventListener('change', toggleFields);
-});
-</script>
 @endsection

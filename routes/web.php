@@ -194,12 +194,25 @@ Route::post('/store-vehicle-data', [CartController::class, 'storeVehicleData'])-
 // })->name('vehicle.data');
 
 
-Route::get('/plugin/search', [PluginController::class, 'showSearchForm'])->name('validate.plugin.client');
-Route::get('/plugin/search/submit', [PluginController::class, 'redirectToSearchResults'])->name('validate.plugin.client');
+// Route::get('/plugin/search', [PluginController::class, 'showSearchForm'])->name('validate.plugin.client');
+// Route::get('/plugin/search/submit', [PluginController::class, 'redirectToSearchResults'])->name('validate.plugin.client');
+Route::get('/js/plugin.js', function () {
+    $domain = str_replace('.', '-', request()->getHost());
+    $path = public_path("frontend/{$domain}/js/plugin.js");
 
+    if (!file_exists($path)) {
+        abort(404, 'Plugin file not found for this domain.');
+    }
+
+    return response()->file($path, [
+        'Content-Type' => 'application/javascript'
+    ]);
+});
+Route::middleware(['web', 'plugin.domain'])->group(function () {
 Route::get('/plugin/search', [PluginController::class, 'showSearchForm'])->name('plugin.search.form');
+Route::get('/plugin/vehicle-search', [VrmController::class, 'showVehicleSearch'])->name('plugin.vehicle-search');
 Route::get('/plugin/search/submit', [PluginController::class, 'redirectToSearchResults'])->name('plugin.search.submit');
-
+});
 
 Route::middleware('verify.token')->group(function () {
     Route::get('/vehicle-data', [VrmController::class, 'getVehicleAndMotDetails'])

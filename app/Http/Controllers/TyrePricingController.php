@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\TyrePricing;
 use App\Models\Supplier;
+use App\Models\TyresProduct;
 use App\Models\OrderTypes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -191,7 +192,7 @@ class TyrePricingController extends Controller
         $defaultMargin = $data['default_price'];
 
         // Base query for tyres_product
-        $query = DB::table('tyres_product');
+        $query = TyresProduct::query();
 
         // Add conditions if supplierId is provided
         if ($supplierId != 0) {
@@ -300,16 +301,14 @@ class TyrePricingController extends Controller
 
                 // Update the matched price column based on the order type
                 if ($priceColumn) {
-                    DB::table('tyres_product')
-                        ->where('product_id', $product->product_id)
+                    TyresProduct::where('product_id', $product->product_id)
                         ->update([
                             $priceColumn => $newPrice,
                         ]);
                 }
             } else {
                 // If no orderTypeId is provided, update all price columns
-                DB::table('tyres_product')
-                    ->where('product_id', $product->product_id)
+                TyresProduct::where('product_id', $product->product_id)
                     ->update([
                         'tyre_fullyfitted_price' => $newPrice,
                         'tyre_mailorder_price' => $newPrice,

@@ -223,13 +223,16 @@ class SitemapController extends Controller
         $this->output->set_output($output);
     }*/
 
-    public function sitemapManufacturerModels()
-    {
-    $products = DB::table('tyres_product as p')
-        ->leftJoin('tyre_brands as m', 'p.tyre_brand_id', '=', 'm.brand_id')
+  public function sitemapManufacturerModels()
+{
+    $tyresTable = (new \App\Models\TyresProduct())->getTable(); // dynamic
+    $brandsTable = (new \App\Models\tyre_brands())->getTable();
+
+    $products = TyresProduct::from("$tyresTable as p")
+        ->leftJoin("$brandsTable as m", 'p.tyre_brand_id', '=', 'm.brand_id')
         ->select('p.product_id', 'p.tyre_brand_id', 'm.name', 'm.slug', 'p.tyre_model')
         ->where('p.tyre_quantity', '>', 0)
-        ->where('p.status', '1')
+        ->where('p.status', 1)
         ->where('p.date_available', '<=', now())
         ->where('p.tyre_model', '!=', '')
         ->where('p.tyre_ean', '!=', '')
@@ -244,11 +247,12 @@ class SitemapController extends Controller
         ->limit(50)
         ->get();
 
+    // XML generation
     $xml = new \SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><urlset/>');
     $xml->addAttribute('xmlns', 'http://www.sitemaps.org/schemas/sitemap/0.9');
 
     foreach ($products as $product) {
-        $model = preg_replace('![\s/\'\\\\*#()+]+!', '-', strtolower(trim($product->model)));
+        $model = preg_replace('![\s/\'\\\\*#()+]+!', '-', strtolower(trim($product->tyre_model)));
         $model = preg_replace('/-+/', '-', $model);
 
         $url = $xml->addChild('url');
@@ -259,6 +263,7 @@ class SitemapController extends Controller
 
     return response($xml->asXML(), 200)->header('Content-Type', 'application/xml');
 }
+
 
 
 

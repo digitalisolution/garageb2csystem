@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\TyrePricingController;
 use Illuminate\Support\Str;
 use App\Models\Supplier;
+use App\Models\TyresProduct;
+use App\Models\tyre_brands;
 use App\Services\FTPFetcher;
 
 class TyreImportController extends Controller
@@ -52,8 +54,7 @@ class TyreImportController extends Controller
             }
 
             // Check if products exist for the supplier in the `tyres_product` table
-            $productCount = DB::table('tyres_product')
-                ->where('tyre_supplier_name', $supplier->supplier_name)
+            $productCount = TyresProduct::where('tyre_supplier_name', $supplier->supplier_name)
                 ->where('supplier_id', $supplier->id)
                 ->count();
 
@@ -62,8 +63,7 @@ class TyreImportController extends Controller
                 $supplier->status = 1;
                 $supplier->save();
 
-                DB::table('tyres_product')
-                    ->where('tyre_supplier_name', $supplier->supplier_name)
+                TyresProduct::where('tyre_supplier_name', $supplier->supplier_name)
                     ->where('supplier_id', $supplier->id)
                     ->update(['status' => 1]);
 
@@ -87,8 +87,7 @@ class TyreImportController extends Controller
             $supplier->status = 0;
             $supplier->save();
 
-            DB::table('tyres_product')
-                ->where('tyre_supplier_name', $supplier->supplier_name)
+            TyresProduct::where('tyre_supplier_name', $supplier->supplier_name)
                 ->where('supplier_id', $supplier->id)
                 ->update(['status' => 0]);
 
@@ -107,8 +106,7 @@ class TyreImportController extends Controller
         $supplier->save();
 
         // Delete tyres related to the supplier in tyres_product table
-        DB::table('tyres_product')
-            ->where('tyre_supplier_name', $supplier->supplier_name)
+        TyresProduct::where('tyre_supplier_name', $supplier->supplier_name)
             ->where('supplier_id', $supplier->id)
             ->delete();
 
@@ -139,15 +137,12 @@ class TyreImportController extends Controller
                 case 'easityre':
                     $this->importEasityreCsv($csvData, $supplierId, $supplierName);
                 break;
-                case 'eden':
-                    $this->importEdenCsv($csvData, $supplierId, $supplierName);
-                break;
                 case 'bmtr':
                     $this->importBmtrCsv($csvData, $supplierId, $supplierName);
                 break;
-                case 'ownstock':
-                $this->importOwnStockCsv($csvData, $supplierId, $supplierName);
-                break;
+                // case 'ownstock':
+                // $this->importOwnStockCsv($csvData, $supplierId, $supplierName);
+                // break;
             default:
                 Log::warning('Unknown supplier name', ['supplier_name' => $supplierName]);
                 throw new \Exception('Unknown supplier name: ' . $supplierName);
@@ -184,15 +179,12 @@ class TyreImportController extends Controller
             case 'kumho':
                 $this->importKumhoCsv($csvData, $supplierId, $supplierName);
             break;
-            case 'eden':
-                $this->importEdenCsv($csvData, $supplierId, $supplierName);
-            break;
             case 'bmtr':
                 $this->importBmtrCsv($csvData, $supplierId, $supplierName);
             break;
-            case 'ownstock':
-                $this->importOwnStockCsv($csvData, $supplierId, $supplierName);
-            break;
+            // case 'ownstock':
+            //     $this->importOwnStockCsv($csvData, $supplierId, $supplierName);
+            // break;
             default:
                 Log::warning('Unknown supplier name', ['supplier_name' => $supplierName]);
                 throw new \Exception('Unknown supplier name: ' . $supplierName);
@@ -251,21 +243,21 @@ class TyreImportController extends Controller
                 case 'easityre':
                     $this->importEasityreCsv($csvData, $supplierId, $supplierName);
                 break;
-                case 'eden':
-                    $this->importEdenCsv($csvData, $supplierId, $supplierName);
-                break;
                 case 'bmtr':
-                    $this->importBmtrCsv($csvData, $supplierId, $supplierName);
+                $this->importBmtrCsv($csvData, $supplierId, $supplierName);
                 break;
-                case 'ownstock':
-                    $this->importOwnStockCsv($csvData, $supplierId, $supplierName);
-                break;
+                // case 'ownstock':
+                //     $this->importOwnStockCsv($csvData, $supplierId, $supplierName);
+                // break;
                 default:
                     Log::warning('Unknown supplier name', ['supplier_name' => $supplierName]);
                     throw new \Exception('Unknown supplier name: ' . $supplierName);
             }
 
+            // Step 6: Log success
+            // Log::info('CSV data imported successfully', ['file_path' => $filePath, 'supplier_name' => $supplierName]);
         } catch (\Exception $e) {
+            // Log and rethrow the exception for higher-level handling
             Log::error('Error during importFromFilePath', [
                 'file_path' => $filePath,
                 'error' => $e->getMessage(),
@@ -379,8 +371,15 @@ class TyreImportController extends Controller
 
     private function importBondCsv($fileContent, $supplierId, $supplierName)
     {
+
+        // Debugging: log the type and content of $fileContent
+        // \Log::debug('File Content Type: ' . gettype($fileContent));
+        // \Log::debug('File Content: ' . var_export($fileContent, true));
+
+        // Set a longer execution time to handle large data imports
         set_time_limit(300);
 
+        // Ensure $fileContent is an array of rows (no need to implode if it's already an array)
         if (is_array($fileContent)) {
             $rows = $fileContent; // Use the array directly
         } else {
@@ -392,15 +391,17 @@ class TyreImportController extends Controller
         $header = array_shift($rows); // Remove the first row as the header
 
         // Step 2: Delete existing data for the `bond` source
-        DB::table('tyres_product')
-            ->where('tyre_supplier_name', $supplierName)
+        TyresProduct::where('tyre_supplier_name', $supplierName)
             ->where('supplier_id', $supplierId)
             ->where('instock', 0) // Ensure correct column name and numeric comparison
             ->delete();
 
         // Step 3: Reset AUTO_INCREMENT safely if the table is empty
-        if (!DB::table('tyres_product')->exists()) {
-            DB::statement("ALTER TABLE tyres_product AUTO_INCREMENT = 1");
+        if (!TyresProduct::exists()) {
+            $tableName = (new TyresProduct)->getTable();
+            $connection = (new TyresProduct)->getConnectionName() ?? config('database.default');
+
+            DB::connection($connection)->statement("ALTER TABLE {$tableName} AUTO_INCREMENT = 1");
         }
 
 
@@ -427,19 +428,19 @@ class TyreImportController extends Controller
                 !empty($row['EAN']) && ($row['EAN'] != '-') &&
                 !empty($row['SECTION']) && !empty($row['PROFILE']) && !empty($row['RIM'])
             ) {
-                // Handle brand_id logic
-                $brandId = null;
+                // Handle manufacturer_id logic
+                $manufacturerId = null;
                 $brandName = $row['BRAND'] ?? null;
 
                 if ($brandName) {
                     // Check if the brand exists
-                    $brand = DB::table('tyre_brands')->where('name', '=', $brandName)->first();
+                    $brand = tyre_brands::where('name', '=', $brandName)->first();
 
                     if ($brand) {
-                        $brandId = $brand->brand_id;
+                        $manufacturerId = $brand->brand_id;
                     } else {
                         // Create a new brand entry
-                        $newBrandId = DB::table('tyre_brands')->insertGetId([
+                        $newBrandId = tyre_brands::insertGetId([
                             'name' => $brandName,
                             'slug' => Str::slug($brandName),
                             'promoted' => 0,
@@ -451,7 +452,7 @@ class TyreImportController extends Controller
                             'updated_at' => now(),
                         ]);
 
-                        $brandId = $newBrandId;
+                        $manufacturerId = $newBrandId;
                     }
                 }
 
@@ -460,15 +461,32 @@ class TyreImportController extends Controller
                 foreach ($row as $key => $value) {
                     $normalized_row[$this->normalizeKey($key)] = $value;
                 }
+                
                 $tyre_runflat = isset($row['RFT']) && ($row['RFT'] === 'Yes' || $row['RFT'] === 'RFT') ? 1 : 0;
                 $tyre_extraload = isset($row['XL']) && $row['XL'] === 'XL' ? 1 : 0;
+                // $seasonMap = [
+                //     'S' => 'Summer',
+                //     'A' => 'All Season',
+                //     'W' => 'Winter',
+                //     'Summer' => 'Summer',
+                //     'All Season' => 'All Season',
+                //     'Winter' => 'Winter',
+                // ];
+                // $tyre_season = isset($row['SEASON']) && isset($seasonMap[strtoupper($row['SEASON'])])
+                //     ? $seasonMap[strtoupper($row['SEASON'])]
+                //     : 'Summer';
+
                 $tyre_season = $row['SEASON'] ?? null;
                 // Handle human-readable text for antiflat and reinforcement
                 $antiflat_text = $tyre_runflat ? 'RFT' : '';
                 $reinforced_text = $tyre_extraload ? 'XL' : '';
                 $season = $tyre_season ? $tyre_season . ' Tyre ' : 'Summer Tyre ';
-
-                // Combine texts intelligently for the tyre_description
+                $rimText = $row['RIM'] ?? '';
+                $vehicleType = strtolower(trim(str_replace('Passenger', '', $row['VEHICLE_TYPE'] ?? 'car')));
+                if ($vehicleType == 'van' || $vehicleType == 'commercial van') {
+                    $rimText .= 'C';
+                }
+                // Combine texts intelligently for the description
                 $additional_features = trim(($antiflat_text . ' ' . $reinforced_text));
                 // Prepare the tyre data and include supplier_id and supplier_name
                 $tyre_data = [
@@ -476,7 +494,7 @@ class TyreImportController extends Controller
                     'tyre_ean' => $row['EAN'] ?? null,
                     'tyre_quantity' => ($row['STOCKBAL'] ?? 0) >= 1 ? $row['STOCKBAL'] : 0,
                     'tyre_price' => is_numeric($row['PRICE']) ? $row['PRICE'] : 0,
-                    'tyre_brand_id' => $brandId,
+                    'tyre_brand_id' => $manufacturerId,
                     'tyre_season' => $tyre_season,
                     'tyre_width' => $row['SECTION'] ?? null,
                     'tyre_profile' => $row['PROFILE'] ?? null,
@@ -497,21 +515,21 @@ class TyreImportController extends Controller
                     'tyre_runflat' => $tyre_runflat,
                     'tyre_loadindex' => $row['LOAD_INDEX'] ?? null,
                     'tyre_extraload' => $tyre_extraload,
-                    'vehicle_type' => strtolower(trim(str_replace('Passenger', '', $row['VEHICLE_TYPE'] ?? 'car'))),
+                    'vehicle_type' =>  $vehicleType,
                     'tyre_weight' => $row['WEIGHT'] ?? $row['WEIGHT_KG'] ?? null,
                     'product_type' => 'tyre',
                     'tax_class_id' => 9,
                     'date_available' => now(),
                     'tyre_image' => 'https://www.bondint.co.uk/Fastraclive/images/products/' . $row['IMAGE'] ?? null,
                     'supplier_id' => $supplierId,  // Add supplier_id here
-                    'tyre_supplier_name' => $supplierName, // Add supplier_name here
+                    'tyre_supplier_name' => $supplierName,
                     'tyre_description' => trim(
                         $season . '' .
                         ($brandName ?? '') . ' ' .
                         ($row['PATTERN'] ?? '') . ' ' .
                         ($row['SECTION'] ?? '') . '/' .
                         ($row['PROFILE'] ?? '') . 'R' .
-                        ($row['RIM'] ?? '') . ' ' .
+                        $rimText . ' ' .
                         ($row['LOAD_INDEX'] ?? '') . ' ' .
                         ($row['SPEED'] ?? '') . ' ' .
                         $additional_features
@@ -524,7 +542,7 @@ class TyreImportController extends Controller
 
                 // Insert data in batches for efficiency
                 if (count($insertData) >= $batchSize) {
-                    DB::table('tyres_product')->insert($insertData);
+                    TyresProduct::insert($insertData);
                     $insertData = [];
                 }
             }
@@ -532,7 +550,7 @@ class TyreImportController extends Controller
 
         // Insert any remaining data that was not inserted in the batch
         if (!empty($insertData)) {
-            DB::table('tyres_product')->insert($insertData);
+            TyresProduct::insert($insertData);
         }
         DB::table('suppliers')
         ->where('id', $supplierId)
@@ -554,15 +572,17 @@ class TyreImportController extends Controller
         $header = array_shift($fileContent); // Remove the first row as the header
 
         // Step 2: Delete existing data for the given supplier and source
-        DB::table('tyres_product')
-            ->where('tyre_supplier_name', $supplierName)
+        TyresProduct::where('tyre_supplier_name', $supplierName)
             ->where('supplier_id', $supplierId)
             ->where('instock', 0)
             ->delete();
 
         // Step 3: Reset AUTO_INCREMENT if the table is empty
-        if (!DB::table('tyres_product')->exists()) {
-            DB::statement("ALTER TABLE tyres_product AUTO_INCREMENT = 1");
+        if (!TyresProduct::exists()) {
+            $tableName = (new TyresProduct)->getTable();
+            $connection = (new TyresProduct)->getConnectionName() ?? config('database.default');
+
+            DB::connection($connection)->statement("ALTER TABLE {$tableName} AUTO_INCREMENT = 1");
         }
 
         // Step 4: Batch processing variables
@@ -586,22 +606,22 @@ class TyreImportController extends Controller
                 !empty($row['SECTION']) && !empty($row['PROFILE']) && !empty($row['RIM'])
             ) {
                 // Handle manufacturer_id logic
-                $brandId = null;
+                $manufacturerId = null;
                 $brandName = $row['BRAND'] ?? null;
 
                 if ($brandName) {
                     // Check if the brand exists
-                    $brand = DB::table('tyre_brands')->where('name', '=', $brandName)->first();
+                    $brand = tyre_brands::where('name', '=', $brandName)->first();
 
                     if ($brand) {
-                        $brandId = $brand->brand_id;
+                        $manufacturerId = $brand->brand_id;
                     } else {
                         // Create a new brand entry
-                        $brandId = DB::table('tyre_brands')->insertGetId([
+                        $manufacturerId = tyre_brands::insertGetId([
                             'name' => $brandName,
                             'slug' => Str::slug($brandName),
                             'promoted' => 0,
-                            'tyre_image' => Str::slug($brandName) . '.jpg',
+                            'image' => Str::slug($brandName) . '.jpg',
                             'sort_order' => 1,
                             'status' => 1,
                             'product_type' => 'tyre',
@@ -638,16 +658,19 @@ class TyreImportController extends Controller
                 $reinforced_text = $tyre_extraload ? 'XL' : '';
                 $season = $tyre_season ? $tyre_season . ' Tyre ' : 'Summer Tyre ';
 
-                // Combine texts intelligently for the tyre_description
+                // Combine texts intelligently for the description
                 $additional_features = trim(($antiflat_text . ' ' . $reinforced_text));
-
+                $rimText = $row['RIM'] ?? '';
+                // if ($row['VEHICLE_TYPE'] === 'van' || $row['VEHICLE_TYPE'] === 'commercial van') {
+                //     $rimText .= 'C';
+                // }
                 // Prepare the tyre data and include supplier_id and supplier_name
                 $tyre_data = [
                     'tyre_sku' => $sku,
                     'tyre_ean' => $ean,
                     'tyre_quantity' => is_numeric($row['STOCKBAL'] ?? 0) >= 1 ? (int) $row['STOCKBAL'] : 0,
                     'tyre_price' => $row['COST_PRICE'] ?? 0,
-                    'tyre_brand_id' => $brandId,
+                    'tyre_brand_id' => $manufacturerId,
                     'tyre_season' => $tyre_season,
                     'tyre_width' => $row['SECTION'] ?? null,
                     'tyre_profile' => (isset($row['PROFILE']) && (strlen($row['PROFILE']) == 2 || strlen($row['PROFILE']) == 3))
@@ -675,13 +698,12 @@ class TyreImportController extends Controller
                     'lead_time' => $row['LEAD_TIME'] ?? $row['LEAD_TIME'] ?? 'Available Today',
                     'date_available' => now(),
                     'tyre_image' => $row['IMAGE'] ?? null,
-                    
                     'supplier_id' => $supplierId,
                     'tyre_supplier_name' => $supplierName,
                     'created_at' => now(),
                     'updated_at' => now(),
 
-                    // Construct the tyre_description
+                    // Construct the description
 
                     // ... other fields ...
                     'tyre_description' => trim(
@@ -690,7 +712,7 @@ class TyreImportController extends Controller
                         ($row['PATTERN'] ?? '') . ' ' .
                         ($row['SECTION'] ?? '') . '/' .
                         ($row['PROFILE'] ?? '') . 'R' .
-                        ($row['RIM'] ?? '') . ' ' .
+                        $rimText . ' ' .
                         ($row['LOAD_INDEX'] ?? '') . ' ' .
                         ($row['SPEED'] ?? '') . ' ' .
                         $additional_features
@@ -703,7 +725,7 @@ class TyreImportController extends Controller
                 // dd($insertData);
                 // Insert data in batches for efficiency
                 if (count($insertData) >= $batchSize) {
-                    DB::table('tyres_product')->insert($insertData);
+                    TyresProduct::insert($insertData);
                     $insertData = [];
                 }
             }
@@ -711,7 +733,7 @@ class TyreImportController extends Controller
 
         // Insert any remaining data that was not inserted in the batch
         if (!empty($insertData)) {
-            DB::table('tyres_product')->insert($insertData);
+            TyresProduct::insert($insertData);
         }
         DB::table('suppliers')
         ->where('id', $supplierId)
@@ -733,15 +755,17 @@ class TyreImportController extends Controller
         $header = array_shift($fileContent); // Remove the first row as the header
 
         // Step 2: Delete existing data for the given supplier and source
-        DB::table('tyres_product')
-            ->where('tyre_supplier_name', $supplierName)
+        TyresProduct::where('tyre_supplier_name', $supplierName)
             ->where('supplier_id', $supplierId)
             ->where('instock', 0)
             ->delete();
 
         // Step 3: Reset AUTO_INCREMENT if the table is empty
-        if (!DB::table('tyres_product')->exists()) {
-            DB::statement("ALTER TABLE tyres_product AUTO_INCREMENT = 1");
+        if (!TyresProduct::exists()) {
+            $tableName = (new TyresProduct)->getTable();
+            $connection = (new TyresProduct)->getConnectionName() ?? config('database.default');
+
+            DB::connection($connection)->statement("ALTER TABLE {$tableName} AUTO_INCREMENT = 1");
         }
 
         // Step 4: Batch processing variables
@@ -765,22 +789,22 @@ class TyreImportController extends Controller
                 !empty($row['SECTION']) && !empty($row['PROFILE']) && !empty($row['RIM'])
             ) {
                 // Handle manufacturer_id logic
-                $brandId = null;
+                $manufacturerId = null;
                 $brandName = $row['BRAND'] ?? null;
 
                 if ($brandName) {
                     // Check if the brand exists
-                    $brand = DB::table('tyre_brands')->where('name', '=', $brandName)->first();
+                    $brand = tyre_brands::where('name', '=', $brandName)->first();
 
                     if ($brand) {
-                        $brandId = $brand->brand_id;
+                        $manufacturerId = $brand->brand_id;
                     } else {
                         // Create a new brand entry
-                        $brandId = DB::table('tyre_brands')->insertGetId([
+                        $manufacturerId = tyre_brands::insertGetId([
                             'name' => $brandName,
                             'slug' => Str::slug($brandName),
                             'promoted' => 0,
-                            'tyre_image' => Str::slug($brandName) . '.jpg',
+                            'image' => Str::slug($brandName) . '.jpg',
                             'sort_order' => 1,
                             'status' => 1,
                             'product_type' => 'tyre',
@@ -817,16 +841,19 @@ class TyreImportController extends Controller
                 $reinforced_text = $tyre_extraload ? 'XL' : '';
                 $season = $tyre_season ? $tyre_season . ' Tyre ' : 'Summer Tyre ';
 
-                // Combine texts intelligently for the tyre_description
+                // Combine texts intelligently for the description
                 $additional_features = trim(($antiflat_text . ' ' . $reinforced_text));
-
+                $rimText = $row['RIM'] ?? '';
+                if ($row['VEHICLE_TYPE'] === 'van' || $row['VEHICLE_TYPE'] === 'commercial van') {
+                    $rimText .= 'C';
+                }
                 // Prepare the tyre data and include supplier_id and supplier_name
                 $tyre_data = [
                     'tyre_sku' => $sku,
                     'tyre_ean' => $ean,
-                    'quantity' => is_numeric($row['STOCKBAL'] ?? 0) >= 1 ? (int) $row['STOCKBAL'] : 0,
+                    'tyre_quantity' => is_numeric($row['STOCKBAL'] ?? 0) >= 1 ? (int) $row['STOCKBAL'] : 0,
                     'tyre_price' => $row['COST_PRICE'] ?? 0,
-                    'tyre_brand_id' => $brandId,
+                    'tyre_brand_id' => $manufacturerId,
                     'tyre_season' => $tyre_season,
                     'tyre_width' => $row['SECTION'] ?? null,
                     'tyre_profile' => (isset($row['PROFILE']) && (strlen($row['PROFILE']) == 2 || strlen($row['PROFILE']) == 3))
@@ -848,28 +875,23 @@ class TyreImportController extends Controller
                     'tyre_runflat' => $tyre_runflat,
                     'tyre_extraload' => $tyre_extraload,
                     'vehicle_type' => strtolower(trim(str_replace('Passenger', '', $row['VEHICLE_TYPE'] ?? 'car'))),
-                    'tyre_weight' => $row['WEIGHT'] ?? $row['WEIGHT_KG'] ?? null,
+                    'weight' => $row['WEIGHT'] ?? $row['WEIGHT_KG'] ?? null,
                     'product_type' => 'tyre',
                     'tax_class_id' => 9,
                     'lead_time' => $row['LEAD_TIME'] ?? $row['LEAD_TIME'] ?? 'Available Today',
                     'date_available' => now(),
                     'tyre_image' => $row['IMAGE'] ?? null,
-                    
                     'supplier_id' => $supplierId,
                     'tyre_supplier_name' => $supplierName,
                     'created_at' => now(),
                     'updated_at' => now(),
-
-                    // Construct the tyre_description
-
-                    // ... other fields ...
                     'tyre_description' => trim(
                         $season . '' .
                         ($brandName ?? '') . ' ' .
                         ($row['PATTERN'] ?? '') . ' ' .
                         ($row['SECTION'] ?? '') . '/' .
                         ($row['PROFILE'] ?? '') . 'R' .
-                        ($row['RIM'] ?? '') . ' ' .
+                        $rimText . ' ' .
                         ($row['LOAD_INDEX'] ?? '') . ' ' .
                         ($row['SPEED'] ?? '') . ' ' .
                         $additional_features
@@ -882,7 +904,7 @@ class TyreImportController extends Controller
                 // dd($insertData);
                 // Insert data in batches for efficiency
                 if (count($insertData) >= $batchSize) {
-                    DB::table('tyres_product')->insert($insertData);
+                    TyresProduct::insert($insertData);
                     $insertData = [];
                 }
             }
@@ -890,7 +912,7 @@ class TyreImportController extends Controller
 
         // Insert any remaining data that was not inserted in the batch
         if (!empty($insertData)) {
-            DB::table('tyres_product')->insert($insertData);
+            TyresProduct::insert($insertData);
         }
         DB::table('suppliers')
         ->where('id', $supplierId)
@@ -916,17 +938,18 @@ class TyreImportController extends Controller
         $header = array_shift($fileContent); // Remove the first row as the header
     
         // Step 2: Delete existing data for the given supplier and source
-        DB::table('tyres_product')
-            ->where('tyre_supplier_name', $supplierName)
+        TyresProduct::where('tyre_supplier_name', $supplierName)
             ->where('supplier_id', $supplierId)
             ->where('instock', 0)
             ->delete();
     
         // Step 3: Reset AUTO_INCREMENT if the table is empty
-        if (!DB::table('tyres_product')->exists()) {
-            DB::statement("ALTER TABLE tyres_product AUTO_INCREMENT = 1");
+        if (!TyresProduct::exists()) {
+            $tableName = (new TyresProduct)->getTable();
+            $connection = (new TyresProduct)->getConnectionName() ?? config('database.default');
+
+            DB::connection($connection)->statement("ALTER TABLE {$tableName} AUTO_INCREMENT = 1");
         }
-    
         // Step 4: Batch processing variables
         $insertData = [];
         $batchSize = 500;
@@ -948,23 +971,23 @@ class TyreImportController extends Controller
                 !empty($row['SECTION']) && !empty($row['PROFILE']) && !empty($row['RIM'] && (!empty($row['TYNOISEDB']) && $row['TYNOISEDB'] > 0))
             ) {
                 // Handle manufacturer_id logic using the mapping array
-                $brandId = null;
+                $manufacturerId = null;
                 $brandCode = $row['MANUFCTR'] ?? null;
                 $brandName = isset($cm[$brandCode]) ? $cm[$brandCode] : null;
     
                 if ($brandName) {
                     // Check if the brand exists
-                    $brand = DB::table('tyre_brands')->where('name', '=', $brandName)->first();
+                    $brand = tyre_brands::where('name', '=', $brandName)->first();
                     if ($brand) {
-                        $brandId = $brand->brand_id;
+                        $manufacturerId = $brand->brand_id;
                     } else {
                         // Create a new brand entry
                         try {
-                            $brandId = DB::table('tyre_brands')->insertGetId([
+                            $manufacturerId = tyre_brands::insertGetId([
                                 'name' => $brandName,
                                 'slug' => Str::slug($brandName),
                                 'promoted' => 0,
-                                'tyre_image' => Str::slug($brandName) . '.jpg',
+                                'image' => Str::slug($brandName) . '.jpg',
                                 'sort_order' => 1,
                                 'status' => 1,
                                 'product_type' => 'tyre',
@@ -994,9 +1017,11 @@ class TyreImportController extends Controller
                 // Stock and quantity logic
                 if (($row['QUANTITY'] ?? 0) > 1) {
                     $quantity = $row['QUANTITY'];
+                    $stock_status_id = 6; // In stock
                     $status = 1;
                 } else {
                     $quantity = 0;
+                    $stock_status_id = 5; // Out of stock
                     $status = 0;
                 }
     
@@ -1033,7 +1058,7 @@ class TyreImportController extends Controller
                     'tyre_ean' => $ean,
                     'tyre_quantity' => (int)$quantity,
                     'tyre_price' => $row['UNITCOST'] ?? 0,
-                    'tyre_brand_id' => $brandId,
+                    'tyre_brand_id' => $manufacturerId,
                     'tyre_season' => $tyre_season,
                     'tyre_width' => $tyre_width, // Use normalized value
                     'tyre_profile' => $tyre_profile,
@@ -1045,7 +1070,7 @@ class TyreImportController extends Controller
                     'trade_costprice' => ($row['UNITCOST'] ?? 0) + 4.84,
                     'tyre_brand_name' => $brandName,
                     'tyre_model' => $row['TREADPAT'] ?? null,
-                    'tyre_noisedb' =>$row['TYNOISEDB'] ?? null,
+                    'tyre_noisedb' => (!empty($row['TYNOISEDB']) && $row['TYNOISEDB'] > 0) ? $row['TYNOISEDB'] : null,
                     'tyre_fuel' => $row['TYFUELC'] ?? null,
                     'tyre_wetgrip' => $row['TYWGC'] ?? null,
                     'tyre_runflat' => $tyre_runflat,
@@ -1057,7 +1082,6 @@ class TyreImportController extends Controller
                     'lead_time' => $row['LEAD_TIME'] ?? null,
                     'date_available' => now(),
                     'tyre_image' => $row['IMAGE'] ?? null,
-                    
                     'supplier_id' => $supplierId,
                     'tyre_supplier_name' => $supplierName,
                     'created_at' => now(),
@@ -1081,7 +1105,7 @@ class TyreImportController extends Controller
     
                 // Insert data in batches for efficiency
                 if (count($insertData) >= $batchSize) {
-                    DB::table('tyres_product')->insert($insertData);
+                    TyresProduct::insert($insertData);
                     $insertData = [];
                 }
             }
@@ -1089,196 +1113,151 @@ class TyreImportController extends Controller
     
         // Insert any remaining data that was not inserted in the batch
         if (!empty($insertData)) {
-            DB::table('tyres_product')->insert($insertData);
+            TyresProduct::insert($insertData);
         }
         DB::table('suppliers')
         ->where('id', $supplierId)
         ->update(['updated_at' => now()]);
     }
-    private function importEdenCsv($fileContent, $supplierId, $supplierName)
+    private function importEasityreCsv($fileContent, $supplierId, $supplierName)
     {
         set_time_limit(300);
-    
-        if (!is_array($fileContent) || count($fileContent) < 2) {
-            \Log::error('File content invalid or too short.');
-            return;
+        if (!is_array($fileContent)) {
+            \Log::error('File content is not an array, unable to process.');
+            return; // Exit if file content is not in the expected format
         }
-    
-       $header = array_shift($fileContent); // Remove the first row as the header
+        $header = array_shift($fileContent); // Remove the first row as the header
         $header = array_map(function($key) {
             return str_replace(' ', '_', $key);
         }, $header);
-
-        DB::table('tyres_product')
-            ->where('tyre_supplier_name', $supplierName)
+        TyresProduct::where('tyre_supplier_name', $supplierName)
             ->where('supplier_id', $supplierId)
             ->where('instock', 0)
             ->delete();
-    
-        if (!DB::table('tyres_product')->exists()) {
-            DB::statement("ALTER TABLE tyres_product AUTO_INCREMENT = 1");
+
+        if (!TyresProduct::exists()) {
+            $tableName = (new TyresProduct)->getTable();
+            $connection = (new TyresProduct)->getConnectionName() ?? config('database.default');
+
+            DB::connection($connection)->statement("ALTER TABLE {$tableName} AUTO_INCREMENT = 1");
         }
-    
+
         $insertData = [];
         $batchSize = 500;
- 
+
         foreach ($fileContent as $line) {
             if (empty($line)) {
                 continue;
             }
-    
+
             $row = array_combine($header, $line);
-           
-            if (
-                    ($row['Price'] ?? 0) > 1 &&
-                    ($row['Product_Available'] ?? 0) > 1 &&
-                    !empty($row['Width']) &&
-                    !empty($row['Aspect_Ratio']) &&
-                    !empty($row['Rim']) &&
-                    isset($row['Noise_Performance']) &&
-                    is_numeric($row['Noise_Performance']) &&
-                    $row['Noise_Performance'] > 0
-                ) {
+            /*if (
+                ($row['Price'] ?? 0) > 1 || ($row['Product_Available'] ?? 0) > 1 &&
+                !empty($row['Width']) && !empty($row['Aspect_Ratio']) && !empty($row['Rim'])
+            ) {*/
+            if (( ($row['Price'] ?? 0) > 1 || ($row['Product_Available'] ?? 0) > 1) && !empty($row['Width']) && !empty($row['Aspect_Ratio']) && !empty($row['Rim']) && !empty($row['Product_EAN']) && trim($row['Rolling_Resistance'] ?? '') !== '' && trim($row['Wet_Grip'] ?? '') !== '' && ($row['Noise_Performance'] ?? 0) > 2 ){
+                $manufacturerId = null;
+                $brandName = $row['Brand_Name'] ?? null;
 
-
-                 
-                $brandId = null;
-                $brandCode = $row['Brand_Name'] ?? null;
-                $brandName = isset($brandCode) ? $brandCode : null;
-    
-                if ($brandName) {
-                    $brand = DB::table('tyre_brands')->where('name', '=', $brandName)->first();
-                    if ($brand) {
-                        $brandId = $brand->brand_id;
-                    } else {
-                        try {
-                            $brandId = DB::table('tyre_brands')->insertGetId([
-                                'name' => $brandName,
-                                'slug' => Str::slug($brandName),
-                                'promoted' => 0,
-                                'tyre_image' => Str::slug($brandName) . '.jpg',
-                                'sort_order' => 1,
-                                'status' => 1,
-                                'product_type' => 'tyre',
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ]);
-                        } catch (\Exception $e) {
-                            \Log::error('Failed to create tyre brand: ' . $brandName);
-                            continue; 
-                        }
-                    }
+            if ($brandName) {
+                $brand = tyre_brands::where('name', '=', $brandName)->first();
+                if ($brand) {
+                    $manufacturerId = $brand->brand_id;
                 } else {
-                    \Log::warning('Manufacturer code not found in mapping: ' . $brandCode);
-                    continue; 
+                    $manufacturerId = tyre_brands::insertGetId([
+                        'name' => $brandName,
+                        'slug' => Str::slug($brandName),
+                        'promoted' => 0,
+                        'image' => Str::slug($brandName) . '.jpg',
+                        'sort_order' => 1,
+                        'status' => 1,
+                        'product_type' => 'tyre',
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
                 }
-    
-                $normalized_row = [];
-                foreach ($row as $key => $value) {
-                    $normalized_row[$this->normalizeKey($key)] = $value;
-                }
-    
-                $sku = $row['Product_Stock_Number'] ?? $this->generateRandom13DigitNumber() . 'A';
-                $ean = $row['Product_EAN'] ?? $this->generateRandom13DigitNumber() . 'Z';
-    
-                if (($row['Product_Available'] ?? 0) > 1) {
-                    $quantity = $row['Product_Available'];
-                    $status = 1;
-                } else {
-                    $quantity = 0;
-                    $status = 0;
-                }
-    
-                $tyre_runflat = isset($row['Runflat']) && $row['Runflat'] === 'TRUE' ? 1 : 0;
-                $tyre_extraload = isset($row['Reinforced']) && $row['Reinforced'] === 'XL' ? 1 : 0;
-               
-                if (stripos($row['Product_Title'], 'CAR ') !== false) {
-                    $tyre_vehicle_type = 'car';
-                } elseif (stripos($row['Product_Title'], '4X4 / SUV') !== false) {
-                    $tyre_vehicle_type = '4x4';
-                } elseif (stripos($row['Product_Title'], 'VAN ') !== false) {
-                    $tyre_vehicle_type = 'van';
-                }else{
-                    $tyre_vehicle_type = 'car';
-                }
+            }
+            $normalized_row = [];
+            foreach ($row as $key => $value) {
+                $normalized_row[$this->normalizeKey($key)] = $value;
+            }
+            $sku = $row['Product_Stock_Number'] ?? $this->generateRandom13DigitNumber() . 'A';
+            $ean = $row['Product_EAN'] ?? $this->generateRandom13DigitNumber() . 'Z';
+            $tyre_runflat = isset($row['Runflat']) && ($row['Runflat'] === 'TRUE') ? 1 : 0;
+            $tyre_extraload = isset($row['Reinforced']) && $row['Reinforced'] === 'XL' ? 1 : 0;
+            $tyre_season = isset($row['Product_Type']) ? ucwords(strtolower(trim($row['Product_Type']))) : null;
+            $antiflat_text = $tyre_runflat ? 'RFT' : '';
+            $reinforced_text = $tyre_extraload ? 'XL' : '';
+            $season = $tyre_season ? $tyre_season . ' Tyre ' : 'Summer Tyre ';
+            $additional_features = trim(($antiflat_text . ' ' . $reinforced_text));
+            $rimText = $row['RIM'] ?? '';
+            if ($row['Vehicle_Type'] === 'van' || $row['Vehicle_Type'] === 'commercial van') {
+                $rimText .= 'C';
+            }
+            $tyre_data = [
+                'tyre_sku' => $sku,
+                'tyre_ean' => $ean,
+                'tyre_quantity' => is_numeric($row['Product_Available'] ?? 0) >= 1 ? (int) $row['Product_Available'] : 0,
+                'tyre_price' => $row['Price'] ?? 0,
+                'tyre_brand_id' => $manufacturerId,
+                'tyre_season' => $tyre_season,
+                'tyre_width' => $row['Width'] ?? null,
+                'tyre_profile' => (isset($row['Aspect_Ratio']) && (strlen($row['Aspect_Ratio']) == 2 || strlen($row['Aspect_Ratio']) == 3))
+                    ? $row['Aspect_Ratio']
+                    : null,
+                'tyre_loadindex' => $row['Load_Index'] ?? null,
+                'tyre_diameter' => $row['Rim'] ?? null,
+                'tyre_speed' => $row['Speed_Rating'] ?? null,
+                'status' => ($row['Product_Available'] ?? 0) >= 1 ? 1 : 0,
+                'tyre_fullyfitted_price' => $row['Price'],
+                'trade_costprice' => $row['Price'] + 4.84,
+                'tyre_brand_name' => $brandName,
+                'tyre_model' => $row['Model_Name'] ?? null,
+                'tyre_noisedb' => isset($row['Noise_Performance']) ? $row['Noise_Performance'] : null,
+                //'tyre_fuel' => $row['Rolling_Resistance'] ?? null,
+                'tyre_fuel' => isset($row['Rolling_Resistance']) ? substr($row['Rolling_Resistance'], 0, 1) : null,
+                'tyre_wetgrip' => isset($row['Wet_Grip']) ? substr($row['Wet_Grip'], 0, 1) : null,
+                'tyre_runflat' => $tyre_runflat,
+                'tyre_extraload' => $tyre_extraload,
+                'vehicle_type' => strtolower(trim(str_replace('Passenger', '', $row['Vehicle_Type'] ?? 'car'))),
+                'tyre_weight' => $row['WEIGHT'] ?? $row['WEIGHT_KG'] ?? null,
+                'product_type' => 'tyre',
+                'tax_class_id' => 9,
+                'lead_time' => $row['LEAD_TIME'] ?? $row['LEAD_TIME'] ?? 'Available Today',
+                'date_available' => now(),
+                'tyre_image' => $row['IMAGE'] ?? null,
+                'supplier_id' => $supplierId,
+                'tyre_supplier_name' => $supplierName,
+                'created_at' => now(),
+                'updated_at' => now(),
+                'tyre_description' => trim(
+                    $season . '' .
+                    ($brandName ?? '') . ' ' .
+                    ($row['Model_Name'] ?? '') . ' ' .
+                    ($row['Width'] ?? '') . '/' .
+                    ($row['Aspect_Ratio'] ?? '') . 'R' .
+                    $rimText . ' ' .
+                    ($row['Load_Index'] ?? '') . ' ' .
+                    ($row['Speed_Rating'] ?? '') . ' ' .
+                    $additional_features
+                ),
+            ];
 
-                $tyre_season = 'Summer'; // default
-                if (stripos($row['Product_Title'], 'ALL SEASON') !== false) {
-                    $tyre_season = 'All Season';
-                } elseif (stripos($row['Product_Title'], 'WINTER') !== false) {
-                    $tyre_season = 'Winter';
-                } elseif (stripos($row['Product_Title'], 'SUMMER') !== false) {
-                    $tyre_season = 'Summer';
-                }
-
-                $tyre_data = [
-                    'tyre_sku' => $sku,
-                    'tyre_ean' => $ean,
-                    'tyre_quantity' => (int)$quantity,
-                    'tyre_price' => $row['Price'],
-                    'tyre_brand_id' => $brandId,
-                    'tyre_season' => $tyre_season ?? null,
-                    'tyre_width' => $row['Width'] ?? null,
-                    'tyre_profile' => $row['Aspect_Ratio'] ?? null,
-                    'tyre_diameter' => $row['Rim'] ?? null,
-                    'tyre_speed' => $row['Speed_Rating'] ?? null,
-                    'tyre_loadindex' => $row['Load_Index'] ?? null,
-                    'status' => $status,
-                    'tyre_fullyfitted_price' => $row['Price'],
-                    'trade_costprice' => ($row['Price'] ?? 0) + 4.84,
-                    'tyre_brand_name' => $brandName,
-                    'tyre_model' => $row['Model_Name'] ?? null,
-                    'tyre_fuel' => $row['Rolling_Resistance'] ?? null,
-                    'tyre_wetgrip' => $row['Wet_Grip'] ?? null,
-                    'tyre_noisedb' =>$row['Noise_Performance'] ?? null,
-                    'tyre_runflat' => $tyre_runflat,
-                    'tyre_extraload' => $tyre_extraload,
-                    'vehicle_type' => $tyre_vehicle_type, //strtolower(trim(str_replace('Passenger', '', $row['VEHICLE_TYPE'] ?? 'car'))),
-                    'tyre_weight' => '',
-                    'product_type' => 'tyre',
-                    'tax_class_id' => 9,
-                    'lead_time' => '',
-                    'date_available' => now(),
-                    'tyre_image' => '',
-                    
-                    'supplier_id' => $supplierId,
-                    'tyre_supplier_name' => $supplierName,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                    'tyre_description' => trim(
-                        $tyre_season . ' Tyre ' .
-                        ($brandName ?? '') . ' ' .
-                        ($row['Model_Name'] ?? '') . ' ' .
-                        ($row['Width'] ?? '') . '/' .
-                        ($row['Aspect_Ratio'] ?? '') . 'R' .
-                        ($row['Rim'] ?? '') . ' ' .
-                        ($row['Load_Index'] ?? '') . ' ' .
-                        ($row['Speed_Rating'] ?? '') . ' ' .
-                        ($tyre_runflat ? 'RFT' : '') . ' ' .
-                        ($tyre_extraload ? 'XL' : '')
-                    ),
-                ];
-                //dd($tyre_data);
-                $insertData[] = $tyre_data;
-            
-                if (count($insertData) >= $batchSize) {
-                    DB::table('tyres_product')->insert($insertData);
-                    $insertData = [];
-                }
+            $insertData[] = $tyre_data;
+            if (count($insertData) >= $batchSize) {
+                TyresProduct::insert($insertData);
+                $insertData = [];
+            }
             }
         }
 
         if (!empty($insertData)) {
-            \Log::info('Inserting ' . count($insertData) . ' products for supplier ' . $supplierName);
-            DB::table('tyres_product')->insert($insertData);
+            TyresProduct::insert($insertData);
         }
-    
-        
         DB::table('suppliers')
         ->where('id', $supplierId)
         ->update(['updated_at' => now()]);
     }
-
     private function importBmtrCsv($fileContent, $supplierId, $supplierName)
     {
         set_time_limit(300);
@@ -1300,14 +1279,16 @@ class TyreImportController extends Controller
             return str_replace(' ', '_', $key);
         }, $header);
 
-        DB::table('tyres_product')
-            ->where('tyre_supplier_name', $supplierName)
+        TyresProduct::where('tyre_supplier_name', $supplierName)
             ->where('supplier_id', $supplierId)
             ->where('instock', 0)
             ->delete();
     
-        if (!DB::table('tyres_product')->exists()) {
-            DB::statement("ALTER TABLE tyres_product AUTO_INCREMENT = 1");
+        if (!TyresProduct::exists()) {
+            $tableName = (new TyresProduct)->getTable();
+            $connection = (new TyresProduct)->getConnectionName() ?? config('database.default');
+
+            DB::connection($connection)->statement("ALTER TABLE {$tableName} AUTO_INCREMENT = 1");
         }
     
         $insertData = [];
@@ -1328,16 +1309,16 @@ class TyreImportController extends Controller
                 $brandName = isset($cm[$brandCode]) ? $cm[$brandCode] : null;
     
                 if ($brandName) {
-                    $brand = DB::table('tyre_brands')->where('name', '=', $brandName)->first();
+                    $brand = tyre_brands::where('name', '=', $brandName)->first();
                     if ($brand) {
                         $brandId = $brand->brand_id;
                     } else {
                         try {
-                            $brandId = DB::table('tyre_brands')->insertGetId([
+                            $brandId = tyre_brands::insertGetId([
                                 'name' => $brandName,
                                 'slug' => Str::slug($brandName),
                                 'promoted' => 0,
-                                'tyre_image' => Str::slug($brandName) . '.jpg',
+                                'image' => Str::slug($brandName) . '.jpg',
                                 'sort_order' => 1,
                                 'status' => 1,
                                 'product_type' => 'tyre',
@@ -1381,7 +1362,7 @@ class TyreImportController extends Controller
                     'All Season' => 'All Season',
                     'Winter' => 'Winter',
                 ];
-                $tyre_season = isset($row['TYSEASON']) && isset($seasonMap[strtoupper($row['TYSEASON'])])
+                $season = isset($row['TYSEASON']) && isset($seasonMap[strtoupper($row['TYSEASON'])])
                     ? $seasonMap[strtoupper($row['TYSEASON'])]
                     : 'Summer';
 
@@ -1391,7 +1372,7 @@ class TyreImportController extends Controller
                     'tyre_quantity' => (int)$quantity,
                     'tyre_price' => $row['UNITCOST'],
                     'tyre_brand_id' => $brandId,
-                    'tyre_season' => $tyre_season ?? null,
+                    'tyre_season' => $season ?? null,
                     'tyre_width' => $row['SECTION'] ?? null,
                     'tyre_profile' => $row['PROFILE'] ?? null,
                     'tyre_diameter' => $row['RIM'] ?? null,
@@ -1420,7 +1401,7 @@ class TyreImportController extends Controller
                     'created_at' => now(),
                     'updated_at' => now(),
                     'tyre_description' => trim(
-                        $tyre_season . ' Tyre ' .
+                        $season . ' Tyre ' .
                         ($brandName ?? '') . ' ' .
                         ($row['TREADPAT'] ?? '') . ' ' .
                         ($row['SECTION'] ?? '') . '/' .
@@ -1436,7 +1417,7 @@ class TyreImportController extends Controller
                 $insertData[] = $tyre_data;
             
                 if (count($insertData) >= $batchSize) {
-                    DB::table('tyres_product')->insert($insertData);
+                    TyresProduct::insert($insertData);
                     $insertData = [];
                 }
             }
@@ -1444,7 +1425,7 @@ class TyreImportController extends Controller
 
         if (!empty($insertData)) {
             \Log::info('Inserting ' . count($insertData) . ' products for supplier ' . $supplierName);
-            DB::table('tyres_product')->insert($insertData);
+            TyresProduct::insert($insertData);
         }
     
         
@@ -1452,143 +1433,8 @@ class TyreImportController extends Controller
         ->where('id', $supplierId)
         ->update(['updated_at' => now()]);
     }
-
-    private function importEasityreCsv($fileContent, $supplierId, $supplierName)
-    {
-        set_time_limit(300);
-        if (!is_array($fileContent)) {
-            \Log::error('File content is not an array, unable to process.');
-            return; // Exit if file content is not in the expected format
-        }
-        $header = array_shift($fileContent); // Remove the first row as the header
-        $header = array_map(function($key) {
-            return str_replace(' ', '_', $key);
-        }, $header);
-        DB::table('tyres_product')
-            ->where('tyre_supplier_name', $supplierName)
-            ->where('supplier_id', $supplierId)
-            ->where('instock', 0)
-            ->delete();
-
-        if (!DB::table('tyres_product')->exists()) {
-            DB::statement("ALTER TABLE tyres_product AUTO_INCREMENT = 1");
-        }
-
-        $insertData = [];
-        $batchSize = 500;
-
-        foreach ($fileContent as $line) {
-            if (empty($line)) {
-                continue;
-            }
-
-            $row = array_combine($header, $line);
-            /*if (
-                ($row['Price'] ?? 0) > 1 || ($row['Product_Available'] ?? 0) > 1 &&
-                !empty($row['Width']) && !empty($row['Aspect_Ratio']) && !empty($row['Rim'])
-            ) {*/
-            if (( ($row['Price'] ?? 0) > 1 || ($row['Product_Available'] ?? 0) > 1) && !empty($row['Width']) && !empty($row['Aspect_Ratio']) && !empty($row['Rim']) && !empty($row['Product_EAN']) && trim($row['Rolling_Resistance'] ?? '') !== '' && trim($row['Wet_Grip'] ?? '') !== '' && ($row['Noise_Performance'] ?? 0) > 2 ){
-                $brandId = null;
-                $brandName = $row['Brand_Name'] ?? null;
-
-            if ($brandName) {
-                $brand = DB::table('tyre_brands')->where('name', '=', $brandName)->first();
-                if ($brand) {
-                    $brandId = $brand->brand_id;
-                } else {
-                    $brandId = DB::table('tyre_brands')->insertGetId([
-                        'name' => $brandName,
-                        'slug' => Str::slug($brandName),
-                        'promoted' => 0,
-                        'tyre_image' => Str::slug($brandName) . '.jpg',
-                        'sort_order' => 1,
-                        'status' => 1,
-                        'product_type' => 'tyre',
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                }
-            }
-            $normalized_row = [];
-            foreach ($row as $key => $value) {
-                $normalized_row[$this->normalizeKey($key)] = $value;
-            }
-            $sku = $row['Product_Stock_Number'] ?? $this->generateRandom13DigitNumber() . 'A';
-            $ean = $row['Product_EAN'] ?? $this->generateRandom13DigitNumber() . 'Z';
-            $tyre_runflat = isset($row['Runflat']) && ($row['Runflat'] === 'TRUE') ? 1 : 0;
-            $tyre_extraload = isset($row['Reinforced']) && $row['Reinforced'] === 'XL' ? 1 : 0;
-            $tyre_season = isset($row['Product_Type']) ? ucwords(strtolower(trim($row['Product_Type']))) : null;
-            $antiflat_text = $tyre_runflat ? 'RFT' : '';
-            $reinforced_text = $tyre_extraload ? 'XL' : '';
-            $season = $tyre_season ? $tyre_season . ' Tyre ' : 'Summer Tyre ';
-            $additional_features = trim(($antiflat_text . ' ' . $reinforced_text));
-            $tyre_data = [
-                'tyre_sku' => $sku,
-                'tyre_ean' => $ean,
-                'tyre_quantity' => is_numeric($row['Product_Available'] ?? 0) >= 1 ? (int) $row['Product_Available'] : 0,
-                'tyre_price' => $row['Price'] ?? 0,
-                'tyre_brand_id' => $brandId,
-                'tyre_season' => $tyre_season,
-                'tyre_width' => $row['Width'] ?? null,
-                'tyre_profile' => (isset($row['Aspect_Ratio']) && (strlen($row['Aspect_Ratio']) == 2 || strlen($row['Aspect_Ratio']) == 3))
-                    ? $row['Aspect_Ratio']
-                    : null,
-                'tyre_loadindex' => $row['Load_Index'] ?? null,
-                'tyre_diameter' => $row['Rim'] ?? null,
-                'tyre_speed' => $row['Speed_Rating'] ?? null,
-                'status' => ($row['Product_Available'] ?? 0) >= 1 ? 1 : 0,
-                'tyre_fullyfitted_price' => $row['Price'],
-                'trade_costprice' => $row['Price'] + 4.84,
-                'tyre_brand_name' => $brandName,
-                'tyre_model' => $row['Model_Name'] ?? null,
-                'tyre_noisedb' => isset($row['Noise_Performance']) ? $row['Noise_Performance'] : null,
-                //'tyre_fuel' => $row['Rolling_Resistance'] ?? null,
-                'tyre_fuel' => isset($row['Rolling_Resistance']) ? substr($row['Rolling_Resistance'], 0, 1) : null,
-                'tyre_wetgrip' => isset($row['Wet_Grip']) ? substr($row['Wet_Grip'], 0, 1) : null,
-                'tyre_runflat' => $tyre_runflat,
-                'tyre_extraload' => $tyre_extraload,
-                'vehicle_type' => strtolower(trim(str_replace('Passenger', '', $row['Vehicle_Type'] ?? 'car'))),
-                'tyre_weight' => $row['WEIGHT'] ?? $row['WEIGHT_KG'] ?? null,
-                'product_type' => 'tyre',
-                'tax_class_id' => 9,
-                'lead_time' => $row['LEAD_TIME'] ?? $row['LEAD_TIME'] ?? 'Available Today',
-                'date_available' => now(),
-                'tyre_image' => $row['IMAGE'] ?? null,
-                
-                'supplier_id' => $supplierId,
-                'tyre_supplier_name' => $supplierName,
-                'created_at' => now(),
-                'updated_at' => now(),
-                'tyre_description' => trim(
-                    $season . '' .
-                    ($brandName ?? '') . ' ' .
-                    ($row['Model_Name'] ?? '') . ' ' .
-                    ($row['Width'] ?? '') . '/' .
-                    ($row['Aspect_Ratio'] ?? '') . 'R' .
-                    ($row['Rim'] ?? '') . ' ' .
-                    ($row['Load_Index'] ?? '') . ' ' .
-                    ($row['Speed_Rating'] ?? '') . ' ' .
-                    $additional_features
-                ),
-            ];
-
-            $insertData[] = $tyre_data;
-            if (count($insertData) >= $batchSize) {
-                DB::table('tyres_product')->insert($insertData);
-                $insertData = [];
-            }
-            }
-        }
-
-        if (!empty($insertData)) {
-            DB::table('tyres_product')->insert($insertData);
-        }
-        DB::table('suppliers')
-        ->where('id', $supplierId)
-        ->update(['updated_at' => now()]);
-    }
-    private function importOwnStockCsv($fileContent, $supplierId, $supplierName)
-    {
-        // Log::info('Error during importOwnStockCsv upload');
-    }
+    // private function importOwnStockCsv($fileContent, $supplierId, $supplierName)
+    // {
+    //     // Log::info('Error during importOwnStockCsv upload');
+    // }
 }

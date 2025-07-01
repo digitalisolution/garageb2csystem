@@ -1921,7 +1921,7 @@
                             const vatType = selectedProduct.tax_class_id === 9 ? 9 : 0;
                             const amount = rate * (1 + vatType / 100);
                             const itemValue = ` ${selectedProduct.tyre_description}`;
-                            const descriptionValue = `<strong>${selectedProduct.ean}</strong> ${itemValue}`;
+                            const descriptionValue = `<strong>${selectedProduct.tyre_ean}</strong> ${itemValue}`;
 
                             const newRow = `
                             <tr>

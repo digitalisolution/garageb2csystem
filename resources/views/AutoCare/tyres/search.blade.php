@@ -21,7 +21,7 @@
          <div class="col-md-2">
             <div class="form-group">
                 <label for="width">Width</label>
-                <input type="text" name="tyre_width" id="width" class="form-control" value="{{ $filters['tyre_width'] ?? '' }}">
+                <input type="text" name="width" id="width" class="form-control" value="{{ $filters['width'] ?? '' }}">
             </div>
         </div>
 
@@ -29,7 +29,7 @@
         <div class="col-md-2">
             <div class="form-group">
                 <label for="profile">Profile</label>
-                <input type="text" name="tyre_profile" id="profile" class="form-control" value="{{ $filters['tyre_profile'] ?? '' }}">
+                <input type="text" name="profile" id="profile" class="form-control" value="{{ $filters['profile'] ?? '' }}">
             </div>
         </div>
 
@@ -37,7 +37,7 @@
         <div class="col-md-2">
             <div class="form-group">
                 <label for="diameter">Rim Size</label>
-                <input type="text" name="tyre_diameter" id="diameter" class="form-control" value="{{ $filters['tyre_diameter'] ?? '' }}">
+                <input type="text" name="diameter" id="diameter" class="form-control" value="{{ $filters['diameter'] ?? '' }}">
             </div>
         </div>
 

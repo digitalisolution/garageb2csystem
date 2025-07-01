@@ -60,7 +60,7 @@ class WorkshopController extends Controller
         $viewData['customerNameSelect'] = Customer::pluck('customer_name', 'id');
         $viewData['counties'] = RegionCounty::where('status', 1)->get();
         $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
-        $viewData['brands'] = DB::table('tyre_brands')->get();
+        $viewData['brands'] = tyre_brands::where('status', 1)->get();
 
         // For editing an existing workshop
         if (isset($id) && $id != null) {
@@ -76,7 +76,7 @@ class WorkshopController extends Controller
                 'workshopVehicleData' => VehicleDetail::where('vehicle_reg_number', $vehicleRegNumber)->get()
             ];
             $viewData['counties'] = RegionCounty::where('status', 1)->get();
-            $viewData['brands'] = DB::table('tyre_brands')->get();
+            $viewData['brands'] = tyre_brands::where('status', 1)->get();
             // dd($viewData);
             return view('AutoCare.workshop.add', $viewData)->with($getFormAutoFillup);
         }

@@ -21,8 +21,6 @@
 								<th>Model</th>
 								<th class="no-wrap">MOT Expiry Date</th>
 								<th class="no-wrap">Total Jobs</th>
-								<th class="no-wrap">Accepted On</th>
-								<th class="no-wrap">Comment</th>
 								<th>Action</th>
 							</tr>
 						</thead>
@@ -31,16 +29,14 @@
 								<tr>
 									<td class="no-wrap">Car</td>
 									<td class="text-uppercase">{{ $vehicle->vehicle_reg_number }}</td>
-									<td>{{ $vehicle->make }}</td>
-									<td>{{ $vehicle->model }}</td>
-									<td>{{ $vehicle->mot_expiry_date }}</td>
+									<td>{{ $vehicle->vehicle_make }}</td>
+									<td>{{ $vehicle->vehicle_model }}</td>
+									<td>{{ $vehicle->vehicle_mot_expiry_date }}</td>
 									<td>
 										<a href="javascript:void(0);" class="btn btn-info btn-sm text-white" data-bs-toggle="modal" data-bs-target="#exampleModal">
 											<i class="fa fa-eye"></i>
 										</a>
 									</td>
-									<td>{{ $vehicle->accepted_on }}</td>
-									<td>{{ $vehicle->comment }}</td>
 									<td class="no-wrap">
 										<a href="{{ route('customer.vehicles.edit', $vehicle->id) }}"
 											class="btn btn-warning btn-sm text-white">

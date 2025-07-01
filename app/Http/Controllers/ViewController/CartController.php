@@ -507,7 +507,6 @@ class CartController extends Controller
     }
     public function storeVehicleData(Request $request)
     {
-        // dd($request);
         $request->merge([
             'year' => (string) $request->input('year'),
             'engine' => (string) $request->input('engine') // Use the cleaned engine value

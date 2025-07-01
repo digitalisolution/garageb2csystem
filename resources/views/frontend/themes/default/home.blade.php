@@ -2,16 +2,17 @@
 
 @section('content')
 
-<iframe
+<!-- <iframe
   src="https://www.digitalideasltd.co.uk/plugin/search"
   width="100%"
   height="450"
   frameborder="0"
   style="border: 1px solid #ddd; border-radius: 6px;"
   title="Tyre Search Plugin"
-></iframe>
+></iframe> -->
 
 
+<script src="https://gktmotcentre.tyreservepro.co.uk/js/plugin.js?v={{ time() }}"></script>
 
 <div class="slider-area">
     <div class="container-fluid">

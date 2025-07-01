@@ -41,6 +41,8 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\VerifyCsrfToken::class,  // CSRF token verification
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \Illuminate\Routing\Middleware\ThrottleRequests::class,
+            \App\Http\Middleware\RedirectDomainToPlugin::class,
+            \App\Http\Middleware\ValidatePluginClient::class,
         ],
 
 
@@ -71,6 +73,7 @@ class Kernel extends HttpKernel
         'verify.token' => \App\Http\Middleware\VerifyRequestToken::class,
         'customer' => \App\Http\Middleware\EnsureCustomerIsAuthenticated::class,
         'dashboard' => \App\Http\Middleware\RedirectIfAuthenticatedToDashboard::class,
+        'plugin.domain' => \App\Http\Middleware\EnsurePluginDomain::class,
         // 'validate.plugin.client' => \App\Http\Middleware\ValidatePluginClient::class,
     ];
 

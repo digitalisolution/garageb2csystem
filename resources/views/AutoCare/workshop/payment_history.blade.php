@@ -131,6 +131,9 @@
                     @case(3)
                         By Check
                         @break
+                    @case(4)
+                        By Bank Transfer
+                        @break
                     @default
                         Unknown
                 @endswitch

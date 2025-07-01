@@ -6,6 +6,9 @@ use App\Models\Workshop;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use App\Models\Customer;
+use Carbon\Carbon;
+
 use App\Models\Invoice;
 use App\Models\VehicleDetail;
 use App\Models\WorkshopTyre;
@@ -374,8 +377,56 @@ class CustomerAccountController extends Controller
         ));
     }
 
-    public function statements()
+       public function statements(Request $request)
     {
-        return view('customer.statement');
+        $customer = Auth::guard('customer')->user();
+        $query = Invoice::where('customer_id', $customer->id)->orderBy('created_at', 'asc');
+
+        if ($request->filled('from') && $request->filled('to')) {
+            try {
+                $from = Carbon::createFromFormat('d-m-Y', $request->input('from'))->startOfDay()->toDateString();
+                $to = Carbon::createFromFormat('d-m-Y', $request->input('to'))->endOfDay()->toDateString();
+                $query->whereBetween('created_at', [$from, $to]);
+            } catch (\Exception $e) {
+                return response()->json(['error' => 'Invalid date format. Please use DD-MM-YYYY.'], 400);
+            }
+        }
+
+        $invoices = $query->get();
+        $transactions = collect();
+        if (!$invoices->isEmpty()) {
+            foreach ($invoices as $invoice) {
+                $transactions->push([
+                    'date' => $invoice->created_at->format('d-m-Y'),
+                    'details' => 'Invoice #' . $invoice->workshop_id,
+                    'type' => 'Invoice',
+                    'amount' => $invoice->grandTotal,
+                    'paid_price' => $invoice->paid_price,
+                    'balance_price' => $invoice->balance_price
+                ]);
+            }
+        } else {
+        }
+
+        $totalInvoiced = $invoices->sum('grandTotal');
+        $totalPaid = $invoices->sum('paid_price');
+        $balanceDue = $totalInvoiced - $totalPaid;
+
+        if ($request->ajax()) {
+            return response()->json([
+                'totalInvoiced' => $totalInvoiced,
+                'totalPaid' => $totalPaid,
+                'balanceDue' => $balanceDue,
+                'transactionsHtml' => $transactions
+            ]);
+        }
+
+        return view('customer.statement', compact(
+            'customer',
+            'totalInvoiced',
+            'totalPaid',
+            'balanceDue',
+            'transactions'
+        ));
     }
 }
