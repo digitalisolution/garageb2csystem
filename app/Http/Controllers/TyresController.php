@@ -117,12 +117,31 @@ class TyresController extends Controller
         ->distinct()
         ->pluck('vehicle_type');
 
+        // Clone query to calculate totals from ALL matching OWNSTOCK tyres with quantity > 0
+            $ownstockTotals = (clone $query)
+            ->where('tyres_product.tyre_supplier_name', 'OWNSTOCK')
+            ->where('tyres_product.tyre_quantity', '>', 0)
+            ->get();
+           /* $ownstockTotals = \App\Models\TyresProduct::from("$tyresTable as tyres_product")
+            ->where('tyres_product.tyre_supplier_name', 'OWNSTOCK')
+            ->where('tyres_product.tyre_quantity', '>', 0)
+            ->get();*/
+
+
     // Paginate and return
     $tyres = $query->paginate(12)->appends($request->except('page'));
 
+    // Totals
+        $totalQty = $ownstockTotals->sum('tyre_quantity');
+        $totalCost = $ownstockTotals->sum(function ($item) {
+                //\Log::info("{$item->tyre_description} | Qty: {$item->tyre_quantity} | Cost: {$item->tyre_price}");
+            return $item->tyre_price;
+        });
+
     $filters = $request->all();
 
-    return view('AutoCare.tyres.search', compact('tyres', 'brands', 'tyreTypes', 'sortBy', 'order', 'seasonTypes', 'vehicleTypes', 'suppliers', 'filters'));
+    //return view('AutoCare.tyres.search', compact('tyres', 'brands', 'tyreTypes', 'sortBy', 'order', 'seasonTypes', 'vehicleTypes', 'suppliers', 'filters'));
+    return view('AutoCare.tyres.search', compact('tyres', 'brands', 'tyreTypes', 'sortBy', 'order','seasonTypes', 'vehicleTypes', 'suppliers', 'filters','totalQty', 'totalCost'));
 }
 
 
@@ -137,7 +156,7 @@ class TyresController extends Controller
                 'tyre_description' => 'nullable|string',
                 'tyre_model' => 'nullable|string|max:64',
                 'tyre_quantity' => 'required|integer|min:0',
-                'tyre_image' => 'nullable|string|max:255',
+                'tyre_image' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:2048',
                 'tyre_width' => 'nullable|string|max:4',
                 'tyre_profile' => 'nullable|string|max:3',
                 'tyre_diameter' => 'nullable|string|max:4',
@@ -145,6 +164,13 @@ class TyresController extends Controller
                 'tax_class_id' => 'required|in:0,9', // Ensure it is either 0 (No VAT) or 9 (VAT)
                 'tyre_brand_id' => 'required|integer',
             ]);
+
+            if ($request->hasFile('tyre_image')) {
+                $image = $request->file('tyre_image');
+                $imageName = time() . '_' . $image->getClientOriginalName();
+                $image->move(public_path('frontend/themes/img/tyre_images'), $imageName);
+                $tyre_image = $imageName;
+            }
 
             // Fetch the brand name from the tyre_brands table using brand_id
             $brandName = tyre_brands::where('brand_id', $request->tyre_brand_id)->value('name');
@@ -168,7 +194,7 @@ class TyresController extends Controller
                     . ($request->tyre_runflat == 1 ? 'RFT' : ''),  // Include RFT if antiflat
                 'tyre_model' => $request->tyre_model,
                 'tyre_quantity' => $request->tyre_quantity,
-                'tyre_image' => $request->tyre_image,
+                'tyre_image' => isset($tyre_image) ? basename($tyre_image) : null,
                 'tyre_width' => $request->tyre_width,
                 'tyre_profile' => $request->tyre_profile,
                 'tyre_diameter' => $request->tyre_diameter,
@@ -216,20 +242,28 @@ class TyresController extends Controller
                 'tyre_description' => 'nullable|string',
                 'tyre_model' => 'nullable|string|max:64',
                 'tyre_quantity' => 'nullable|integer|min:0',
-                'tyre_image' => 'nullable|string|max:255',
+                'tyre_image' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:2048',
                 'tyre_width' => 'nullable|string|max:4',
                 'tyre_profile' => 'nullable|string|max:3',
                 'tyre_diameter' => 'nullable|string|max:4',
                 'tyre_season' => 'nullable|string|max:15',
                 'tax_class_id' => 'required|in:0,9',
                 'tyre_brand_id' => 'required|integer',
-                // Other validations here
             ]);
 
-            // Fetch the Tyre product
-            $tyre = TyresProduct::where('product_id', $product_id)->firstOrFail();
+            if ($request->hasFile('tyre_image')) {
+                $image = $request->file('tyre_image');
+                $imageName = time() . '_' . $image->getClientOriginalName();
+                $image->move(public_path('frontend/themes/img/tyre_images'), $imageName);
+                $tyre_image = $imageName;
+            }
+        
 
-            // Fetch the brand name from the tyre_brands table using brand_id
+            $tyre = TyresProduct::where('product_id', $product_id)->firstOrFail();
+                        // Only update image if uploaded
+            /*if ($imageName) {
+                $tyre->tyre_image = $imageName;
+            }*/
             $brandName = tyre_brands::where('brand_id', $request->tyre_brand_id)->value('name');
             $supplierName = DB::table('suppliers')
             ->where('id', $request->supplier_id)
@@ -239,28 +273,27 @@ class TyresController extends Controller
             } elseif ($request->stock_type === 'Decrease') {
                 $quantity = $tyre->tyre_quantity - $request->tyre_quantity;
             } else {
-                // Handle unexpected values for stock_Type (optional)
                 $quantity = $tyre->tyre_quantity; // Default to current stock quantity
             }
-            // Update the Tyre product
+
             $tyre->update([
                 'tyre_ean' => $request->tyre_ean,
                 'tyre_sku' => $request->tyre_sku,
                 'tyre_price' => $request->tyre_price,
                 'tyre_description' => $request->tyre_season . ' Tyre '
-                    . $brandName . ' ' // Use the fetched brand name here
+                    . $brandName . ' '
                     . $request->model . ' '
                     . $request->tyre_width . '/'
                     . $request->tyre_profile . 'R'
                     . $request->tyre_diameter . ' '
                     . $request->tyre_loadindex . ' '
                     . $request->tyre_speed . ' '
-                    . ($request->tyre_extraload == 1 ? 'XL ' : '') // Include XL if reinforced
-                    . ($request->tyre_runflat == 1 ? 'RFT' : ''),  // Include RFT if antiflat
+                    . ($request->tyre_extraload == 1 ? 'XL ' : '')
+                    . ($request->tyre_runflat == 1 ? 'RFT' : ''),
                 'tyre_model' => $request->tyre_model,
-               // Check the value of stock_Type and perform addition or subtraction accordingly
                 'tyre_quantity' => $quantity,
-                'tyre_image' => $request->tyre_image,
+                //'tyre_image' => $request->tyre_image,
+                'tyre_image' => isset($tyre_image) ? basename($tyre_image) : null,
                 'tyre_width' => $request->tyre_width,
                 'tyre_profile' => $request->tyre_profile,
                 'tyre_diameter' => $request->tyre_diameter,
@@ -290,7 +323,6 @@ class TyresController extends Controller
                 'trade_costprice' => $request->trade_costprice,
             ]);
             if ($request->filled('tyre_quantity') && $supplierName === 'ownstock') {
-                // Prepare data for stock_history table
                 $stockHistoryData = [
                     'product_id' => $product_id,
                     'product_type' => 'tyre',
@@ -308,17 +340,12 @@ class TyresController extends Controller
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
-    
-                // Insert data into the stock_history table
                 DB::table('stock_history')->insert($stockHistoryData);
             }
             $queryParams = request()->query();
-            // dd($queryParams);
-        // Redirect back to the search results page with the query parameters
         return redirect()->route('AutoCare.tyres.search', $queryParams)->with('success', 'Tyre updated successfully!');
     
         } catch (\Exception $e) {
-            // Log::error("Tyre update failed: " . $e->getMessage());
             return back()->withErrors(['error' => 'Something went wrong! ' . $e->getMessage()]);
         }
     }
@@ -345,7 +372,8 @@ class TyresController extends Controller
         // If no product_id is provided, we are adding a new tyre
         $brands = tyre_brands::where('status',1)->get();
         $suppliers = Supplier::where('status', 1)->get();
-        return view('AutoCare.tyres.edit', compact('brands','suppliers'));
+        $tyre = null;
+        return view('AutoCare.tyres.edit', compact('tyre','brands','suppliers'));
     }
 
     // Method to delete a tyre
@@ -356,88 +384,88 @@ class TyresController extends Controller
 
         return redirect()->route('AutoCare.tyres.search')->with('success', 'Tyre deleted successfully!');
     }
-public function getTyreProducts(Request $request)
-{
-    // Resolve dynamic model table names
-    $tpTable = (new \App\Models\TyresProduct())->getTable();
-    $tbTable = (new \App\Models\tyre_brands())->getTable();
-
-    // Start the query with correct table names
-    $query = \App\Models\TyresProduct::from("$tpTable as tp")
-        ->leftJoin("$tbTable as tb", 'tp.tyre_brand_id', '=', 'tb.brand_id')
-        ->select('tp.*', 'tb.name as brand_name')
-        ->where('tp.tyre_quantity', '>', 0);
-
-    // Apply filters
-    if ($request->tyre_ean) {
-        $query->where('tp.tyre_ean', 'LIKE', "%{$request->tyre_ean}%");
-    }
-    if ($request->tyre_width) {
-        $query->where('tp.tyre_width', 'LIKE', "%{$request->tyre_width}%");
-    }
-    if ($request->tyre_profile) {
-        $query->where('tp.tyre_profile', 'LIKE', "%{$request->tyre_profile}%");
-    }
-    if ($request->tyre_diameter) {
-        $query->where('tp.tyre_diameter', 'LIKE', "%{$request->tyre_diameter}%");
-    }
-    if ($request->tyre_brand_name) {
-        $query->where('tp.tyre_brand_name', 'LIKE', "%{$request->tyre_brand_name}%");
-    }
-    if ($request->tyre_supplier_name) {
-        $query->where('tp.tyre_supplier_name', 'LIKE', "%{$request->tyre_supplier_name}%");
-    }
-    if ($request->tyre_runflat) {
-        $query->where('tp.tyre_runflat', 'LIKE', "%{$request->tyre_runflat}%");
-    }
-
-    // Determine the price field based on fitting type
-    $priceFieldMap = [
-        'fully_fitted'           => 'tyre_fullyfitted_price',
-        'mailorder'              => 'tyre_mailorder_price',
-        'mobile_fitted'          => 'tyre_mobilefitted_price',
-        'collection'             => 'tyre_price_collection',
-        'trade_customer_price'   => 'trade_costprice',
-    ];
-
-    $fittingType = $request->fittingtype;
-    $priceField = $priceFieldMap[$fittingType] ?? 'tyre_fullyfitted_price';
-
-    // Add the selected price field to the query
-    $query->addSelect(DB::raw("tp.$priceField as selected_price"));
-
-    // Order by the selected price field
-    $query->orderBy("tp.$priceField", 'asc');
-
-    // Paginate and return results
-    $tyreProducts = $query->paginate(25)->appends($request->except('page'));
-
-    return response()->json(['tyre_products' => $tyreProducts]);
-}
-
-
-    /**
-     * Fetch all suppliers for the dropdown.
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function getSuppliers()
+    public function getTyreProducts(Request $request)
     {
-        try {
-            // Fetch all suppliers from the database
-            $suppliers = Supplier::select('id', 'supplier_name')->where('status', 1)->get();
-            // dd($suppliers);
-            // Return the suppliers as a JSON response
-            return response()->json([
-                'success' => true,
-                'suppliers' => $suppliers,
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error fetching suppliers: ' . $e->getMessage(),
-            ], 500);
+         // Resolve dynamic model table names
+        $tpTable = (new \App\Models\TyresProduct())->getTable();
+            $tbTable = (new \App\Models\tyre_brands())->getTable();
+
+        // Start the query with correct table names
+        $query = \App\Models\TyresProduct::from("$tpTable as tp")
+            ->leftJoin("$tbTable as tb", 'tp.tyre_brand_id', '=', 'tb.brand_id')
+            ->select('tp.*', 'tb.name as brand_name')
+            ->where('tp.tyre_quantity', '>', 0);
+
+        // Apply filters
+        if ($request->tyre_ean) {
+            $query->where('tp.tyre_ean', 'LIKE', "%{$request->tyre_ean}%");
         }
+        if ($request->tyre_width) {
+            $query->where('tp.tyre_width', 'LIKE', "%{$request->tyre_width}%");
+        }
+        if ($request->tyre_profile) {
+            $query->where('tp.tyre_profile', 'LIKE', "%{$request->tyre_profile}%");
+        }
+        if ($request->tyre_diameter) {
+            $query->where('tp.tyre_diameter', 'LIKE', "%{$request->tyre_diameter}%");
+        }
+        if ($request->tyre_brand_name) {
+            $query->where('tp.tyre_brand_name', 'LIKE', "%{$request->tyre_brand_name}%");
+        }
+        if ($request->tyre_supplier_name) {
+            $query->where('tp.tyre_supplier_name', 'LIKE', "%{$request->tyre_supplier_name}%");
+        }
+        if ($request->tyre_runflat) {
+            $query->where('tp.tyre_runflat', 'LIKE', "%{$request->tyre_runflat}%");
+        }
+
+        // Determine the price field based on fitting type
+        $priceFieldMap = [
+            'fully_fitted'           => 'tyre_fullyfitted_price',
+            'mailorder'              => 'tyre_mailorder_price',
+            'mobile_fitted'          => 'tyre_mobilefitted_price',
+            'collection'             => 'tyre_price_collection',
+            'trade_customer_price'   => 'trade_costprice',
+        ];
+
+        $fittingType = $request->fittingtype;
+        $priceField = $priceFieldMap[$fittingType] ?? 'tyre_fullyfitted_price';
+
+        // Add the selected price field to the query
+        $query->addSelect(DB::raw("tp.$priceField as selected_price"));
+
+        // Order by the selected price field
+        $query->orderBy("tp.$priceField", 'asc');
+
+        // Paginate and return results
+        $tyreProducts = $query->paginate(25)->appends($request->except('page'));
+
+        return response()->json(['tyre_products' => $tyreProducts]);
+    }
+
+
+        /**
+         * Fetch all suppliers for the dropdown.
+         *
+         * @return \Illuminate\Http\JsonResponse
+         */
+        public function getSuppliers()
+        {
+            try {
+                // Fetch all suppliers from the database
+                $suppliers = Supplier::select('id', 'supplier_name')->where('status', 1)->get();
+                // dd($suppliers);
+                // Return the suppliers as a JSON response
+                return response()->json([
+                    'success' => true,
+                    'suppliers' => $suppliers,
+                ]);
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error fetching suppliers: ' . $e->getMessage(),
+                ], 500);
+            }
     }
     public function getOrderType()
     {

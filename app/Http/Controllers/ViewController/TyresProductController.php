@@ -219,123 +219,121 @@ class TyresProductController extends Controller
     }
 
     public function filter(Request $request, $width = null, $profile = null, $diameter = null)
-    {
-        // dd($request);
-        if ($width && $profile && $diameter) {
-            $request->merge([
-                'width' => $width,
-                'profile' => $profile,
-                'diameter' => $diameter,
-            ]);
-        }
-        $page = $request->input('page', 1);
-        $recommendedTyres = $this->getRecommendedTyres($request);
-        $message = empty($recommendedTyres) ? 'No recommended tyres found.' : null;
-        $tyresModel = new TyresProduct();
-        $tyresTable = $tyresModel->getTable(); // Dynamic table name
-        $brandsTable = (new \App\Models\tyre_brands())->getTable(); // Typically 'tyre_brands'
-        $query = TyresProduct::from("$tyresTable as tp")
-            ->join("$brandsTable as tb", 'tb.brand_id', '=', 'tp.tyre_brand_id')
-            ->select('tp.*', 'tb.recommended_tyre')
-            ->where('tp.tyre_quantity', '>', 0)
-            ->where('tp.tyre_fullyfitted_price', '>', 0)
-            ->where('tp.status', '=', 1);
-        $query->join($brandsTable, 'tb.brand_id', '=', 'tp.tyre_brand_id')
-            ->select('tp.*', 'tb.recommended_tyre');
-
-        if ($request->filled('width')) {
-            $query->where('tyre_width', $request->input('width'));
-        }
-        if ($request->filled('profile')) {
-            $query->where('tyre_profile', $request->input('profile'));
-        }
-        if ($request->filled('diameter')) {
-            $query->where('tyre_diameter', $request->input('diameter'));
-        }
-        if ($request->filled('minPrice') && $request->filled('maxPrice')) {
-            $query->whereBetween('tyre_price', [$request->input('minPrice'), $request->input('maxPrice')]);
-        }
-        if ($request->filled('fuel')) {
-            $fuelEfficiency = $request->input('fuel');
-            $query->whereIn('tyre_fuel', $fuelEfficiency);
-        }
-        if ($request->filled('season')) {
-            $getSeason = $request->input('season');
-            $query->whereIn('tyre_season', $getSeason);
-        }
-        if ($request->filled('wetGrip')) {
-            $wetGrip = $request->input('wetGrip');
-            $query->whereIn('tyre_wetgrip', $wetGrip);
-        }
-        $runflat = $request->input('runflat');
-        $extraload = $request->input('extraload');
-        if ($runflat === '1') {
-            $query->where('tyre_runflat', 1);
-        }
-        if ($extraload === '1') {
-            $query->where('tyre_extraload', 1);
-        }
-        if ($request->filled('tyreBrand')) {
-            $tyreBrandIds = $request->input('tyreBrand');
-            $query->whereIn('tp.tyre_brand_id', $tyreBrandIds)
-                ->orderByRaw('FIELD(tp.tyre_brand_id, ' . implode(',', $tyreBrandIds) . ')');
-        }
-        $recommendedTyres = [];
-        $message = null;
-        // Add logic for recommended tyres to show only when a user filters based on size
-        if ($request->filled('width') || $request->filled('profile') || $request->filled('diameter')) {
-            $recommendedTyres = $this->getRecommendedTyres($request);
-        }
-
-        $query->orderByRaw("CASE WHEN tyre_supplier_name = 'ownstock' THEN 1 ELSE 2 END")
-            ->orderBy('tyre_price', 'asc');
-
-        // Fetch paginated results
-        // $tyres = $query->paginate(7)->appends($request->except('page'));
-
-        $tyres = $query->paginate(72, ['*'], 'page', $page)->appends($request->except('page'));
-
-        // // If no tyres are found, return an appropriate message
-        // if ($tyres->isEmpty()) {
-        //     return response()->json([
-        //         'tyres' => '<p>No tyres found matching the criteria.</p>',
-        //         'pagination' => '',
-        //         'recommendedTyresMessage' => $message,
-        //         'recommendedTyres' => []
-        //     ]);
-        // }
-        $leadTimes = [];
-        $order_type = $fitting_type ?? $request->input('fitting_type');
-        foreach ($tyres as $tyre) {
-            if ($tyre->supplier_id) {
-                $supplierLeadTime = $this->getLeadTime($tyre->supplier_id, $order_type); // Call your method
-                $leadTimes[$tyre->product_id] = $supplierLeadTime[$tyre->supplier_id] ?? null;
+        {
+            // dd($request);
+            if ($width && $profile && $diameter) {
+                $request->merge([
+                    'width' => $width,
+                    'profile' => $profile,
+                    'diameter' => $diameter,
+                ]);
             }
-        }
+            $page = $request->input('page', 1);
+            $recommendedTyres = $this->getRecommendedTyres($request);
+            $message = empty($recommendedTyres) ? 'No recommended tyres found.' : null;
+            $tyresModel = new TyresProduct();
+            $tyresTable = $tyresModel->getTable(); // Dynamic table name
+            $brandsTable = (new \App\Models\tyre_brands())->getTable(); // 
+            $query = TyresProduct::from("$tyresTable as tp");
+            $query->where('tyre_quantity', '>', 0);
+            $query->where('tyre_fullyfitted_price', '>', 0);
+            $query->where('tp.status', '=', '1');
 
-        try {
-            $tyresHtml = view('tyre-cards', compact('tyres', 'leadTimes'))->render();
-            $hasMorePages = $tyres->hasMorePages() ? true : false;
+            $query->join("$brandsTable as tb", 'tb.brand_id', '=', 'tp.tyre_brand_id')
+                ->select('tp.*', 'tb.recommended_tyre');
 
-            // Only render recommended tyres on first load
-            $recommendedTyresHtml = $page === 1
-                ? view('recommended-tyres', compact('recommendedTyres'))->render()
-                : '';
+            if ($request->filled('width')) {
+                $query->where('tyre_width', $request->input('width'));
+            }
+            if ($request->filled('profile')) {
+                $query->where('tyre_profile', $request->input('profile'));
+            }
+            if ($request->filled('diameter')) {
+                $query->where('tyre_diameter', $request->input('diameter'));
+            }
+            if ($request->filled('minPrice') && $request->filled('maxPrice')) {
+                $query->whereBetween('tyre_price', [$request->input('minPrice'), $request->input('maxPrice')]);
+            }
+            if ($request->filled('fuel')) {
+                $fuelEfficiency = $request->input('fuel');
+                $query->whereIn('tyre_fuel', $fuelEfficiency);
+            }
+            if ($request->filled('season')) {
+                $getSeason = $request->input('season');
+                $query->whereIn('tyre_season', $getSeason);
+            }
+            if ($request->filled('wetGrip')) {
+                $wetGrip = $request->input('wetGrip');
+                $query->whereIn('tyre_wetgrip', $wetGrip);
+            }
+            $runflat = $request->input('runflat'); 
+            $extraload = $request->input('extraload'); 
+            if ($runflat === '1') {
+                $query->where('tyre_runflat', 1);
+            }
+            if ($extraload === '1') {
+                $query->where('tyre_extraload', 1);
+            }
+            if ($request->filled('tyreBrand')) {
+                $tyreBrandIds = $request->input('tyreBrand');
+                $query->whereIn('tp.tyre_brand_id', $tyreBrandIds)
+                    ->orderByRaw('FIELD(tp.tyre_brand_id, ' . implode(',', $tyreBrandIds) . ')');
+            }
+            $recommendedTyres = [];
+            $message = null;
+            // Add logic for recommended tyres to show only when a user filters based on size
+            if ($request->filled('width') || $request->filled('profile') || $request->filled('diameter')) {
+                $recommendedTyres = $this->getRecommendedTyres($request);
+            }
 
-        } catch (\Exception $e) {
-            \Log::error('View Rendering Error: ' . $e->getMessage());
-            return response()->json(['error' => 'Unable to render view'], 500);
-        }
+            $query->orderByRaw("CASE WHEN tyre_supplier_name = 'ownstock' THEN 1 ELSE 2 END")
+                ->orderBy('tyre_fullyfitted_price', 'asc');
 
-        // Return the response with rendered HTML for tyres, pagination, and recommended tyres
-        return response()->json([
-            'tyres' => $tyresHtml,
-            'has_more_pages' => $hasMorePages,
-            'recommendedTyresMessage' => $message,
-            'recommendedTyres' => $recommendedTyresHtml,
-        ]);
+            // Fetch paginated results
+            // $tyres = $query->paginate(7)->appends($request->except('page'));
+
+            $tyres = $query->paginate(72, ['*'], 'page', $page)->appends($request->except('page'));
+
+            // // If no tyres are found, return an appropriate message
+            // if ($tyres->isEmpty()) {
+            //     return response()->json([
+            //         'tyres' => '<p>No tyres found matching the criteria.</p>',
+            //         'pagination' => '',
+            //         'recommendedTyresMessage' => $message,
+            //         'recommendedTyres' => []
+            //     ]);
+            // }
+            $leadTimes = [];
+            $order_type = $fitting_type ?? $request->input('fitting_type');
+            foreach ($tyres as $tyre) {
+                if ($tyre->supplier_id) {
+                    $supplierLeadTime = $this->getLeadTime($tyre->supplier_id, $order_type); // Call your method
+                    $leadTimes[$tyre->product_id] = $supplierLeadTime[$tyre->supplier_id] ?? null;
+                }
+            }
+
+            try {
+                $tyresHtml = view('tyre-cards', compact('tyres','leadTimes'))->render();
+                $hasMorePages = $tyres->hasMorePages() ? true : false;
+        
+                // Only render recommended tyres on first load
+                $recommendedTyresHtml = $page === 1
+                    ? view('recommended-tyres', compact('recommendedTyres'))->render()
+                    : '';
+        
+            } catch (\Exception $e) {
+                \Log::error('View Rendering Error: ' . $e->getMessage());
+                return response()->json(['error' => 'Unable to render view'], 500);
+            }
+
+            // Return the response with rendered HTML for tyres, pagination, and recommended tyres
+            return response()->json([
+                'tyres' => $tyresHtml,
+                'has_more_pages' => $hasMorePages,
+                'recommendedTyresMessage' => $message,
+                'recommendedTyres' => $recommendedTyresHtml,
+            ]);
     }
-
 
     public function getRecommendedTyres(Request $request, $width = null, $profile = null, $diameter = null)
     {

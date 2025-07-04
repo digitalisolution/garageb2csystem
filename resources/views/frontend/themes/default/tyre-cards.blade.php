@@ -12,9 +12,23 @@
                                         <span class="pink">{{ $tyre->brand->promoted_text }}</span>
                                     @endif
                                     <div class="tyre_card">
-                                    <div class="tyre-picture"><img class="default-img"
-                                            src="{{ $tyre->tyre_image ?? 'frontend/themes/default/img/product/sample-tyre.png' }}"
-                                            alt="{{ $tyre->tyre_model }}"></div>
+                                       @php
+                                        $cdnBase = config('cdn.tyre_cdn_url');
+                                        $localPath = 'frontend/themes/img/tyre_images/';
+                                        $imageName = $tyre->tyre_image ?? '';
+                                        $localFullPath = public_path($localPath . $imageName);
+
+                                        if (!empty($imageName) && file_exists($localFullPath)) {
+                                            $imageUrl = asset($localPath . $imageName);
+                                        } elseif (!empty($imageName)) {
+                                            $imageUrl = $cdnBase . $imageName;
+                                        } else {
+                                            $imageUrl = asset('frontend/themes/default/img/product/sample-tyre.png');
+                                        }
+                                    @endphp
+                                    <div class="tyre-picture">
+                                        <img src="{{ $imageUrl }}" alt="{{ $tyre->tyre_model }}" width="100" onerror="this.onerror=null;this.src='{{ asset('frontend/themes/default/img/product/sample-tyre.png') }}';">
+                                    </div>
                                         <div class="tyre-description mt-1">
                                             @if($tyre->brand && $tyre->brand->image)
                                                 <img class="default-img" src="frontend/themes/default/img/brand-logo/{{ $tyre->brand->image }}"

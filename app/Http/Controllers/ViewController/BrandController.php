@@ -11,9 +11,13 @@ class BrandController extends Controller
 {
     public function index()
     {
+        $tyresModel = new TyresProduct();
+        $tyresTable = $tyresModel->getTable(); // Dynamic table name
+        $brandsTable = (new \App\Models\tyre_brands())->getTable(); // 
+        $query = TyresProduct::from("$tyresTable as tp");
         // Retrieve brands with the necessary conditions
-        $brands = \DB::table('tyre_brands as m')
-            ->leftJoin('tyres_product as p', 'm.brand_id', '=', 'p.tyre_brand_id')
+        $brands = tyre_brands::from("$brandsTable as m")
+            ->leftJoin("$tyresTable as p", 'm.brand_id', '=', 'p.tyre_brand_id')
             ->select('m.name', 'm.brand_id', 'm.image', 'm.slug')
             ->where('p.tyre_quantity', '>', 0)
             ->whereNotNull('m.name')

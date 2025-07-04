@@ -172,6 +172,15 @@
         @endif
                  
             <div class="table-responsive">
+                @if (!empty($filters['tyre_supplier_name']) && strtolower($filters['tyre_supplier_name']) === 'ownstock')
+                @if(isset($totalQty) && isset($totalCost))
+                
+                <div class="alert alert-primary font-weight-bold">
+                    Total OWNSTOCK Quantity: <span class="text-success">{{ $totalQty }}</span><br>
+                    Total OWNSTOCK Cost Price: <span class="text-success">£{{ number_format($totalCost, 2) }}</span>
+                </div>
+                @endif
+                @endif
                 <!-- Tyres Table -->
                 <table class="table table-bordered table-hover mt-4">
                     <thead class="thead-dark">

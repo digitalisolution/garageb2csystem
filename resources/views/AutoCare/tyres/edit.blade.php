@@ -1,6 +1,6 @@
 @extends('samples')
-
 @section('content')
+
         <div class="container-fluid">
             <div class="bg-white p-3">
                 <h5>{{ isset($tyre) ? 'Edit' : 'Add' }} Tyre Product</h5>
@@ -266,10 +266,28 @@
                         <div class="form-group col-lg-3 col-md-6 col-12">
                             <label for="tyre_image">Tyre Image:</label>
                             <input type="file" name="tyre_image" id="tyre_image" class="form-control">
-                            @if (isset($tyre) && $tyre->tyre_image)
-                                <img src="{{ asset('storage/' . $tyre->tyre_image) }}" alt="Tyre Image" width="100">
-                            @endif
+                            @php
+                                $cdnBaseUrl = config('cdn.tyre_cdn_url', ''); // fallback to empty string
+                                $localDir = 'frontend/themes/img/tyre_images/';
+                                $defaultImg = asset('frontend/themes/default/img/product/sample-tyre.png');
+                                $imageUrl = $defaultImg;
+
+                                if (!empty($tyre) && !empty($tyre->tyre_image)) {
+                                    $imageFile = $tyre->tyre_image;
+                                    $fullLocalPath = public_path($localDir . $imageFile);
+
+                                    if (file_exists($fullLocalPath)) {
+                                        $imageUrl = asset($localDir . $imageFile);
+                                    } elseif (!empty($cdnBaseUrl)) {
+                                        $imageUrl = rtrim($cdnBaseUrl, '/') . '/' . ltrim($imageFile, '/');
+                                    }
+                                }
+                                @endphp
+                                <img src="{{ $imageUrl }}" width="100"
+                                     onerror="this.onerror=null;this.src='{{ $defaultImg }}';"
+                                 alt="Tyre Image" class="mt-2 border rounded">
                         </div>
+
 
                         @if(isset($tyre))
                         <div class="clearfix"></div>

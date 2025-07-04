@@ -17,7 +17,8 @@ class tyre_brands extends Model
      */
     public function getConnectionName()
     {
-        $sharedDomains = ['www.digitalideasltd.in', 'b2b.garage-automation.com'];
+        // $sharedDomains = ['www.digitalideasltd.in', 'b2b.garage-automation.com'];
+        $sharedDomains = [];
 
         // CLI (schedule/command)
         if (app()->runningInConsole()) {
@@ -48,8 +49,8 @@ class tyre_brands extends Model
             $cliHost = $_SERVER['APP_FAKE_HOST'] ?? null;
 
             return match ($cliHost) {
-                'b2b.garage-automation.com'     => 'tyre_brands_gloucester',
-                'www.digitalideasltd.in'        => 'tyre_brands_gloucester',
+                // 'b2b.garage-automation.com'     => 'tyre_brands_gloucester',
+                // 'www.digitalideasltd.in'        => 'tyre_brands_gloucester',
                 default                         => 'tyre_brands',
             };
         }
@@ -57,8 +58,8 @@ class tyre_brands extends Model
         $host = request()->getHost();
 
         return match ($host) {
-            'b2b.garage-automation.com'     => 'tyre_brands_gloucester',
-            'www.digitalideasltd.in'        => 'tyre_brands_gloucester',
+            // 'b2b.garage-automation.com'     => 'tyre_brands_gloucester',
+            // 'www.digitalideasltd.in'        => 'tyre_brands_gloucester',
             default                         => 'tyre_brands',
         };
     }
