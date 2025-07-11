@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use App\Models\Workshop;
+use Gloudemans\Shoppingcart\Facades\Cart; // If using Shoppingcart package
+
 
 class EdenService
 {
@@ -35,13 +37,12 @@ class EdenService
 
         $list = $this->prepareCsvData($products, $externalReference, $jobid,$reference);
 
-        // Save the CSV file locally
         if (!File::exists($this->saveDirectory)) {
             File::makeDirectory($this->saveDirectory, 0777, true);
 
         }
 
-        $localFile = $this->saveDirectory . $fileName;
+        /*$localFile = $this->saveDirectory . $fileName;
         Log::info('Eden Save Path: ' . $this->saveDirectory);
         Log::info('Full file path: ' . $localFile);
 
@@ -49,22 +50,56 @@ class EdenService
         foreach ($list as $line) {
             fputcsv($file, $line);
         }
-        fclose($file);
-        Log::info('Upload mode: ' . $this->api['eden_upload_mode']);
+        fclose($file);*/
 
+            $tempPath = storage_path("app/tmp_{$fileName}");
+            $file = fopen($tempPath, 'w');
+            foreach ($list as $line) {
+                fputcsv($file, $line);
+            }
+            fclose($file);
+
+        /*Log::info('Upload mode: ' . $this->api['eden_upload_mode']);
         if ($this->api['eden_upload_mode'] === 'ftp') {
             $uploaded = $this->uploadToFtp($fileName, $localFile);
             if (!$uploaded) {
                 return ['status' => 'danger', 'msg' => 'FTP upload failed.'];
             }
-        }
+        }*/
 
+        if ($this->api['eden_upload_mode'] === 'ftp') {
+        Log::info("Uploading to FTP: $fileName");
+        $uploaded = $this->uploadToFtp($fileName, $tempPath);
+
+        unlink($tempPath);
+
+        if (!$uploaded) {
+            return ['status' => 'danger', 'msg' => 'FTP upload failed.'];
+        }
+    } else {
+        if (!File::exists($this->saveDirectory)) {
+            File::makeDirectory($this->saveDirectory, 0777, true);
+        }
+        File::move($tempPath, $this->saveDirectory . $fileName);
+    }
+
+    return [
+    'api_order_id' => 'eden-' . rand(10000, 90000),
+    'type' => $this->api['eden_upload_mode'],
+    'msg' => 'Order placed successfully',
+    'status' => 'success',
+    'details' => array_map(function ($item) use ($reference) {
         return [
-            'api_order_id' => 'eden-' . rand(10000, 90000),
-            'type' => $this->api['eden_upload_mode'],
-            'msg' => 'Order placed successfully',
-            'status' => 'success',
+            'sku' => $item['sku'] ?? null,
+            'ean' => $item['ean'] ?? null,
+            'quantity' => $item['quantity'] ?? 0,
+            'supplier' => $item['supplier'] ?? null,
+            'reference' => $reference,
+            'api_order_id' => 'eden-' . rand(10000, 90000), // consistent with above
         ];
+    }, $rows),
+    ];
+
     }
 
     private function prepareCsvData(array $products, $externalReference, $jobid = null,$reference)
@@ -90,6 +125,7 @@ class EdenService
 
             if ($reference) {
                 $workshop = Workshop::find($reference);
+                if (!$workshop) continue;
                 if ($workshop) {
                     $rows[] = [
                         $workshop->workshop_origin,
@@ -110,7 +146,7 @@ class EdenService
                         $product['ean'] ?? '',
                         $product['description']?? '',
                         $product['quantity'] ?? 1,
-                        $workshop->grandTotal,
+                        $product['price']*1.2 ?? '',
                         $product['supplier'] ?? '',
                         $workshop->payment_method,
                         '',
@@ -122,6 +158,7 @@ class EdenService
 
         
         }
+        Log::info('Eden CSV rows count: ' . count($rows)); // ✅ optional debug
 
         return $rows;
     }
@@ -140,10 +177,10 @@ class EdenService
         if (!$login) return false;
 
         ftp_pasv($connId, true);
-        ftp_mkdir($connId, $remoteDir);
-        ftp_mkdir($connId, "{$remoteDir}/processed");
+        @ftp_mkdir($connId, $remoteDir);
+        @ftp_mkdir($connId, "{$remoteDir}/processed");
 
-        $uploadSuccess = ftp_put($connId, "{$remoteDir}/{$remoteFileName}", $localPath, FTP_BINARY);
+        $uploadSuccess = ftp_put($connId, "{$remoteDir}/processed/{$remoteFileName}", $localPath, FTP_BINARY);
 
         ftp_close($connId);
         return $uploadSuccess;

@@ -36,14 +36,17 @@ class SupplierServiceFactory
                         'trading_point' => $credentials['trading_point'] ?? null,
                         'auto_order' => $credentials['bond_status_autoorder'] == "1",
                     ];
-                }elseif (isset($credentials['eden_status_autoorder'], $credentials['eden_dir_path'])) {
+                }elseif (isset($credentials['eden_status_autoorder'], $credentials['eden_upload_mode'])) {
                     return [
-                        'eden_upload_mode' => $credentials['eden_upload_mode'] ?? null,
-                        'external_ref_append' => $credentials['external_ref_append']?? null,
-                        'eden_dir_path' => $credentials['eden_dir_path']?? null,
-                        'item_type' => $credentials['item_type'] ?? null,
-                        'auto_order' => $credentials['eden_status_autoorder'] == "1",
-                    ];
+                    'eden_upload_mode' => $credentials['eden_upload_mode'],
+                    'external_ref_append' => $credentials['external_ref_append'] ?? null,
+                    'eden_dir_path' => $credentials['eden_dir_path'] ?? null, // Can be null in FTP mode
+                    'item_type' => $credentials['item_type'] ?? null,
+                    'eden_ftp_host' => $credentials['eden_ftp_host'] ?? null,
+                    'eden_ftp_username' => $credentials['eden_ftp_username'] ?? null,
+                    'eden_ftp_password' => $credentials['eden_ftp_password'] ?? null,
+                    'auto_order' => $credentials['eden_status_autoorder'] == "1",
+                ];
                 } else {
                     // Log error if required fields are missing
                     Log::error("Missing required fields in decoded credentials", ['supplier_name' => $supplierName, 'credentials' => $credentials]);
