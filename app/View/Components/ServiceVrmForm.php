@@ -4,7 +4,7 @@ namespace App\View\Components;
 
 use Illuminate\View\Component;
 
-class ServiceVrmForm extends Component
+class ServiceVrmForm extends ViewComponent
 {
     /**
      * Create a new component instance.
@@ -23,6 +23,6 @@ class ServiceVrmForm extends Component
      */
     public function render()
     {
-        return view('components.service-vrm-form');
+        return $this->ViewComponent('service-vrm-form');
     }
 }

@@ -55,7 +55,7 @@ class ApiOrderingService
                 // Check if API ordering is enabled for the supplier
                 if ($supplierDetails && $supplierDetails->api_order_enable == 1) {
                     $supplierService = $this->supplierServiceFactory->getServiceForSupplier($supplier);
-
+//dd($supplierService);
                     if (!$supplierService) {
                         Log::error("Service not found for supplier: $supplier");
                         continue;

@@ -26,6 +26,7 @@ class ContactToCustomer extends Mailable
             'name' => $this->data['name'],
             'email' => $this->data['email'],
             'subject' => $this->data['subject'],
+            'ip' => $this->data['ip'],
             'user_message' => $this->data['user_message'],
         ])
             ->subject('Thank you for contacting us!')

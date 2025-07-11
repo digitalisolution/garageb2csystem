@@ -4,7 +4,7 @@ namespace App\View\Components;
 
 use Illuminate\View\Component;
 
-class servicevrm-modal extends Component
+class serviceVrmModal extends ViewComponent
 {
     /**
      * Create a new component instance.
@@ -23,6 +23,6 @@ class servicevrm-modal extends Component
      */
     public function render()
     {
-        return view('components.servicevrm-modal');
+        return $this->ViewComponent('components.servicevrm-modal');
     }
 }

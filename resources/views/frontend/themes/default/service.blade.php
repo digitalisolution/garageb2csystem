@@ -1,7 +1,13 @@
 @extends('layouts.app')
-
 @section('content')
+    @php
+        $domain = str_replace(['http://', 'https://'], '', request()->getHost());
+        $customImagePath = 'frontend/' . str_replace('.', '-', $domain) . '/img/service_icon/';
+        $defaultImagePath = 'frontend/themes/default/img/service/';
 
+        $custominnerImagePath = 'frontend/' . str_replace('.', '-', $domain) . '/img/service-inner-img/';
+        $defaultinnerImagePath = 'frontend/themes/default/img/service-inner-img/';
+    @endphp
 <div class="breadcrumb-area pt-35 pb-35 bg-gray-3">
     <div class="container">
         <div class="breadcrumb-content text-center">
@@ -29,13 +35,44 @@
                             @endif
 
                             <div class="row align-items-center">
+                            @php
+                                $imageName = $service->image;
+                                $innerimageName = $service->inner_image;
+
+                                $customImage = $imageName ? public_path($customImagePath . $imageName) : null;
+                                $defaultImage = $imageName ? public_path($defaultImagePath . $imageName) : null;
+                                $fallbackNoImage = public_path($defaultImagePath . 'no-image.png');
+
+                                $custominnerImage = $innerimageName ? public_path($custominnerImagePath . $innerimageName) : null;
+                                $defaultinnerImage = $innerimageName ? public_path($defaultinnerImagePath . $innerimageName) : null;
+                                $fallbackNoinnerImage = public_path($defaultinnerImagePath . 'no-image.png');
+
+                                if ($imageName && file_exists($customImage)) {
+                                    $finalImage = versioned_asset($customImagePath . $imageName);
+                                } elseif ($imageName && file_exists($defaultImage)) {
+                                    $finalImage = versioned_asset($defaultImagePath . $imageName);
+                                } else {
+                                    $finalImage = versioned_asset($defaultImagePath . 'no-image.png');
+                                }
+
+                                if ($innerimageName && file_exists($custominnerImage)) {
+                                    $finalinnerImage = versioned_asset($custominnerImagePath . $innerimageName);
+                                } elseif ($innerimageName && file_exists($defaultinnerImage)) {
+                                    $finalinnerImage = versioned_asset($defaultinnerImagePath . $innerimageName);
+                                } else {
+                                    $finalinnerImage = versioned_asset($defaultinnerImagePath . 'no-image.png');
+                                }
+                            @endphp
                             <div class="col-lg-4 col-md-5 col-12">
                                 @if($service->inner_image)
-                                    <img src="frontend/themes/default/img/service/{{ $service->inner_image ?? $service->image }}" class="img-bank">
-                                @elseif(!$service->inner_image)
-                                    <img src="frontend/themes/default/img/service/{{ $service->image ?? '' }}" class="img-bank">
+                                <img src="{{ $finalinnerImage }}" alt="{{ $service->name }}" class="img-bank" onerror="this.onerror=null; this.src='{{ versioned_asset('frontend/themes/default/img/service/no-image.png') }}';">
+                                @elseif($service->image)
+                                    <img src="{{ $finalImage }}" alt="{{ $service->name }}" class="img-bank" onerror="this.onerror=null; this.src='{{ versioned_asset('frontend/themes/default/img/service/no-image.png') }}';">
+                                @else
+                                <img src="{{ versioned_asset('frontend/themes/default/img/service/no-image.png') }}" alt="{{ $service->name }}" class="img-bank">
                                 @endif
                             </div>
+
                             <div class="col-lg-8 col-md-7 col-12">
                                 <h4>{{ $service->name }}</h4>
                                         <p><i class="pe-7s-timer"></i> Work Time</p>
@@ -65,7 +102,7 @@
             </div>
             @if($vehicleData)
             <div class="col-lg-3">
-                <div class="vehicle_details-wrap p-4 pb-0 rounded mb-4">
+                <div class="vehicle_details-wrap p-4 rounded mb-4">
                     <h3 class="text-white mb-4">Your Vehicle</h3>
                     <div class="vehicle_bank" id="vehicleInfo">
                         <h4 class="text-uppercase"><strong id="vehicleReg"></strong></h4>

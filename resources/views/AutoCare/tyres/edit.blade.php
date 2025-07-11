@@ -393,6 +393,12 @@
                                 required>
                         </div>
 
+                        <div class="form-group col-lg-3 col-md-6 col-12">
+                            <label for="tyre_delivery_price">Price Delivery:</label>
+                        <input type="text" name="tyre_delivery_price" id="tyre_delivery_price" class="form-control"
+                                value="{{ isset($tyre) ? $tyre->tyre_delivery_price ?? '0.00' : old('tyre_delivery_price', '0.00') }}"
+                                required>
+                        </div>
 
                         <div class="form-group col-lg-3 col-md-6 col-12">
                             <label for="trade_costprice">Trade Cost Price:</label>
@@ -461,16 +467,38 @@
     function calculateFullyFitted() {
         let costPrice = parseFloat(document.getElementById('tyre_price').value) || 0;
         let margin = parseFloat(document.getElementById('tyre_margin').value) || 0;
-        let tradeMargin = 4.17;
-        // console.log(tradeMargin);
+        let tradeMargin = 4.84;
+        let deliveryPriceValue = "{{ get_option('tyre_delivery_price') }}";
 
         let fullyFitted = costPrice + margin;
-        let tradeprice = costPrice + tradeMargin;  // Using the trade margin value from the database
+        let tradeprice = costPrice + tradeMargin;
+
+         switch (deliveryPriceValue) {
+            case 'trade_costprice':
+                deliveryPrice = tradeprice;
+                break;
+                 case 'tyre_fullyfitted_price':
+                deliveryPrice = fullyFitted;
+                break;
+                 case 'tyre_mobilefitted_price':
+                deliveryPrice = fullyFitted;
+                break;
+            case 'tyre_mailorder_price':
+                deliveryPrice = fullyFitted;
+                break;
+            case 'tyre_collection_price':
+                deliveryPrice = fullyFitted;
+                break;
+            default:
+                deliveryPrice = costPrice;
+        }
 
         document.getElementById('tyre_fullyfitted_price').value = fullyFitted.toFixed(2);
         document.getElementById('tyre_mobilefitted_price').value = fullyFitted.toFixed(2);
         document.getElementById('tyre_mailorder_price').value = fullyFitted.toFixed(2);
         document.getElementById('tyre_collection_price').value = fullyFitted.toFixed(2);
+        document.getElementById('tyre_delivery_price').value = deliveryPrice.toFixed(2);
+        document.getElementById('trade_costprice').value = tradeprice.toFixed(2);
     }
 
     document.getElementById('tyre_price').addEventListener('input', calculateFullyFitted);

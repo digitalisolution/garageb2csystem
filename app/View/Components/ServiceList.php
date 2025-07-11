@@ -2,9 +2,8 @@
 
 namespace App\View\Components;
 
-use Illuminate\View\Component;
 use App\Models\CarService;
-class ServiceList extends Component
+class ServiceList extends ViewComponent
 {
     /**
      * Create a new component instance.
@@ -15,13 +14,8 @@ class ServiceList extends Component
 
     public function __construct()
     {
-        // Fetch all services from the database
-        // $this->services = CarService::all();
-        $this->services = \DB::table('car_services')->where('status', 1)->where('display_status', 1)->get();
-        // dd($services);
+        $this->services = CarService::where('status', 1)->where('display_status', 1)->get();
 
-        // return view('view.service', compact('services'));
-        // dd($this->services);
     }
 
     /**
@@ -31,6 +25,6 @@ class ServiceList extends Component
      */
     public function render()
     {
-        return view('components.service-list');
+        return $this->ViewComponent('service-list');
     }
 }

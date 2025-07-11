@@ -40,34 +40,59 @@
                 </div>
 
                 <!-- Image Field -->
-                <div class="col-lg-6 col-md-6 col-12 form-group">
-                    <label for="image">Service icon</label>
-                    <input type="file" name="image" id="image" class="form-control" accept="image/*">
-                    @if (isset($service->image))
-                        <img src="{{ asset('storage/' . $service->image) }}" alt="Service Image" style="width: 100px;">
-                    @endif
-                </div>
+                    @php
+                        $domain = str_replace(['http://', 'https://'], '', request()->getHost());
 
-                <!-- inner_image Field -->
-                <div class="col-lg-6 col-md-6 col-12 form-group">
-                    <label for="iinner_image">Service Image</label>
-                    <input type="file" name="inner_image" id="inner_image" class="form-control" accept="inner_image/*">
-                    @if (isset($service->inner_image))
-                        <img src="{{ asset('storage/' . $service->inner_image) }}" alt="Service inner_image"
-                            style="width: 100px;">
-                    @endif
-                </div>
+                        $imagePath = 'frontend/' . str_replace('.', '-', $domain) . '/img/service_icon/';
+                        $innerPath = 'frontend/' . str_replace('.', '-', $domain) . '/img/service-inner-img/';
+                        $bannerPath = 'frontend/' . str_replace('.', '-', $domain) . '/img/service-banners/';
 
-                <!-- Service Banner Path Field -->
-                <div class="col-lg-6 col-md-6 col-12 form-group">
-                    <label for="service_banner_path">Service Banner</label>
-                    <input type="file" name="service_banner_path" id="service_banner_path" class="form-control"
-                        accept="image/*">
-                    @if (isset($service->service_banner_path))
-                        <img src="{{ asset('storage/' . $service->service_banner_path) }}" alt="Service Banner"
-                            style="width: 100px;">
-                    @endif
-                </div>
+                        $fallbackiconPath   = 'frontend/themes/default/img/service/';
+                        $fallbackinnerPath  = 'frontend/themes/default/img/service-inner-img/';
+                        $fallbackbannerPath = 'frontend/themes/default/img/service-banners/';
+
+                        $imageFile = $service->image ?? 'sample-icon-image.png';
+                        $domainImageUrl = asset($imagePath . $imageFile);
+                        $fallbackImageUrl = asset($fallbackiconPath . $imageFile);
+
+                        $innerImageFile = $service->inner_image ?? 'sample-inner-image.png';
+                        $innerImageUrl = asset($innerPath . $innerImageFile);
+                        $fallbackInnerImageUrl = asset($fallbackinnerPath . $innerImageFile);
+
+                        $bannerImageFile = $service->service_banner_path ?? 'sample-banner-image.png';
+                        $bannerImageUrl = asset($bannerPath . $bannerImageFile);
+                        $fallbackBannerImageUrl = asset($fallbackbannerPath . $bannerImageFile);
+
+                    @endphp
+
+                    <div class="col-lg-6 col-md-6 col-12 form-group">
+                        <label for="image">Service icon</label>
+                        <input type="file" name="image" id="image" class="form-control" accept="image/*">
+                        @if (!empty($service->image))
+                            <img src="{{ $domainImageUrl }}"onerror="this.onerror=null;this.src='{{ $fallbackImageUrl }}';" alt="{{ $service->name ?? old('name') }}" style="width:100px;">
+                        @endif
+
+                    </div>
+
+                    <!-- inner_image Field -->
+                    <div class="col-lg-6 col-md-6 col-12 form-group">
+                        <label for="iinner_image">Service Image</label>
+                        <input type="file" name="inner_image" id="inner_image" class="form-control" accept="inner_image/*">
+                        @if (isset($service->inner_image))
+                    <img src="{{ $innerImageUrl }}"onerror="this.onerror=null;this.src='{{ $fallbackInnerImageUrl }}';" alt="{{ $service->name ?? old('name') }}" style="width:100px;">
+                            <!-- <img src="{{ !empty($imagePath) ? $domainImageUrl : $fallbackImageUrl }}" onerror="this.onerror=null;this.src='{{ $fallbackImageUrl }}';" alt="{{ $service->name }}" style="width: 100px;"> -->
+                        @endif
+                    </div>
+
+                    <!-- Service Banner Path Field -->
+                    <div class="col-lg-6 col-md-6 col-12 form-group">
+                        <label for="service_banner_path">Service Banner</label>
+                        <input type="file" name="service_banner_path" id="service_banner_path" class="form-control"
+                            accept="image/*">
+                        @if (isset($service->service_banner_path))
+                            <img src="{{ $bannerImageUrl }}"onerror="this.onerror=null;this.src='{{ $fallbackBannerImageUrl }}';" alt="{{ $service->name ?? old('name') }}" style="width:100px;">
+                        @endif
+                    </div>
 
                 <!-- Price Fields -->
                 {{-- <div class="col-lg-6 col-md-6 col-12 form-group">

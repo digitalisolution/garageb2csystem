@@ -47,6 +47,13 @@
             <td style="font-family:HelveticaNeue,sans-serif;border-collapse:collapse">
                 {{ $user_message }}</td>
         </tr>
+         <tr style="border-collapse:collapse">
+            <td style="font-family:HelveticaNeue,sans-serif;border-collapse:collapse">
+                <strong>IP Address:</strong>
+            </td>
+            <td style="font-family:HelveticaNeue,sans-serif;border-collapse:collapse">
+                {{ $ip }}</td>
+        </tr>
     </tbody>
 </table>
     		</td>

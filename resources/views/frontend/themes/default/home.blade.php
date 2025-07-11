@@ -12,7 +12,7 @@
 ></iframe> -->
 
 
-<script src="https://gktmotcentre.tyreservepro.co.uk/js/plugin.js?v={{ time() }}"></script>
+<!-- <script src="https://gktmotcentre.tyreservepro.co.uk/js/plugin.js?v={{ time() }}"></script> -->
 
 <div class="slider-area">
     <div class="container-fluid">
@@ -45,4 +45,5 @@
 </div>
 <x-service-list />
 <x-Html-template-list />
+<!-- <x-html-template-list templateName="Special Offer" /> -->
 @endsection

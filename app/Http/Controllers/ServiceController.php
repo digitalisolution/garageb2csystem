@@ -46,27 +46,48 @@ class ServiceController extends Controller
         ]);
 
         $data = $request->all();
-
+        $domain = str_replace(['http://', 'https://'], '', request()->getHost());
         if ($request->hasFile('image')) {
             $image = $request->file('image');
             $imageName = $image->getClientOriginalName();
-            $image->storeAs('uploads/services/icon', $imageName, 'public');
+            $imagePath = 'frontend/' . str_replace('.', '-', $domain) . '/img/service_icon';
+            $destinationimgPath = public_path($imagePath);
+            
+            if (!file_exists($destinationimgPath)) {
+                mkdir($destinationimgPath, 0755, true);
+            }
+            
+            $image->move($destinationimgPath, $imageName);
             $data['image'] = $imageName;
         }
+
 
         if ($request->hasFile('inner_image')) {
             $innerImage = $request->file('inner_image');
             $innerImageName = $innerImage->getClientOriginalName();
-            $innerImage->storeAs('uploads/services/image', $innerImageName, 'public');
-            $data['inner_image']->inner_image = $innerImageName;
+            $innerPath = 'frontend/' . str_replace('.', '-', $domain) . '/img/service-inner-img';
+            $destinationinnerPath = public_path($innerPath);
+            
+            if (!file_exists($destinationinnerPath)) {
+                mkdir($destinationinnerPath, 0755, true);
+            }
+            
+            $innerImage->move($destinationinnerPath, $innerImageName);
+            $data['inner_image'] = $innerImageName; // <--- Save only the image name
         }
 
-
         if ($request->hasFile('service_banner_path')) {
-            $banner = $request->file('service_banner_path');
-            $bannerName = $banner->getClientOriginalName();
-            $banner->storeAs('uploads/services/banners', $bannerName, 'public');
-            $data['service_banner_path'] = $bannerName;
+            $bannerImage = $request->file('service_banner_path');
+            $bannerImageName = $bannerImage->getClientOriginalName();
+            $bannerPath = 'frontend/' . str_replace('.', '-', $domain) . '/img/service-banners';
+            $destinationbannerPath = public_path($bannerPath);
+            
+            if (!file_exists($destinationbannerPath)) {
+                mkdir($destinationbannerPath, 0755, true);
+            }
+            
+            $bannerImage->move($destinationbannerPath, $bannerImageName);
+            $data['service_banner_path'] = $bannerImageName; // <--- Save only the image name
         }
 
         // Create the CarService record
@@ -103,33 +124,51 @@ class ServiceController extends Controller
             'exclude_sitemap' => 'nullable|integer',
         ]);
 
-        // Handle image uploads
+    $data = $request->except(['_token', '_method', 'image', 'inner_image', 'service_banner_path']);
+    $domain = str_replace(['http://', 'https://'], '', request()->getHost());
         if ($request->hasFile('image')) {
             $image = $request->file('image');
             $imageName = $image->getClientOriginalName();
-            $image->storeAs('uploads/services/icon', $imageName, 'public');
-            $service->image = $imageName;
+            $domainimgPath = 'frontend/' . str_replace('.', '-', $domain) . '/img/service_icon';
+            $destinationimgPath = public_path($domainimgPath);
+            
+            if (!file_exists($destinationimgPath)) {
+                mkdir($destinationimgPath, 0755, true);
+            }
+            
+            $image->move($destinationimgPath, $imageName);
+            $data['image'] = $imageName;
         }
 
         if ($request->hasFile('inner_image')) {
             $innerImage = $request->file('inner_image');
             $innerImageName = $innerImage->getClientOriginalName();
-            $innerImage->storeAs('uploads/services/image', $innerImageName, 'public');
-            $service->inner_image = $innerImageName;
+            $innerPath = 'frontend/' . str_replace('.', '-', $domain) . '/img/service-inner-img';
+            $destinationinnerPath = public_path($innerPath);
+            if (!file_exists($destinationinnerPath)) {
+                mkdir($destinationinnerPath, 0755, true);
+            }
+            
+            $innerImage->move($destinationinnerPath, $innerImageName);
+            $data['inner_image'] = $innerImageName;
         }
 
         if ($request->hasFile('service_banner_path')) {
-            $banner = $request->file('service_banner_path');
-            $bannerName = $banner->getClientOriginalName();
-            $banner->storeAs('uploads/services/banners', $bannerName, 'public');
-            $service->service_banner_path = $bannerName;
+            $bannerImage = $request->file('service_banner_path');
+            $bannerImageName = $bannerImage->getClientOriginalName();
+            $bannerPath = 'frontend/' . str_replace('.', '-', $domain) . '/img/service-banners';
+            $destinationbannerPath = public_path($bannerPath);
+            
+            if (!file_exists($destinationbannerPath)) {
+                mkdir($destinationbannerPath, 0755, true);
+            }
+            
+            $bannerImage->move($destinationbannerPath, $bannerImageName);
+            $data['service_banner_path'] = $bannerImageName; // <--- Save only the image name
         }
 
-        // Exclude file inputs from the bulk update
-        $service->update($request->except(['_token', '_method', 'image', 'inner_image', 'service_banner_path']));
 
-        // Save any changes to file paths
-        $service->save();
+         $service->update($data);
 
         return redirect()->route('services.index')->with('success', 'Service updated successfully!');
     }

@@ -93,18 +93,20 @@ class ServiceController extends Controller
         if (!$garage || !$garage->email) {
             return redirect()->back()->with('error', 'Garage details are not configured properly.');
         }
+        $fromEmail = $garage->email ?? 'info@digitalideasltd.co.uk';
 
-        $validationResult = $this->emailValidationService->validateEmail($request->email, $garage->email);
+        $validationResult = $this->emailValidationService->validateEmail($request->email, $fromEmail);
         if (!$validationResult['status']) {
             return back()->withErrors(['email' => $validationResult['message']])->withInput();
         }
-
+        $ip = request()->ip();
 
         // Build email data
         $emailData = [
             'name' => $validated['name'],
             'email' => $validated['email'],
             'subject' => $validated['subject'],
+            'ip' => $ip,
             'user_message' => $validated['message'],
         ];
 
@@ -113,31 +115,6 @@ class ServiceController extends Controller
 
     // Send confirmation to customer
     Mail::to($validated['email'])->send(new ContactToCustomer($emailData, $garage));
-
-        // // Send emails
-        // Mail::send('emails.contact_form', $emailData, function ($msg) use ($validated, $garage) {
-        //     $msg->to('info@digitalideasltd.co.uk')
-        //         ->from(config('mail.from.address'), $garage->garage_name)
-        //         ->replyTo($validated['email'], $validated['name'])
-        //         ->subject($validated['subject']);
-        // });
-
-        // Mail::send('emails.contact_form', $emailData, function ($msg) use ($validated, $garage) {
-        //     $msg->to($garage->email)
-        //         ->from(config('mail.from.address'), $garage->garage_name)
-        //         ->replyTo($validated['email'], $validated['name'])
-        //         ->subject($validated['subject']);
-        // });
-
-        // Mail::send('emails.customer_confirmation', $emailData, function ($msg) use ($validated, $garage) {
-        //     $msg->to($validated['email'])
-        //         ->from(config('mail.from.address'), $garage->garage_name)
-        //         ->replyTo($garage->email, $garage->garage_name ?? 'Garage')
-        //         ->subject('Thank you for contacting us!');
-        // });
-        if (!$this->emailValidationService->validateEmail($validated['email'], $garage->email)) {
-            return back()->withErrors(['email' => 'You have reached submiting form limit for today. Please try again later.'])->withInput();
-        }
 
         return redirect()->back()->with('success', 'Your inquiry has been sent successfully!');
     }

@@ -5,7 +5,7 @@ namespace App\View\Components;
 use Illuminate\View\Component;
 use App\Models\OrderTypes; // Import the OrderType model
 
-class SearchTyres extends Component
+class SearchTyres extends ViewComponent
 {
     public $fittingTypes; // Variable to hold fitting types
 
@@ -28,7 +28,7 @@ class SearchTyres extends Component
     public function render()
     {
         // Pass the fitting types to the view
-        return view('components.search-tyres', [
+        return $this->ViewComponent('search-tyres', [
             'fittingTypes' => $this->fittingTypes,
         ]);
     }

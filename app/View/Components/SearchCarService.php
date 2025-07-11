@@ -5,7 +5,7 @@ namespace App\View\Components;
 use Illuminate\View\Component;
 use App\Models\CarserviceProduct;
 
-class SearchCarService extends Component
+class SearchCarService extends ViewComponent
 {
     public $carMakes;
 
@@ -28,6 +28,6 @@ class SearchCarService extends Component
      */
     public function render()
     {
-        return view('components.search-car-service');
+        return $this->ViewComponent('search-car-service');
     }
 }

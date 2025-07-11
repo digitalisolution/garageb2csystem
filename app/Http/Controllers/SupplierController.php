@@ -51,6 +51,10 @@ class SupplierController extends Controller
             } else {
                 $getFormAutoFillup['api_order_details'] = []; // Set as empty if not available
             }
+            
+            $item_type = $getFormAutoFillup['api_order_details']['item_type'] ?? null;
+            $viewData['item_type'] = in_array($item_type, ['tyres', 'all']) ? $item_type : null;
+
             return view('AutoCare.supplier.add', $viewData)->with($getFormAutoFillup);
         } else if ((!isset($id) && $id == null) && !$request->isMethod('post')) {
             return view('AutoCare.supplier.add', $viewData);

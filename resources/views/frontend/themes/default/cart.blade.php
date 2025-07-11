@@ -44,8 +44,8 @@
                             $shippingPricePerTyre += $shippingPrice * $item['quantity'];
                         }
                     }
-                    
-                $fittingType = strToUpper(str_replace('_', ' ', $item['fitting_type']));
+
+                    $fittingType = strToUpper(str_replace('_', ' ', $item['fitting_type']));
                 }
 
                 // Add shipping costs to totals

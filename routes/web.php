@@ -29,6 +29,7 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\MailTyrePricingController;
 use App\Http\Controllers\TyreImportController;
 use App\Http\Controllers\BondApiController;
+//use App\Http\Controllers\EdenApiController;
 use App\Http\Controllers\VrmController;
 use App\Http\Controllers\VehicleDetailController;
 // use App\Http\Controllers\ViewController\BrandController;
@@ -42,6 +43,7 @@ use App\Http\Controllers\BlogController;
 use App\Http\Controllers\BlogCategoryController;
 use App\Http\Controllers\AppointmentController;
 
+use App\Http\Controllers\MobilefittingformController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -116,6 +118,9 @@ Route::get('/dojo/callback', [DojoController::class, 'callback'])->name('dojo.ca
 // if (get_option('appointment_form', 0)) {
     Route::get('/appointment', [AppointmentController::class, 'create'])->name('appointment.create');
     Route::post('/appointment', [AppointmentController::class, 'store'])->name('appointment.store');
+
+    Route::get('/mobile-fitting-availablitiy', [MobilefittingformController::class, 'create'])->name('mobilefittingform.create');
+    Route::post('/mobile-fitting-availablitiy', [MobilefittingformController::class, 'store'])->name('mobilefittingform.store');
 // }
 
 // Route::get('/brand', function () {
@@ -136,12 +141,6 @@ Route::get('/getTyreBrandOptions', [TyresProductController::class, 'getTyreBrand
 Route::get('/getFuelEfficiencyOptions', [TyresProductController::class, 'getFuelEfficiencyOptions'])->name('tyres.getFuelEfficiencyOptions');
 Route::get('/getPriceRange', [TyresProductController::class, 'getPriceRange'])->name('tyres.getPriceRange');
 
-// Route to the home page
-// Route::get('/home', 'ViewController\HomeController@index')->name('home');
-// Route::get('/payment', function () {
-//     return view('payment');
-// })->name('payment.form');
-
 Route::post('/process-payment', [PaymentController::class, 'processPayment'])->name('payment.process');
 
 
@@ -154,22 +153,14 @@ Route::get('/years', [CarserviceProductController::class, 'getYears'])->name('ye
 Route::get('/engines', [CarserviceProductController::class, 'getEngines'])->name('engines');
 
 
-Route::get('/service', [App\Http\Controllers\ViewController\ServiceController::class, 'services'])->name('service');  // Homepage showing services
-// Route::get('{service_slug}', [ServiceController::class, 'show'])->name('service.show');  // Service details page
-// Route::get('/about', [HomeController::class, 'aboutUs'])->name('aboutUs');  // Service details page
+Route::get('/service', [App\Http\Controllers\ViewController\ServiceController::class, 'services'])->name('service'); 
+
 Route::get('/cart/fetch', [CartController::class, 'fetchCartItems'])->name('cart.fetch');
 
-// Route::get('/checkout', [CheckoutController::class, 'showCheckoutPage'])->name('checkout.page');
-
 // Route for handling the form submission
-// Route::post('/checkout/submit', [CheckoutController::class, 'submitOrder'])->name('checkout.submit');
 Route::post('/checkout', [CheckoutController::class, 'submit'])->name('checkout.submit');
-// Route::post('/save-booking', [CalendarController::class, 'saveBooking'])->name('save.booking');
-// routes/web.php
+
 Route::post('/save-selected-slot', [CalendarController::class, 'saveSelectedSlot'])->name('save.selected.slot');
-
-// Route::get('/checkout', [CheckoutController::class, 'calendar'])->name('checkout');
-
 
 Route::get('/sitemap.xml', [SitemapController::class, 'sitemapIndex']);
 Route::get('/sitemap-pages.xml', [SitemapController::class, 'sitemapPages']);
@@ -186,16 +177,6 @@ Route::get('/', function () {
 
 Route::post('/store-vehicle-data', [CartController::class, 'storeVehicleData'])->name('store.vehicle.data');
 
-// Route::get('/header', function () {
-//     return view('contact.header');
-// })->name('header');
-// Route::get('/vehicle-data', function () {
-//     return include_dynamic_view('home');
-// })->name('vehicle.data');
-
-
-// Route::get('/plugin/search', [PluginController::class, 'showSearchForm'])->name('validate.plugin.client');
-// Route::get('/plugin/search/submit', [PluginController::class, 'redirectToSearchResults'])->name('validate.plugin.client');
 Route::get('/js/plugin.js', function () {
     $domain = str_replace('.', '-', request()->getHost());
     $path = public_path("frontend/{$domain}/js/plugin.js");
@@ -544,6 +525,8 @@ Route::middleware('auth:web')->group(function () {
 
 
     Route::post('/bond/place-order', [BondApiController::class, 'placeOrder']);
+    //Route::post('/eden/test-order', [EdenApiController::class, 'placeOrder']);
+
     // product sale:sale
     Route::get('/AutoCare/sale/add', 'SaleProductController@index');
     Route::get('/AutoCare/sale/edit/{id}', 'SaleProductController@edit');
@@ -604,22 +587,6 @@ Route::middleware('auth:web')->group(function () {
     Route::get('/AutoCare/product/delete/{id}', 'ProductController@permanemetDelete');
     //End: Product Details
 
-    // Start: Service Details
-    // Route::get('/AutoCare/service/add', 'ServiceController@save');
-    // Route::post('/AutoCare/service/add', 'ServiceController@save');
-    // Route::post('/AutoCare/service/update', 'ServiceController@update');
-    // Route::get('/AutoCare/service/add/{id}', 'ServiceController@update');
-    // Route::get('/AutoCare/service/search', 'ServiceController@view');
-    // Route::post('/AutoCare/service/search', 'ServiceController@view');
-    // Route::get('/AutoCare/service/trash/{id}', 'ServiceController@trash');
-    // Route::get('/AutoCare/service/delete', 'ServiceController@trashedList');
-    // Route::get('/AutoCare/service/delete/{id}', 'ServiceController@permanemetDelete');
-    // Route::post('AutoCare/model/add', 'ServiceController@model');
-    // Route::post('/AutoCare/brand/add', 'ServiceController@brand');
-    // Route::post('/AutoCare/service_name/add', 'ServiceController@service');
-    // Route::post('/AutoCare/serviceType/add', 'ServiceController@serviceType');
-    // End: Service Details
-
     // Start: Supplier Details
     Route::get('/AutoCare/customer/add', 'CustomerController@save');
     Route::post('/AutoCare/customer/add', 'CustomerController@save');
@@ -655,9 +622,6 @@ Route::middleware('auth:web')->group(function () {
     Route::get('/AutoCare/customer/statement/pdf', 'CustomerController@downloadStatementPDF')->name('AutoCare.customer.statement.pdf');
     Route::post('/AutoCare/customer/statement/email', 'CustomerController@sendStatementEmail')->name('AutoCare.customer.statement.email');
 
-
-    // Route::get('/AutoCare/customer/orders/job-{id}', [CustomerController::class, 'viewOrder'])->name('AutoCare.customer.orders.view');
-    // Route::get('/AutoCare/customer/invoice/inv-{id}', [CustomerController::class, 'viewInvoice'])->name('AutoCare.customer.invoice.view');
     // Start: Master Form Details
     Route::post('/master/brands', 'MasterController@brand');
     Route::post('/master/modal', 'MasterController@modal');
@@ -730,18 +694,6 @@ Route::middleware('auth:web')->group(function () {
     Route::get('/CustomerCreditDebitLog/trash/{id}', 'CustomerCreditDebitLog@trash');
     Route::get('/CustomerCreditDebitLog/delete/{id}', 'CustomerCreditDebitLog@permanemetDelete');
     // End: Marketing Details
-
-    // Start:  Marketing Details
-    // Route::post('/credit-debit/add','CreditDebitDetailController@save');
-    // Route::post('/credit-debit/update','CreditDebitDetailController@update');
-    // Route::post('/credit-debit/search','CreditDebitDetailController@view');
-    // Route::get('/credit-debit/add','CreditDebitDetailController@save');
-    // Route::get('/credit-debit/add/{id}','CreditDebitDetailController@save');
-    // Route::get('/credit-debit/search','CreditDebitDetailController@view');
-    // Route::get('/credit-debit/delete','CreditDebitDetailController@trashedList');
-    // Route::get('/credit-debit/trash/{id}','CreditDebitDetailController@trash');
-    // Route::get('/credit-debit/delete/{id}','CreditDebitDetailController@permanemetDelete');
-// End: Marketing Details
 
     // Start: Ajax Related
     Route::post('/ajax/getPurchase', 'AjaxController@getPurchase');

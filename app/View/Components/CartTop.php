@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Session;
 use App\Models\TyresProduct;
 use App\Models\CarService;
 
-class CartTop extends Component
+class CartTop extends ViewComponent
 {
     public $cartItems;
     public $shippingData; // Add a property for shipping data
@@ -91,7 +91,7 @@ class CartTop extends Component
 
         $grandTotal = $subTotal + $vatTotal + $shippingPricePerJob + $shippingPricePerTyre;
 
-        return view('components.cart-top', [
+        return $this->ViewComponent('cart-top', [
             'cartItems' => $this->cartItems,
             'shippingData' => $this->shippingData,
             'subTotal' => $subTotal,

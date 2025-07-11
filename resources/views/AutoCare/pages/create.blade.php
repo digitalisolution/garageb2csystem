@@ -31,11 +31,19 @@
             <textarea name="content" id="content" class="form-control">{{ $page->content ?? old('content') }}</textarea>
         </div>
         <!-- banner Field -->
+        @php
+            $domain = str_replace(['http://', 'https://'], '', request()->getHost());
+            $imagePath = 'frontend/' . str_replace('.', '-', $domain) . '/img/banner/content-pages/';
+            $fallbackPath   = 'frontend/themes/default/img/banner/content-pages/';
+            $imageFile = $page->page_banner_path ?? 'sample-page-image.png';
+            $domainImageUrl = asset($imagePath . $imageFile);
+            $fallbackImageUrl = asset($fallbackPath . $imageFile);
+        @endphp
         <div class="col-lg-3 col-md-6 col-12 form-group">
             <label for="page_banner_path">page Banner</label>
             <input type="file" name="page_banner_path" id="page_banner_path" class="form-control" accept="image/*">
             @if (isset($page->page_banner_path))
-                <img src="{{ asset('storage/' . $page->page_banner_path) }}" alt="page Banner" style="width: 100px;">
+                <img src="{{ $domainImageUrl }}"onerror="this.onerror=null;this.src='{{ $fallbackImageUrl }}';" alt="{{ $page->page_banner_path }}" style="width:100px;">
             @endif
         </div>
         <!-- Meta Title Field -->

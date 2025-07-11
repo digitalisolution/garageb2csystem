@@ -12,13 +12,19 @@ class EmailValidationService
     {
         // Whitelisted emails bypass validation
         $whitelistedEmails = [
-            'shopersstore883@gmail.com',
             'info@digitalideasltd.co.uk',
             'aryanchaudhary22222@gmail.com'
         ];
 
         if (in_array($email, $whitelistedEmails)) {
             return ['status' => true, 'message' => 'Whitelisted email.'];
+        }
+
+
+        $ip = request()->ip();
+        $attempts = VerifyEmail::where('ip', $ip)->where('created_on', '>=', now()->subDay())->count();
+        if ($attempts > 2) {
+            return ['status' => false, 'message' => 'Too many requests from your IP. Please try again later.'];
         }
 
         // Check rate limit (last 24 hours)
@@ -60,6 +66,7 @@ class EmailValidationService
                 'email_from' => $fromEmail,
                 'to_verified' => $isValid,
                 'status' => 1,
+                'ip' => $ip,
                 'created_on' => now(),
             ]);
 

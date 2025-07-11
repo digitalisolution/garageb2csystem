@@ -2,6 +2,7 @@
 namespace App\Services;
 
 use App\Services\BondService;
+use App\Services\EdenService;
 use App\Services\BitsService;
 use Illuminate\Support\Facades\log;
 use Illuminate\Support\Facades\DB;
@@ -35,6 +36,14 @@ class SupplierServiceFactory
                         'trading_point' => $credentials['trading_point'] ?? null,
                         'auto_order' => $credentials['bond_status_autoorder'] == "1",
                     ];
+                }elseif (isset($credentials['eden_status_autoorder'], $credentials['eden_dir_path'])) {
+                    return [
+                        'eden_upload_mode' => $credentials['eden_upload_mode'] ?? null,
+                        'external_ref_append' => $credentials['external_ref_append']?? null,
+                        'eden_dir_path' => $credentials['eden_dir_path']?? null,
+                        'item_type' => $credentials['item_type'] ?? null,
+                        'auto_order' => $credentials['eden_status_autoorder'] == "1",
+                    ];
                 } else {
                     // Log error if required fields are missing
                     Log::error("Missing required fields in decoded credentials", ['supplier_name' => $supplierName, 'credentials' => $credentials]);
@@ -59,6 +68,8 @@ class SupplierServiceFactory
             switch (strtolower($supplierName)) {
                 case 'bond':
                     return new BondService($credentials);
+                case 'eden':
+                    return new EdenService($credentials);
                 case 'bits':
                     return new BitsService($credentials);
                 // Add cases for other suppliers as needed

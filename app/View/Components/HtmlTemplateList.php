@@ -4,23 +4,27 @@ namespace App\View\Components;
 
 use Illuminate\View\Component;
 use App\Models\HTMLTemplate;
-class HtmlTemplateList extends Component
+
+class HtmlTemplateList extends ViewComponent
 {
     public $templates;
-    /**
-     * Create a new component instance.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        $this->templates = HTMLTemplate::where('status', 1)
-            ->orderBy('sort_order', 'asc') // or 'desc' depending on the desired order
-            ->get();
+    public $templateName;
 
+    public function __construct($templateName = null)
+    {
+        $this->templateName = $templateName;
+
+        $query = HTMLTemplate::where('status', 1);
+
+        if ($templateName) {
+            $query->where('title', $templateName);
+        }
+
+        $this->templates = $query->orderBy('sort_order', 'asc')->get();
     }
+
     public function render()
     {
-        return view('components.html-template-list');
+        return $this->ViewComponent('html-template-list');
     }
 }

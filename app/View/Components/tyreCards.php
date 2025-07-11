@@ -25,6 +25,6 @@ class tyreCards extends Component
      */
     public function render()
     {
-        return view('components.tyre-cards');
+        return view('tyre-cards');
     }
 }

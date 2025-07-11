@@ -8,7 +8,7 @@
         <thead class="thead-dark">
             <tr>
                 <th>ID</th>
-                <th>Order ID</th>
+                <th>Workshop ID</th>
                 <th>API Order ID</th>
                 <th>Order Type</th>
                 <th>Supplier</th>

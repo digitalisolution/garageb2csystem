@@ -13,6 +13,8 @@ use App\Models\GeneralSettings;
 use Illuminate\Pagination\Paginator;
 use App\Models\GarageDetails;
 use App\Services\BondService;
+use App\Services\EdenService;
+
 use Illuminate\Auth\Notifications\ResetPassword;
 
 class AppServiceProvider extends ServiceProvider
@@ -137,5 +139,18 @@ class AppServiceProvider extends ServiceProvider
 
             return new BondService($supplierDetails);
         });
+
+        $this->app->bind(EdenService::class, function ($app) {
+            // Provide the required $supplierDetails array
+            $supplierDetails = [
+                'trading_point' => env('BOND_TRADING_POINT', ''),
+                'supplier_email' => env('BOND_SUPPLIER_EMAIL', ''),
+                'api_code' => env('BOND_API_CODE', ''),
+                'api_mode' => env('BOND_API_MODE', 'test'), // Default to 'test' mode
+            ];
+
+            return new EdenService($supplierDetails);
+        });
     }
+
 }

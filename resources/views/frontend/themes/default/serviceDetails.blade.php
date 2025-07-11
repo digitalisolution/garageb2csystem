@@ -3,9 +3,18 @@
 @section('meta_keywords', $metaKeywords)
 @section('meta_description', $metaDescription)
 @section('content')
+
+        @php
+            $domain = str_replace(['http://', 'https://'], '', request()->getHost());
+            $bannerPath = 'frontend/' . str_replace('.', '-', $domain) . '/img/service-banners/';
+            $fallbackPath = 'frontend/themes/default/img/service-banners/';
+
+            $bannerimagePath = $service->service_banner_path ?? 'sample-banner-image.png';
+            $bannerImageUrl = asset($bannerPath . $bannerimagePath);
+            $fallbackImageUrl = asset($fallbackPath . $bannerimagePath);
+        @endphp
     <div class="breadcrumb-area brand_breadcrumb">
-        <img src="{{ $service->service_banner_path ? asset('frontend/themes/default/img/service-banners/' . $service->service_banner_path) : asset('frontend/themes/default/img/service-banners/car-servicing.jpg') }}"
-            alt="{{ $service->service_banner_path ?? 'Default Banner' }}" class="img-bank">
+            <img src="{{ $bannerImageUrl }}" onerror="this.onerror=null;this.src='{{ $fallbackImageUrl }}';" alt="{{ $service->name }}" class="img-bank">
 
         <div class="brand_name">
             <h1>{{ $service->name }}</h1>

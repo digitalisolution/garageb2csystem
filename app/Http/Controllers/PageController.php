@@ -38,14 +38,24 @@ class PageController extends Controller
             'title' => 'required|string|max:255',
             'slug' => 'required|string|unique:pages,slug',
             'page_banner_path' => 'nullable|image|mimes:jpeg,webp,png,jpg,gif|max:2048',
+
             'sort' => 'nullable|integer',
         ]);
 
         $data = $request->all();
+
         if ($request->hasFile('page_banner_path')) {
             $banner = $request->file('page_banner_path');
             $bannerName = $banner->getClientOriginalName();
-            $banner->storeAs('uploads/pages/banners', $bannerName, 'public');
+            $domain = str_replace(['http://', 'https://'], '', request()->getHost());
+            $imagePath = 'frontend/' . str_replace('.', '-', $domain) . '/img/banner/content-pages';
+            $destinationimgPath = public_path($imagePath);
+            
+            if (!file_exists($destinationimgPath)) {
+                mkdir($destinationimgPath, 0755, true);
+            }
+            
+            $banner->move($destinationimgPath, $bannerName);
             $data['page_banner_path'] = $bannerName;
         }
 
@@ -60,118 +70,41 @@ class PageController extends Controller
     }
 
     public function update(Request $request, Page $page)
-{
-    // Validation rules
-    $request->validate([
-        'title' => 'required|string|max:255',
-        'slug' => [
-            'required',
-            'string',
-            Rule::unique('pages', 'slug')->ignore($page->id),
-            'regex:/^[a-zA-Z0-9#\/-]+$/',
-        ],
-        'page_banner_path' => 'nullable|image|mimes:jpeg,webp,png,jpg,gif|max:2048',
-        'sort' => 'nullable|integer',
-    ]);
+    {
+        // Validation rules
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'slug' => [
+                'required',
+                'string',
+                Rule::unique('pages', 'slug')->ignore($page->id),
+                'regex:/^[a-zA-Z0-9#\/-]+$/',
+            ],
+            'page_banner_path' => 'nullable|image|mimes:jpeg,webp,png,jpg,gif|max:2048',
+            'sort' => 'nullable|integer',
+        ]);
 
-    // Determine domain folder
-    $host = request()->getHttpHost(); // e.g. www.digitalideasltd.in
-    $domainParts = explode('.', $host);
-    $domain = count($domainParts) >= 2 ? implode('-', $domainParts) : 'theme';
-    $allowedDomains = ['www-digitalideasltd-in', 'example-com'];
+        $data = $request->except(['_token', '_method', 'page_banner_path']);
 
-    if (!in_array($domain, $allowedDomains)) {
-        $domain = 'theme';
-    }
-
-    // Handle file upload to public path
-    if ($request->hasFile('page_banner_path')) {
-        $image = $request->file('page_banner_path');
-        $bannerName = time() . '_' . $image->getClientOriginalName(); // optional unique name
-
-        $destinationPath = public_path("frontend/{$domain}/img/pages/banners");
-
-        if (!file_exists($destinationPath)) {
-            mkdir($destinationPath, 0775, true); // create directory if not exists
+        if ($request->hasFile('page_banner_path')) {
+            $banner = $request->file('page_banner_path');
+            $bannerName = $banner->getClientOriginalName();
+            $domain = str_replace(['http://', 'https://'], '', request()->getHost());
+            $imagePath = 'frontend/' . str_replace('.', '-', $domain) . '/img/banner/content-pages';
+            $destinationimgPath = public_path($imagePath);
+            
+            if (!file_exists($destinationimgPath)) {
+                mkdir($destinationimgPath, 0755, true);
+            }
+            
+            $banner->move($destinationimgPath, $bannerName);
+            $data['page_banner_path'] = $bannerName;
         }
+        $page->update($data);
 
-        $image->move($destinationPath, $bannerName);
+        return redirect()->route('pages.index')->with('success', 'Page updated successfully!');
 
-        $page->page_banner_path = $bannerName;
     }
-
-    // Update other fields
-    $page->fill($request->except(['_token', '_method', 'page_banner_path']));
-    $page->save();
-
-    return redirect()->route('pages.index')->with('success', 'Page updated successfully!');
-}
-
-
-/*public function update(Request $request, Page $page)
-{
-    // Validation rules
-    $request->validate([
-        'title' => 'required|string|max:255',
-        'slug' => [
-            'required',
-            'string',
-            Rule::unique('pages', 'slug')->ignore($page->id),
-            'regex:/^[a-zA-Z0-9#\/-]+$/',
-        ],
-        'page_banner_path' => 'nullable|image|mimes:jpeg,webp,png,jpg,gif|max:2048',
-        'sort' => 'nullable|integer',
-    ]);
-
-    // Get current domain and convert to safe folder name
-    $host = request()->getHttpHost(); // e.g. www.digitalideasltd.in
-    $domainParts = explode('.', $host);
-    
-    // Convert domain into folder-safe format
-    $domain = count($domainParts) >= 2 ? implode('-', $domainParts) : 'theme';
-
-    // Optional: Fallback to 'theme' if domain is not recognized
-    $allowedDomains = ['www-digitalideasltd-in', 'example-com'];
-    if (!in_array($domain, $allowedDomains)) {
-        $domain = 'theme';
-    }
-
-      if ($request->hasFile('page_banner_path')) {
-        $image = $request->file('page_banner_path');
-        $bannerName = $image->getClientOriginalName();
-        $image->storeAs('frontend/themes/default/img/pages/banners', $bannerName, 'public');
-        $page->page_banner_path = $bannerName;
-    }
-
-    // // Handle the page banner upload
-    // if ($request->hasFile('page_banner_path')) {
-    //     $banner = $request->file('page_banner_path');
-    //     $bannerName = $banner->getClientOriginalName();
-
-    //     // Define dynamic path
-    //     $path = "frontend/theme/img/pages/banners";
-
-    //     // Log the path to check where file should be saved
-    //     \Log::info("Attempting to save to: " . $path);
-
-    //     // Ensure the directory exists (recursive)
-    //     // if (!Storage::disk('public')->exists($path)) {
-    //     //     Storage::disk('public')->makeDirectory($path);
-    //     //     \Log::info("Created folder: " . $path);
-    //     // }
-
-    //     // Store file
-    //     $banner->storeAs($path, $bannerName, 'public');
-
-    //     // Update model
-    //     $page->page_banner_path = $bannerName;
-    // }
-
-    // Update the page, excluding unnecessary fields
-    $page->update($request->except(['_token', '_method', 'page_banner_path']));
-
-    return redirect()->route('pages.index')->with('success', 'Page updated successfully!');
-}*/
 
 
     public function destroy(Page $page)

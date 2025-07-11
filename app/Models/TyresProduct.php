@@ -101,6 +101,7 @@ class TyresProduct extends Model
         'tyre_supplier_name',
         'supplier_id',
         'tyre_collection_price',
+        'tyre_delivery_price',
         'tyre_fullyfitted_price',
         'tyre_mailorder_price',
         'tyre_mobilefitted_price',

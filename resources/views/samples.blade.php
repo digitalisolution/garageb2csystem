@@ -13,7 +13,26 @@
     <title>{{$garage->garage_name}}</title>
 
     <!-- logo -->
-    <link rel="shortcut icon" href="{{ asset('img/favicon.png') }}">
+@php
+$domain = str_replace('.', '-', request()->getHost());
+$favicon = null;
+
+if (!empty($garage->favicon)) {
+$domainFaviconPath = public_path("frontend/{$domain}/img/logo/{$garage->favicon}");
+$themeFaviconPath = public_path("frontend/themes/{$garage->theme}/img/logo/{$garage->favicon}");
+
+if (file_exists($domainFaviconPath)) {
+$favicon = asset("frontend/{$domain}/img/logo/{$garage->favicon}") . '?v=' . time();
+} elseif (file_exists($themeFaviconPath)) {
+$favicon = asset("frontend/themes/{$garage->theme}/img/logo/{$garage->favicon}") . '?v=' . time();
+}
+}
+// Default fallback
+if (!$favicon) {
+$favicon = asset("frontend/themes/default/img/favicon.png") . '?v=' . time();
+}
+@endphp
+    <link rel="icon" type="image/png" href="{{ $favicon }}">
     <title>{{ config('app.name') }}</title>
     <script src="{{ asset('js/jQuery.min.js') }}"></script>
     <script src="{{ mix('js/app.js')}}"></script>

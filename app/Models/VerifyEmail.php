@@ -20,6 +20,7 @@ class VerifyEmail extends Model
 		'email_from',
 		'to_verified',
 		'status',
+		'ip',
 		'created_on',
 	];
 

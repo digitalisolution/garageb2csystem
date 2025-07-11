@@ -290,6 +290,9 @@ class TyrePricingController extends Controller
                     case 'collection':
                         $priceColumn = 'tyre_collection_price';
                         break;
+                        case 'delivery':
+                        $priceColumn = 'tyre_delivery_price';
+                        break;
                     case 'trade':
                         $priceColumn = 'trade_costprice';
                         break;
@@ -314,6 +317,7 @@ class TyrePricingController extends Controller
                         'tyre_mailorder_price' => $newPrice,
                         'tyre_mobilefitted_price' => $newPrice,
                         'tyre_collection_price' => $newPrice,
+                        'tyre_delivery_price' => $newPrice,
                     ]);
             }
         }

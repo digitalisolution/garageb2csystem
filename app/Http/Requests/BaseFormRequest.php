@@ -66,6 +66,12 @@ class BaseFormRequest extends FormRequest
         if (!$recaptchaData['success']) {
             throw new \Exception('Google reCAPTCHA verification failed. Please try again.');
         }
+        
+         if (isset($recaptchaData['score'])) {
+        if ($recaptchaData['score'] < 0.5) {
+            throw new \Exception('reCAPTCHA v3 score too low. Suspected bot.');
+        }
+    }
     }
     public function messages(): array
     {

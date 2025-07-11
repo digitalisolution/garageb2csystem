@@ -218,8 +218,9 @@ class TyresController extends Controller
                 'product_type' => $request->product_type ?? 'tyre',
                 'tyre_fullyfitted_price' => $request->tyre_fullyfitted_price,
                 'tyre_mailorder_price' => $request->tyre_mailorder_price,
-                'tyre_mobilefitted_price' => $request->tyre_mobilefitted_price,
+                'tyre_mobilefittcollectioned_price' => $request->tyre_mobilefitted_price,
                 'tyre_collection_price' => $request->tyre_collection_price,
+                'tyre_delivery_price' => $request->tyre_delivery_price,
                 'lead_time' => $request->lead_time,
                 'trade_costprice' => $request->trade_costprice,
             ]);
@@ -319,6 +320,7 @@ class TyresController extends Controller
                 'tyre_mailorder_price' => $request->tyre_mailorder_price,
                 'tyre_mobilefitted_price' => $request->tyre_mobilefitted_price,
                 'tyre_collection_price' => $request->tyre_collection_price,
+                'tyre_delivery_price' => $request->tyre_delivery_price,
                 'lead_time' => $request->lead_time,
                 'trade_costprice' => $request->trade_costprice,
             ]);
@@ -425,6 +427,7 @@ class TyresController extends Controller
             'mailorder'              => 'tyre_mailorder_price',
             'mobile_fitted'          => 'tyre_mobilefitted_price',
             'collection'             => 'tyre_price_collection',
+            'delivery'               => 'tyre_delivery_price',
             'trade_customer_price'   => 'trade_costprice',
         ];
 
