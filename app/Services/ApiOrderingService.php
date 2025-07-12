@@ -105,6 +105,7 @@ class ApiOrderingService
 
             // Fetch all tyres (excluding services)
             $tyreItems = WorkshopTyre::where('workshop_id', $orderId)
+                ->where('ref_type', 'workshop')
                 ->where('product_type', 'tyre')
                 ->get();
 

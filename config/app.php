@@ -175,8 +175,6 @@ return [
         // App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
-        App\Providers\BondServiceProvider::class,
-        App\Providers\EdenServiceProvider::class,
 
         App\Providers\ThemeViewServiceProvider::class,
         App\Providers\MailServiceProvider::class,

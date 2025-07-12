@@ -28,7 +28,7 @@ use App\Http\Controllers\ViewController\CustomerAccountController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\MailTyrePricingController;
 use App\Http\Controllers\TyreImportController;
-use App\Http\Controllers\BondApiController;
+// use App\Http\Controllers\BondApiController;
 //use App\Http\Controllers\EdenApiController;
 use App\Http\Controllers\VrmController;
 use App\Http\Controllers\VehicleDetailController;
@@ -524,7 +524,7 @@ Route::middleware('auth:web')->group(function () {
     Route::get('/AutoCare/supplier/install/{id}', [TyreImportController::class, 'install'])->name('supplier.install');
 
 
-    Route::post('/bond/place-order', [BondApiController::class, 'placeOrder']);
+    // Route::post('/bond/place-order', [BondApiController::class, 'placeOrder']);
     //Route::post('/eden/test-order', [EdenApiController::class, 'placeOrder']);
 
     // product sale:sale
