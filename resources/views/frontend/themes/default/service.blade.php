@@ -28,10 +28,10 @@
                 <div class="service_bank">
                     @foreach ($services as $service)
                         <div class="service_card">
-                            @if($service->cost_price > 0)
-                            <span class="cost_price">  
-                                Cost: &pound;{{$service->tax_class_id == 9 ? number_format($service->cost_price * 1.20, 2) : number_format($service->cost_price, 2)  }}
-                            </span>
+                            @if($service->cost_price > 0 && $service->price_type == 'fixed-price') 
+                                <span class="cost_price"> Cost: &pound;{{ $service->tax_class_id == 9 ? number_format($service->cost_price * 1.20, 2) : number_format($service->cost_price, 2) }} </span>
+                            @elseif($service->price_type == 'free')
+                                <span class="cost_price">Free</span>
                             @endif
 
                             <div class="row align-items-center">
@@ -84,14 +84,20 @@
                                         </ul>
                                         <div class="mt-4">
                                             <a href="{{ route('slug.handle', $service->slug) }}" class="btn btn-dark">View Details</a>
-                                            @if ($service->cost_price > 0)
-                                                <a href="javascript:void(0);" class="btn btn-theme-select add-to-cart" data-id="{{ $service->service_id }}"
-                                                    data-name="{{ $service->name }}" data-price="{{ $service->cost_price }}"
-                                                    data-type="service">Add to Cart</a>
-                                            @else
-                                                <!-- <a href="contact" class="btn btn-theme-select">Quote Now</a> -->
-                                                <a href="tel:{{ $garage->mobile }}" class="btn btn-theme-select">Call Now</a>
-                                            @endif
+                                        @if($service->cost_price > 0 && $service->price_type == 'fixed-price')
+                                                <a href="javascript:void(0);" class="btn btn-theme-select add-to-cart"
+                                                data-id="{{ $service->service_id }}" data-name="{{ $service->name }}"
+                                                data-price="{{ $service->cost_price }}" data-type="service">Add to Cart</a>
+                                        @elseif($service->price_type == 'call-now')
+                                            <a href="tel:{{ $garage->mobile }}" class="btn btn-theme-select">Call Now</a>
+                                        @elseif($service->price_type == 'quote-now')
+                                            <a href="javascript:void(0);" class="btn btn-theme-select btn-enquiry-modal" data-id="{{ $service->service_id }}" data-name="{{ $service->name }}">Quote Now</a>
+
+                                        @elseif($service->cost_price = 0 && $service->price_type == 'free')
+                                            <a href="javascript:void(0);" class="btn btn-theme-select add-to-cart" data-id="{{ $service->service_id }}" data-name="{{ $service->name }}" data-price="0" data-type="service">Add to Cart</a>
+                                        @else
+                                            <a href="tel:{{ $garage->mobile }}" class="btn btn-theme-select">Call Now</a>
+                                        @endif
                                     </div>
                             </div>
 
@@ -116,33 +122,117 @@
                     </div>
                 </div>
                 @endif
-                <!-- <div class="grand-totall">
-                    <div class="title-wrap">
-                        <h4 class="cart-bottom-title section-bg-gary-cart">Selected Service</h4>
-                    </div>
-                    <h5>MOT <span>£33.00</span></h5>
-                    <h4 class="grand-totall-title">Grand Total <span>£33.00</span></h4>
-                    <a href="#">Checkout</a>
-                </div> -->
             </div>
         </div>
 
 
 
-
-
-        <div class="row">
-            <div class="col-md-12">
-
-                <div class="">
-
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 
 @endsection
+<!-- Enquiry Popup Modal -->
+<div class="modal fade" id="quoteEnquiryModal" tabindex="-1" role="dialog" aria-labelledby="quoteModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
+    <div class="modal-content">
+      <form id="quoteEnquiryForm" method="POST" action="{{ route('service.enquiry.submit') }}">
+        @csrf
+        <div class="modal-header">
+          <h5 class="modal-title" id="quoteModalLabel">Get a Quote</h5>
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="row">
+            <!-- Left Column (Vehicle Info) -->
+            <div class="col-md-6">
+              <div class="form-group">
+                <label>Vehicle Reg.No*</label>
+                <input type="text" name="vehicle_reg" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label>Vehicle Mileage</label>
+                <input type="text" name="mileage" class="form-control">
+              </div>
+              <div class="form-group">
+                <label>First Name*</label>
+                <input type="text" name="first_name" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label>Last Name</label>
+                <input type="text" name="last_name" class="form-control">
+              </div>
+              <div class="form-group">
+                <label>Preferred Method of Contact</label>
+                <select name="preferred_contact" class="form-control">
+                  <option>By Email</option>
+                  <option>By Phone</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>E-mail Address*</label>
+                <input type="email" name="email" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label>Phone Number</label>
+                <input type="text" name="phone" class="form-control">
+              </div>
+              <div class="form-group">
+                <label>Address*</label>
+                <input type="text" name="address" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label>Enter Postcode</label>
+                <input type="text" name="postcode" class="form-control">
+              </div>
+              <div class="form-group">
+                <label>Message</label>
+                <textarea name="message" class="form-control" rows="3"></textarea>
+              </div>
+            </div>
+
+            <!-- Right Column (Service Checkboxes) -->
+            <div class="col-md-6">
+              <label>Frequently Selected Services*</label>
+              <div style="max-height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px;">
+                @foreach($services as $s)
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="selected_services[]" value="{{ $s->name }}" id="service_{{ $s->service_id }}">
+                    <label class="form-check-label" for="service_{{ $s->service_id }}">
+                      {{ $s->name }}
+                    </label>
+                  </div>
+                @endforeach
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Send Enquiry</button>
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.btn-enquiry-modal').forEach(button => {
+            button.addEventListener('click', function () {
+                const serviceName = this.getAttribute('data-service');
+
+                // Pre-select the service in the modal if needed
+                document.querySelectorAll('#quoteEnquiryModal input[name="selected_services[]"]').forEach(input => {
+                    input.checked = input.value === serviceName;
+                });
+
+                $('#quoteEnquiryModal').modal('show');
+            });
+        });
+    });
+</script>
 
 <!-- SweetAlert2 CDN -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.0/dist/sweetalert2.all.min.js"></script>
@@ -183,15 +273,12 @@
                                 }
                             });
 
-                            // Update the cart count in the header (total quantity)
                             let newTotalQuantity = data.totalQuantity;
-                            $('.count-style').text(newTotalQuantity); // Update the total quantity
+                            $('.count-style').text(newTotalQuantity); 
 
-                            // Update the total price dynamically in the header dropdown
                             let newTotalPrice = data.cartTotalPrice;
-                            $('.shop-total').text('£' + newTotalPrice); // Update total price
+                            $('.shop-total').text('£' + newTotalPrice); 
 
-                            // Dynamically generate the new cart items list
                             let newCartItems = '';
                             let newSubTotal = 0;
                             let newVatTotal = 0;
@@ -201,8 +288,8 @@
                                 if (data.product.hasOwnProperty(key)) {
                                     const item = data.product[key];
                                     console.log(item);
-                                    const itemTotalPrice = (item.price * item.quantity).toFixed(2); // Calculate total price for the item
-                                    const itemVAT = item.tax_class_id == 9 ? itemTotalPrice * 0.20 : 0; // Calculate VAT for the item
+                                    const itemTotalPrice = (item.price * item.quantity).toFixed(2); 
+                                    const itemVAT = item.tax_class_id == 9 ? itemTotalPrice * 0.20 : 0;
 
                                     newSubTotal += parseFloat(itemTotalPrice);
                                     newVatTotal += parseFloat(itemVAT);
@@ -213,7 +300,7 @@
                                             <div class="shopping-cart-title">
                                                 <div class="d-flex justify-content-between mb-2">
                                                     <h4>${item.model}</h4>
-                                                    <h6>£${itemTotalPrice}</h6> <!-- Display total price for the item -->
+                                                    <h6>£${itemTotalPrice}</h6>
                                                 </div>
                                                 <div class="d-flex justify-content-between align-items-center">
                                                     <div class="item_width">
@@ -232,10 +319,8 @@
                                 }
                             }
 
-                            // Replace the entire cart list with the updated items
                             $('#cart-items-list').html(newCartItems);
 
-                            // Update the totals
                             $('#sub-total').text('£' + newSubTotal.toFixed(2));
                             $('#vat-total').text('£' + newVatTotal.toFixed(2));
                             $('#grand-total').text('£' + newGrandTotal.toFixed(2));

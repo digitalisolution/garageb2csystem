@@ -154,6 +154,7 @@ Route::get('/engines', [CarserviceProductController::class, 'getEngines'])->name
 
 
 Route::get('/service', [App\Http\Controllers\ViewController\ServiceController::class, 'services'])->name('service'); 
+Route::post('/service-enquiry', [App\Http\Controllers\ServiceController::class, 'handleEnquiry'])->name('service.enquiry.submit');
 
 Route::get('/cart/fetch', [CartController::class, 'fetchCartItems'])->name('cart.fetch');
 

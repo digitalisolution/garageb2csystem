@@ -37,6 +37,7 @@ class ServiceController extends Controller
             'display_status' => 'required|integer',
             'status' => 'required|integer',
             'sort_order' => 'nullable|integer',
+            'price_type' => 'required|string|in:fixed-price,call-now,quote-now,free',
             'cost_price' => 'required|numeric|min:0',
             'meta_title' => 'nullable|string|max:150',
             'meta_description' => 'nullable|string',
@@ -116,6 +117,7 @@ class ServiceController extends Controller
             'display_status' => 'required|integer',
             'status' => 'required|integer',
             'sort_order' => 'nullable|integer',
+            'price_type' => 'required|string|in:fixed-price,call-now,quote-now,free',
             'cost_price' => 'required|numeric|min:0',
             'meta_title' => 'nullable|string|max:150',
             'meta_description' => 'nullable|string',
@@ -179,4 +181,21 @@ class ServiceController extends Controller
         $service->delete();
         return redirect()->route('services.index')->with('success', 'Service deleted successfully!');
     }
+
+    public function handleEnquiry(Request $request)
+{
+    $data = $request->validate([
+        'vehicle_reg' => 'required',
+        'first_name' => 'required',
+        'email' => 'required|email',
+        'address' => 'required',
+        'selected_services' => 'required|array',
+    ]);
+
+    // Example: save to DB or send email
+    // Mail::to('admin@example.com')->send(new QuoteEnquiryMail($data));
+
+    return back()->with('success', 'Your enquiry has been sent.');
+}
+
 }

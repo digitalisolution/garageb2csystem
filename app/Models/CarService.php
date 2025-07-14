@@ -12,7 +12,7 @@ class CarService extends Model
     protected $primaryKey = 'service_id'; // Specify the primary key column
     public $incrementing = true; // If the primary key is auto-incrementing
     protected $keyType = 'int';
-    protected $fillable = ['name', 'service_lead_time', 'slug', 'content', 'tax_class_id', 'image', 'inner_image', 'display_status', 'status', 'meta_title', 'meta_description', 'meta_keywords', 'sort_order', 'cost_price', 'service_banner_path', 'robots_noindex_follow', 'exclude_sitemap'];
+    protected $fillable = ['name', 'service_lead_time', 'slug', 'content', 'tax_class_id', 'image', 'inner_image', 'display_status', 'status', 'meta_title', 'meta_description', 'meta_keywords', 'sort_order', 'price_type', 'cost_price', 'service_banner_path', 'robots_noindex_follow', 'exclude_sitemap'];
 
     // Relationship for subpages
 

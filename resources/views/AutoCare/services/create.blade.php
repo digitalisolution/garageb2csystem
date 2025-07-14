@@ -18,13 +18,6 @@
                         value="{{ $service->name ?? old('name') }}" required>
                 </div>
 
-                <!-- Service Lead Time Field -->
-                <div class="col-lg-3 col-md-6 col-12 form-group">
-                    <label for="service_lead_time">Service Lead Time</label>
-                    <input type="text" name="service_lead_time" id="service_lead_time" class="form-control"
-                        value="{{ $service->service_lead_time ?? old('service_lead_time') }}">
-                </div>
-
                 <!-- Slug Field -->
                 <div class="col-lg-3 col-md-6 col-12 form-group">
                     <label for="slug">Slug</label>
@@ -32,10 +25,17 @@
                         value="{{ $service->slug ?? old('slug') }}">
                 </div>
 
+                <!-- Service Lead Time Field -->
+                <div class="col-lg-3 col-md-6 col-12 form-group">
+                    <label for="service_lead_time">Service Lead Time</label>
+                    <input type="text" name="service_lead_time" id="service_lead_time" class="form-control"
+                        value="{{ $service->service_lead_time ?? old('service_lead_time') }}">
+                </div>
+
                 <!-- Long Description Field -->
                 <div class="col-12 form-group">
                     <label for="long_description">Content</label>
-                    <textarea name="content" id="content"
+                    <textarea name="content" rows="6" id="content"
                         class="form-control">{{ $service->content ?? old('content') }}</textarea>
                 </div>
 
@@ -64,28 +64,26 @@
                         $fallbackBannerImageUrl = asset($fallbackbannerPath . $bannerImageFile);
 
                     @endphp
-
-                    <div class="col-lg-6 col-md-6 col-12 form-group">
+                    <!-- Service Icon Field -->
+                    <div class="col-lg-4 col-md-6 col-12 form-group">
                         <label for="image">Service icon</label>
                         <input type="file" name="image" id="image" class="form-control" accept="image/*">
                         @if (!empty($service->image))
                             <img src="{{ $domainImageUrl }}"onerror="this.onerror=null;this.src='{{ $fallbackImageUrl }}';" alt="{{ $service->name ?? old('name') }}" style="width:100px;">
                         @endif
-
                     </div>
 
                     <!-- inner_image Field -->
-                    <div class="col-lg-6 col-md-6 col-12 form-group">
+                    <div class="col-lg-4 col-md-6 col-12 form-group">
                         <label for="iinner_image">Service Image</label>
                         <input type="file" name="inner_image" id="inner_image" class="form-control" accept="inner_image/*">
                         @if (isset($service->inner_image))
-                    <img src="{{ $innerImageUrl }}"onerror="this.onerror=null;this.src='{{ $fallbackInnerImageUrl }}';" alt="{{ $service->name ?? old('name') }}" style="width:100px;">
-                            <!-- <img src="{{ !empty($imagePath) ? $domainImageUrl : $fallbackImageUrl }}" onerror="this.onerror=null;this.src='{{ $fallbackImageUrl }}';" alt="{{ $service->name }}" style="width: 100px;"> -->
+                        <img src="{{ $innerImageUrl }}"onerror="this.onerror=null;this.src='{{ $fallbackInnerImageUrl }}';" alt="{{ $service->name ?? old('name') }}" style="width:100px;">
                         @endif
                     </div>
 
                     <!-- Service Banner Path Field -->
-                    <div class="col-lg-6 col-md-6 col-12 form-group">
+                    <div class="col-lg-4 col-md-6 col-12 form-group">
                         <label for="service_banner_path">Service Banner</label>
                         <input type="file" name="service_banner_path" id="service_banner_path" class="form-control"
                             accept="image/*">
@@ -94,38 +92,45 @@
                         @endif
                     </div>
 
-                <!-- Price Fields -->
-                {{-- <div class="col-lg-6 col-md-6 col-12 form-group">
-                    <label for="price_1.6L">Price for 1.6L</label>
-                    <input type="text" name="price_1.6L" id="price_1.6L" class="form-control"
-                        value="{{ $service->price_1.6L ?? old('price_1.6L') }}" required>
-                </div>
+                    <!-- Price Type Field -->
+                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                        <label for="price_type">Price Type</label>
+                        <select name="price_type" id="price_type" class="form-control" required>
+                            <option value="fixed-price" {{ old('price_type', $service->price_type ?? '') == 'fixed-price' ? 'selected' : '' }}>Fixed Price</option>
+                            <option value="call-now" {{ old('price_type', $service->price_type ?? '') == 'call-now' ? 'selected' : '' }}>Call Now</option>
+                            <option value="quote-now" {{ old('price_type', $service->price_type ?? '') == 'quote-now' ? 'selected' : '' }}>Quote Now</option>
+                            <option value="free" {{ old('price_type', $service->price_type ?? '') == 'free' ? 'selected' : '' }}>Free</option>
+                        </select>
 
-                <div class="col-lg-6 col-md-6 col-12 form-group">
-                    <label for="price_1.6_2.2L">Price for 1.6-2.2L</label>
-                    <input type="text" name="price_1.6_2.2L" id="price_1.6_2.2L" class="form-control"
-                        value="{{ $service->price_1.6_2.2L ?? old('price_1.6_2.2L') }}" required>
-                </div> --}}
+                    </div>
 
-                <!-- Display Status Field -->
-                <div class="col-lg-3 col-md-6 col-12 form-group">
-                    <label for="display_status">Display Status</label>
-                    <select name="display_status" id="display_status" class="form-control" required>
-                        <option value="1" {{ isset($service) && $service->display_status == 1 ? 'selected' : '' }}>
-                            Displayed</option>
-                        <option value="0" {{ isset($service) && $service->display_status == 0 ? 'selected' : '' }}>Hidden
-                        </option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="tax_class_id">Vat:</label>
-                    <select name="tax_class_id" id="tax_class_id" class="form-control" required>
-                        <option value="9" {{ isset($service) && $service->tax_class_id == 9 ? 'selected' : '' }}>Vat
-                        </option>
-                        <option value="0" {{ isset($service) && $service->tax_class_id == 0 ? 'selected' : '' }}>No Vat
-                        </option>
-                    </select>
-                </div>
+                    <!-- Cost Price Field -->
+                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                        <label for="cost_price">Cost Price</label>
+                        <input type="number" name="cost_price" id="cost_price" class="form-control"
+                            value="{{ $service->cost_price ?? old('cost_price') }}" required step="0.01" min="0">
+                    </div>
+
+                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                        <label for="tax_class_id">Vat:</label>
+                        <select name="tax_class_id" id="tax_class_id" class="form-control" required>
+                            <option value="9" {{ isset($service) && $service->tax_class_id == 9 ? 'selected' : '' }}>Vat
+                            </option>
+                            <option value="0" {{ isset($service) && $service->tax_class_id == 0 ? 'selected' : '' }}>No Vat
+                            </option>
+                        </select>
+                    </div>
+                    <!-- Display Status Field -->
+                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                        <label for="display_status">Display Status</label>
+                        <select name="display_status" id="display_status" class="form-control" required>
+                            <option value="1" {{ isset($service) && $service->display_status == 1 ? 'selected' : '' }}>
+                                Displayed</option>
+                            <option value="0" {{ isset($service) && $service->display_status == 0 ? 'selected' : '' }}>Hidden
+                            </option>
+                        </select>
+                    </div>
+                
                 <!-- Status Field -->
                 <div class="col-lg-3 col-md-6 col-12 form-group">
                     <label for="status">Status</label>
@@ -141,34 +146,6 @@
                     <label for="sort_order">Sort Order</label>
                     <input type="number" name="sort_order" id="sort_order" class="form-control"
                         value="{{ $service->sort_order ?? old('sort_order') }}" required>
-                </div>
-
-                <!-- Cost Price Field -->
-                <div class="col-lg-3 col-md-6 col-12 form-group">
-                    <label for="cost_price">Cost Price</label>
-                    <input type="number" name="cost_price" id="cost_price" class="form-control"
-                        value="{{ $service->cost_price ?? old('cost_price') }}" required step="0.01" min="0">
-                </div>
-
-                <!-- Meta Title Field -->
-                <div class="col-lg-3 col-md-6 col-12 form-group">
-                    <label for="meta_title">Meta Title</label>
-                    <input type="text" name="meta_title" id="meta_title" class="form-control"
-                        value="{{ $service->meta_title ?? old('meta_title') }}">
-                </div>
-
-                <!-- Meta Keywords Field -->
-                <div class="col-lg-3 col-md-6 col-12 form-group">
-                    <label for="meta_keywords">Meta Keywords</label>
-                    <input type="text" name="meta_keywords" id="meta_keywords" class="form-control"
-                        value="{{ $service->meta_keywords ?? old('meta_keywords') }}">
-                </div>
-
-                <!-- Meta Description Field -->
-                <div class="col-lg-6 col-md-6 col-12 form-group">
-                    <label for="meta_description">Meta Description</label>
-                    <textarea name="meta_description" id="meta_description"
-                        class="form-control">{{ $service->meta_description ?? old('meta_description') }}</textarea>
                 </div>
 
                 <!-- Robots Noindex Follow Field -->
@@ -191,6 +168,27 @@
                         <option value="0" {{ isset($service) && $service->exclude_sitemap == 0 ? 'selected' : '' }}>No
                         </option>
                     </select>
+                </div>
+
+                <!-- Meta Title Field -->
+                <div class="col-lg-3 col-md-6 col-12 form-group">
+                    <label for="meta_title">Meta Title</label>
+                    <input type="text" name="meta_title" id="meta_title" class="form-control"
+                        value="{{ $service->meta_title ?? old('meta_title') }}">
+                </div>
+
+                <!-- Meta Keywords Field -->
+                <div class="col-lg-3 col-md-6 col-12 form-group">
+                    <label for="meta_keywords">Meta Keywords</label>
+                    <input type="text" name="meta_keywords" id="meta_keywords" class="form-control"
+                        value="{{ $service->meta_keywords ?? old('meta_keywords') }}">
+                </div>
+
+                <!-- Meta Description Field -->
+                <div class="col-lg-6 col-md-6 col-12 form-group">
+                    <label for="meta_description">Meta Description</label>
+                    <textarea name="meta_description" id="meta_description"
+                        class="form-control">{{ $service->meta_description ?? old('meta_description') }}</textarea>
                 </div>
             </div>
             <button type="submit" class="btn btn-primary mt-2">Save</button>
