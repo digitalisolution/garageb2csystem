@@ -46,55 +46,9 @@ $defaultLogoPath = public_path("frontend/themes/theme/img/logo/logo.png");
     --}}
   </ul>
   <ul class="nav navbar-nav ml-auto mr-4">
-<li class="nav-item dropdown d-md-down-none">
-  <a class="nav-link" data-toggle="dropdown" href="#">
-    <i class="icon-bell"></i>
-    <span class="badge badge-pill badge-danger" id="notification-count">
-      {{ $newBookingsCount ?? 0 }}
-    </span>
-  </a>
-  <div class="dropdown-menu dropdown-menu-right notification-dropdown" style="overflow:hidden;">
-    <div class="bg-dark p-3">
-    <div class="d-flex justify-content-between align-items-center">
-      <h5 class="p-0 text-white">New Bookings</h5>
-      <form method="POST" action="{{ route('notifications.markAsRead') }}">
-        @csrf
-        <button type="submit" class="btn btn-sm btn-outline-secondary">Mark all as read</button>
-      </form>
-    </div>
-    </div>
-
-    <div id="notification-items" style="width:350px; max-height:400px; overflow-y: auto;">
-      @foreach($newBookings as $booking)
-  <div class="dropdown-item" id="notification-{{ $booking->id }}">
-    <div class="notification-item">
-      <div>
-    <span class="text-danger mark-as-read-btn" data-id="{{ $booking->id }}" title="Mark as read">
-      <i class="fa fa-check-circle"></i>
-    </span>
-    <span class="badge {{ $booking->paymentStatus }}">{{ $booking->paymentStatus }}</span>
-  </div>
-    <div>
-      <a href="{{ route('workshop.job.view', $booking->id) }}">
-        <strong>Workshop #{{ $booking->id }}</strong> ({{ $booking->vrm.' , '.$booking->name }})<br>
-        @if($booking->description)
-          <small>{{ $booking->description }}</small><br>
-        @endif
-        <div class="d-flex gap-2 align-items-center">
-        <small>{{ $booking->quantity }} {{ $booking->type }}'s - £{{ $booking->grandTotal }}</small>
-        <small class="badge badge-dark ml-auto">{{ $booking->date }}</small>
-        </div>
-      </a>
-    </div>
-    </div>
-  </div>
-@endforeach
-
-    </div>
-  </div>
-</li>
-
-
+     <li class="nav-item d-md-down-none">
+      <a class="nav-link" href="#"><i class="icon-bell"></i><span class="badge badge-pill badge-danger">5</span></a>
+    </li>
     <li class="nav-item d-md-down-none">
       <a class="nav-link" href="#"><i class="icon-list"></i></a>
     </li>
@@ -150,44 +104,3 @@ $defaultLogoPath = public_path("frontend/themes/theme/img/logo/logo.png");
     {{ csrf_field() }}
   </form>
 </header>
-<script>
-  $(document).on('click', '.mark-as-read-btn', function () {
-    const bookingId = $(this).data('id');
-    const row = $('#notification-' + bookingId);
-
-    $.ajax({
-      url: `/ajax/mark-as-read/${bookingId}`,
-      type: 'POST',
-      data: {
-        _token: '{{ csrf_token() }}'
-      },
-      success: function (response) {
-        row.fadeOut(300, function () {
-          $(this).remove();
-        });
-
-        // Decrement counter
-        let countElem = $('#notification-count');
-        let count = parseInt(countElem.text());
-        if (count > 1) {
-          countElem.text(count - 1);
-        } else {
-          countElem.text(0);
-        }
-      },
-      error: function () {
-        alert('Something went wrong.');
-      }
-    });
-  });
-</script>
-
-<style type="text/css">
-.notification-item{display:flex;gap:0;line-height:normal;}
-.notification-item a{color:#333;}
-.notification-item a:hover, .notification-item a:focus{text-decoration:none;background-color:transparent;}
-.app-header.navbar .dropdown-item:active{background-color:#f0f3f5;}
-.app-header.navbar .dropdown-item{white-space:inherit;}
-.notification-item .mark-as-read-btn i{color:darkturquoise;}
-.notification-item .Unpaid, .notification-item .Paid, .notification-item .Partially{padding:2px 5px;}
-</style>

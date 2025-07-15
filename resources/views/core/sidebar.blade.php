@@ -21,6 +21,9 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{{ asset('/AutoCare/workshop/search') }}">Bookings</a>
                         </li>
+                         <li class="nav-item">
+                            <a class="nav-link" href="{{ asset('/AutoCare/estimate/search') }}">Estimates</a>
+                        </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ asset('/AutoCare/workshop/search-invoice') }}">Invoices</a>
                         </li>

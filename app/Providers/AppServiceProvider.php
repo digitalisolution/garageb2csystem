@@ -14,6 +14,7 @@ use Illuminate\Pagination\Paginator;
 use App\Models\GarageDetails;
 use App\Services\BondService;
 use App\Services\EdenService;
+use App\Services\BookingNotificationService;
 
 use Illuminate\Auth\Notifications\ResetPassword;
 
@@ -26,43 +27,47 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        // Custom password reset URL
         ResetPassword::createUrlUsing(function ($user, string $token) {
             return url(route('customer.password.reset', [
                 'token' => $token,
                 'email' => $user->getEmailForPasswordReset(),
             ], false));
         });
-        // Handle HTTP requests for dynamic DB config
+
+        // Handle DB config based on request host
         $this->setSiteDatabaseConfig(request()->getHost());
 
-        // Apply the configuration before running any command
         if ($this->app->runningInConsole()) {
-            // Get site identifier based on your logic or configuration
-            $siteIdentifier = $this->getSiteIdentifierFromConfig(); // Dynamically get the site identifier
+            $siteIdentifier = $this->getSiteIdentifierFromConfig();
             $this->setSiteDatabaseConfig($siteIdentifier);
         }
         Paginator::useBootstrap();
-        // Share cart details and vehicle information with all views
-        view()->composer('*', function ($view) {
-            $cart = session('cart', []);
-            $totalQuantity = array_sum(array_column($cart, 'quantity'));
-            $totalPrice = array_reduce($cart, fn($sum, $item) => $sum + ($item['price'] * $item['quantity']), 0);
+            // 🔹 Global View Data (applies to all views)
+        View::composer('*', function ($view) {
+            // $cart = session('cart', []);
+            // $totalQuantity = array_sum(array_column($cart, 'quantity'));
+            // $totalPrice = array_reduce($cart, fn($sum, $item) => $sum + ($item['price'] * $item['quantity']), 0);
 
-            $view->with('cart', $cart);
-            $view->with('cartTotalQuantity', $totalQuantity);
-            $view->with('cartTotalPrice', number_format($totalPrice, 2));
+            // $view->with('cart', $cart);
+            // $view->with('cartTotalQuantity', $totalQuantity);
+            // $view->with('cartTotalPrice', number_format($totalPrice, 2));
 
-            // Share garage and vehicle details
             $garage = GarageDetails::first();
             $view->with('garage', $garage);
 
-            // $generalSettings = GeneralSettings::all();
-            // View::share('generalSettings', $generalSettings);
-
-            $vehicleDetails = VrmVehicleDetail::all();
-            View::share('vehicleDetails', $vehicleDetails);
+            // $vehicleDetails = \App\Models\VrmVehicleDetail::all();
+            // $view->with('vehicleDetails', $vehicleDetails);
+        });
+        View::composer('core.navbar', function ($view) {
+            $service = app(BookingNotificationService::class);
+            $newBookings = $service->getLatestBookings();
+            $newBookingsCount = $newBookings->count();  // Adjust condition as needed
+            $view->with('newBookings', $newBookings);
+            $view->with('newBookingsCount', $newBookingsCount);
         });
     }
+
 
     /**
      * Get the site identifier from the config file.

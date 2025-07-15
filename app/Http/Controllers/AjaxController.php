@@ -105,6 +105,21 @@ class AjaxController extends Controller
     }
 
 
+        public function markAsRead()
+        {
+            Workshop::where('is_read', false)->update(['is_read' => true]);
+            return redirect()->back()->with('success', 'All bookings marked as read.');
+        }
+       public function markAsReadSingle($id)
+        {
+            $booking = Workshop::findOrFail($id);
+            $booking->is_read = true;
+            $booking->save();
+
+            return response()->json(['success' => true]);
+        }
+
+
     public function createCustomerForWorkshop(Request $request)
     {
     

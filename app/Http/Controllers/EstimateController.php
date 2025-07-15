@@ -7,7 +7,7 @@ use App\Models\tyre_brands;
 use App\Models\TyresProduct;
 use Illuminate\Http\Request;
 use App\Models\Workshop;
-use App\Models\Service;
+use App\Models\Estimate;
 use DB;
 use App\Models\WorkshopProduct;
 use App\Models\WorkshopService;
@@ -35,7 +35,7 @@ use App\Models\WorkshopProductsEstimated;
 use App\Models\PaymentHistory;
 use App\Services\PaymentHistoryService;
 
-class WorkshopController extends Controller
+class EstimateController extends Controller
 {
     protected $paymentHistoryService;
     public function __construct(PaymentHistoryService $paymentHistoryService)
@@ -49,7 +49,7 @@ class WorkshopController extends Controller
     {
         
         // Prepare initial view data
-        $viewData['pageTitle'] = 'Add Workshop';
+        $viewData['pageTitle'] = 'Add Estimate';
         // $viewData['model_select'] = Modal::pluck('model_name', 'id');
         $viewData['tyre_width'] = TyresProduct::pluck('tyre_width', 'product_id');
         $viewData['tyre_profile'] = TyresProduct::pluck('tyre_profile', 'product_id');
@@ -64,7 +64,7 @@ class WorkshopController extends Controller
 
         // For editing an existing workshop
         if (isset($id) && $id != null) {
-            $workshop = Workshop::findOrFail($id);
+            $workshop = Estimate::findOrFail($id);
             $getFormAutoFillup = $workshop->toArray();
 
             // Get vehicle registration number from workshop data
@@ -78,7 +78,7 @@ class WorkshopController extends Controller
             $viewData['counties'] = RegionCounty::where('status', 1)->get();
             $viewData['brands'] = tyre_brands::where('status', 1)->get();
             // dd($viewData);
-            return view('AutoCare.workshop.add', $viewData)->with($getFormAutoFillup);
+            return view('AutoCare.estimate.add', $viewData)->with($getFormAutoFillup);
         }
 
         // For adding new data or updating existing 3
@@ -91,7 +91,7 @@ class WorkshopController extends Controller
                 if (empty($request->input('due_in')) && empty($request->input('due_out'))) {
                     \Log::warning("booking date missing. Workshop not created.");
                     $request->session()->flash('message.level', 'danger');
-                    $request->session()->flash('message.content', 'Please add Due in and Due out before saving the workshop.');
+                    $request->session()->flash('message.content', 'Please add Due in and Due out before saving the estimate.');
                     return redirect()->back()->withInput();
                 }
                 $addressComponents = [
@@ -107,7 +107,7 @@ class WorkshopController extends Controller
                 $saveAndSyncInvoice = $request->has('save_and_sync_invoice');
                 // Data for updating an existing workshop
                 if ($request->has('id') && $request->id != null) {
-                    $existingWorkshop = Workshop::find($request->id);
+                    $existingWorkshop = Estimate::find($request->id);
 
                     if (!$existingWorkshop) {
                         return redirect()->back()->with('message.level', 'danger')->with('message.content', 'Workshop not found.');
@@ -171,7 +171,7 @@ class WorkshopController extends Controller
                     
                     // dd($PartyManage);
                     // Update the workshop record
-                    if (Workshop::whereId($request->id)->update($PartyManage)) {
+                    if (Estimate::whereId($request->id)->update($PartyManage)) {
                         // Clear old related data
                         Booking::where('workshop_id', $request->id)->forceDelete();
                         WorkshopService::where('workshop_id', $request->id)->forceDelete();
@@ -231,7 +231,7 @@ class WorkshopController extends Controller
                     
                     $PartyManage['is_read'] = 1;
 
-                    $newWorkshop = Workshop::create($PartyManage);
+                    $newWorkshop = Estimate::create($PartyManage);
 
                     if ($newWorkshop) {
                         // Save new product and service data
@@ -244,7 +244,7 @@ class WorkshopController extends Controller
 
                 $request->session()->flash('message.level', 'success');
                 $request->session()->flash('message.content', 'Workshop saved successfully!');
-                return redirect('/AutoCare/workshop/search');
+                return redirect('/AutoCare/estimate/search');
             } catch (\Exception $e) {
                 \Log::error("Error saving workshop: " . $e->getMessage());
                 $request->session()->flash('message.level', 'danger');
@@ -252,7 +252,7 @@ class WorkshopController extends Controller
             }
         }
 
-        return view('AutoCare.workshop.add', $viewData);
+        return view('AutoCare.estimate.add', $viewData);
     }
     /**
      * Save workshop product, service, and tire data.
@@ -540,7 +540,7 @@ if ($request->has('vehicle_reg_number') && $request->vehicle_reg_number != null)
     public function convertToInvoice($id)
     {
         try {
-            $workshop = Workshop::findOrFail($id);
+            $workshop = Estimate::findOrFail($id);
             $existingInvoice = Invoice::where('workshop_id', $workshop->id)->first();
             
             $workshopData = $workshop->toArray();
@@ -603,65 +603,6 @@ if ($request->has('vehicle_reg_number') && $request->vehicle_reg_number != null)
         }
     }
 
-    // this is for search
-    // public function view(Request $request)
-    // {
-    //     $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
-    //     // $viewData['model_select'] = Modal::pluck('model_name', 'id');
-    //     $viewData['customerNameSelect'] = Customer::pluck('customer_name', 'id');
-    //     if ($request->isMethod('post')) {
-    //         $viewData['pageTitle'] = 'Add Party';
-    //         $workshop = DB::table('workshops');
-    //         $getFormAutoFillup = $request->all();
-    //         $workshop->where('workshops.deleted_at', '=', null);
-    //         if ($request->has('id') && $request->id != '') {
-    //             $workshop->where('workshops.id', '=', $request->id);
-    //         }
-    //         if ($request->has('customer_id') && $request->customer_id != '') {
-    //             $workshop->where('workshops.customer_id', '=', $request->customer_id);
-    //         }
-    //         if ($request->has('created_at_from') && $request->created_at_from != '') {
-    //             $workshop->whereDate('workshops.created_at', '<=', $request->created_at_from);
-    //         }
-    //         if ($request->has('created_at_to') && $request->created_at_to != '') {
-    //             $workshop->whereDate('workshops.created_at', '>=', $request->created_at_to);
-    //         }
-    //         if ($request->has('mobile') && $request->mobile != '') {
-    //             $workshop->where('workshops.mobile', '=', $request->mobile);
-    //         }
-    //         if ($request->has('email') && $request->email != '') {
-    //             $workshop->where('workshops.email', '=', $request->email);
-    //         }
-    //         if ($request->has('vehicle_reg_number_for_search') && $request->vehicle_reg_number_for_search != '') {
-    //             $workshop->where('workshops.vehicle_reg_number', 'like', '%' . $request->vehicle_reg_number_for_search . '%');
-    //         }
-
-    //         if ($request->has('year') && $request->year != '') {
-    //             $workshop->where('workshops.year', '=', $request->year);
-    //         }
-    //         // $workshop->select('workshops.*', 'modals.model_name as modelNumber');
-    //         $workshop->orderBy('id', 'desc');
-    //         $workshop->paginate(200);
-    //         $workshop = $workshop->get();
-    //         $viewData['workshop'] = json_decode(json_encode($workshop), true);
-    //         return view('AutoCare.workshop.search', $viewData)->with($getFormAutoFillup);
-
-    //     } else {
-    //         $viewData['pageTitle'] = 'Workshop Details';
-    //         $workshop = DB::table('workshops');
-    //         $workshop->where('workshops.deleted_at', '=', null);
-    //         $workshop->orderBy('workshops.id', 'desc');
-    //         $workshop->paginate(200);
-    //         $workshop = $workshop->get();
-    //         $viewData['workshop'] = json_decode(json_encode($workshop), true);
-    //         //  $workshop= DB::table('workshops');
-    //         //$workshop->orderBy('id','desc');
-    //         //$workshop= $workshop->get();
-    //         //$viewData['workshop']=json_decode(json_encode($workshop), true);
-    //         return view('AutoCare.workshop.search', $viewData);
-    //     }
-
-    // }
     public function view(Request $request)
     {
         $viewData['header_link'] = HeaderLink::where("menu_id", '3')
@@ -672,7 +613,7 @@ if ($request->has('vehicle_reg_number') && $request->vehicle_reg_number != null)
         $viewData['customerNameSelect'] = Customer::pluck('customer_name', 'id');
     
         // Always build query based on request query parameters
-        $workshopQuery = DB::table('workshops')->whereNull('deleted_at');
+        $workshopQuery = Estimate::whereNull('deleted_at');
     
         // Apply filters from request (both GET and POST)
         if ($request->filled('id')) {
@@ -734,7 +675,7 @@ if ($request->has('vehicle_reg_number') && $request->vehicle_reg_number != null)
         // If POST, get form input for repopulating fields
         $formAutoFillup = $request->isMethod('post') ? $request->all() : $request->query();
     
-        return view('AutoCare.workshop.search', $viewData, $formAutoFillup);
+        return view('AutoCare.estimate.search', $viewData, $formAutoFillup);
     }
 
 
@@ -780,7 +721,7 @@ if ($request->has('vehicle_reg_number') && $request->vehicle_reg_number != null)
                 $workshop->orderBy('id', 'desc');
                 $workshop = $workshop->get();
                 $viewData['workshop'] = json_decode(json_encode($workshop), true);
-                return view('AutoCare.workshop.search-invoice', $viewData)->with($getFormAutoFillup);
+                return view('AutoCare.estimate.search-invoice', $viewData)->with($getFormAutoFillup);
 
             } else {
                 $viewData['pageTitle'] = 'Workshop Details';
@@ -793,7 +734,7 @@ if ($request->has('vehicle_reg_number') && $request->vehicle_reg_number != null)
                 //$workshop->orderBy('id','desc');
                 //$workshop= $workshop->get();
                 //$viewData['workshop']=json_decode(json_encode($workshop), true);
-                return view('AutoCare.workshop.search-invoice', $viewData);
+                return view('AutoCare.estimate.search-invoice', $viewData);
             }
 
         }
@@ -805,7 +746,7 @@ if ($request->has('vehicle_reg_number') && $request->vehicle_reg_number != null)
         ->exists();
 
     if (!$check) {
-        return redirect()->back()->with('error', 'No payment history found for this workshop.');
+        return redirect()->back()->with('error', 'No payment history found for this estimate.');
     }
 
     // Fetch payment history with customer details and debit logs
@@ -836,7 +777,7 @@ if ($request->has('vehicle_reg_number') && $request->vehicle_reg_number != null)
 
     // Convert to an array
     $viewData['AdminSaleView'] = json_decode(json_encode($all_view), true);
-    return view('AutoCare.workshop.payment_history', $viewData);
+    return view('AutoCare.estimate.payment_history', $viewData);
 }
 
 public function trash(Request $request, $id)
@@ -848,7 +789,7 @@ public function trash(Request $request, $id)
     DB::beginTransaction();
     try {
         // Find the workshop by ID
-        $workshop = Workshop::findOrFail($id);
+        $workshop = Estimate::findOrFail($id);
 
         if (!$workshop) {
             throw new \Exception("Workshop not found.");
@@ -923,7 +864,7 @@ public function trash(Request $request, $id)
 
     // Prepare view data
     $viewData['pageTitle'] = 'Workshop';
-    $viewData['workshop'] = Workshop::paginate(10);
+    $viewData['workshop'] = Estimate::paginate(10);
 
     // Return the search view
     return redirect()->back();
@@ -932,22 +873,22 @@ public function trash(Request $request, $id)
     {
         $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
 
-        $TrashedParty = Workshop::orderBy('deleted_at', 'desc')->onlyTrashed()->simplePaginate(10);
-        return view('AutoCare.workshop.delete', compact('TrashedParty', 'TrashedParty'));
+        $TrashedParty = Estimate::orderBy('deleted_at', 'desc')->onlyTrashed()->simplePaginate(10);
+        return view('AutoCare.estimate.delete', compact('TrashedParty', 'TrashedParty'));
 
     }
     public function permanemetDelete(Request $request, $id)
     {
         $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
-        if (($id != null) && (Workshop::where('id', $id)->forceDelete())) {
+        if (($id != null) && (Estimate::where('id', $id)->forceDelete())) {
             $request->session()->flash('message.level', 'warning');
             $request->session()->flash('message.content', "Workshop was deleted Permanently and Can't rollback in Future!");
         } else {
             session()->flash('status', ['danger', 'Operation was Failed!']);
         }
 
-        $TrashedParty = Workshop::orderBy('deleted_at', 'desc')->onlyTrashed()->simplePaginate(10);
-        return view('AutoCare.workshop.delete', compact('TrashedParty', 'TrashedParty'));
+        $TrashedParty = Estimate::orderBy('deleted_at', 'desc')->onlyTrashed()->simplePaginate(10);
+        return view('AutoCare.estimate.delete', compact('TrashedParty', 'TrashedParty'));
     }
     public function viewIndivisual($id)
     {
@@ -958,7 +899,7 @@ public function trash(Request $request, $id)
             ->get();
     
         // Fetch workshop details
-        $workshop = Workshop::whereId($id)->first(); // Keep as an object
+        $workshop = Estimate::whereId($id)->first(); // Keep as an object
     
         if ($workshop) {
             // Format discount based on type
@@ -1004,7 +945,7 @@ public function trash(Request $request, $id)
             $viewData['workshop'] = $workshop; // Pass the workshop object
             $viewData['workshopId'] = $workshop->id;
             $viewData['paymentHistory'] = $paymentHistory;
-            return view('AutoCare.workshop.view', $viewData);
+            return view('AutoCare.estimate.view', $viewData);
         } else {
             // Handle case where no workshop is found
             return redirect()->back()->with('error', 'Workshop not found.');
@@ -1013,7 +954,7 @@ public function trash(Request $request, $id)
     public function viewByWorkshop($id)
     {
         $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
-        $getIndivisualWorkshopDetail = Workshop::whereId($id)->first()->toArray();
+        $getIndivisualWorkshopDetail = Estimate::whereId($id)->first()->toArray();
         // $WorkshopProduct = DB::table('workshop_products')
         //     ->join('products', 'products.id', '=', 'workshop_products.product_id')
         // ->where('workshop_id', $getIndivisualWorkshopDetail['id'])->get();
@@ -1028,7 +969,7 @@ public function trash(Request $request, $id)
         $viewData['WorkshopTyre'] = $WorkshopTyre;
         // $viewData['WorkshopService'] = $WorkshopService;
         $viewData['workshopId'] = "";
-        return view('AutoCare.workshop.view', $viewData)->with($getIndivisualWorkshopDetail);
+        return view('AutoCare.estimate.view', $viewData)->with($getIndivisualWorkshopDetail);
     }
     public function viewInvoice($id)
     {
@@ -1077,7 +1018,7 @@ public function trash(Request $request, $id)
         // $viewData['workshop_products_estimateds'] = $workshop_products_estimateds;
         $viewData['workshopId'] = "";
             // dd($viewData);
-        return view('AutoCare.workshop.invoice', $viewData);
+        return view('AutoCare.estimate.invoice', $viewData);
     } else {
         // Handle case where no workshop is found
         return redirect()->back()->with('error', 'Workshop not found.');

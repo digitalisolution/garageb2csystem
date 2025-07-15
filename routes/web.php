@@ -10,6 +10,7 @@ use App\Http\Controllers\MobileTyrePricingController;
 use App\Http\Controllers\ViewController\TyresProductController;
 use App\Http\Controllers\TyresController;
 use App\Http\Controllers\WorkshopController;
+use App\Http\Controllers\EstimateController;
 use App\Http\Controllers\CalendarSettingController;
 use App\Http\Controllers\Gateways\DojoController;
 use App\Http\Controllers\ClickTrackingController;
@@ -461,6 +462,30 @@ Route::middleware('auth:web')->group(function () {
 });
 
 
+//estimates route
+
+    Route::get('/AutoCare/estimate/add', 'EstimateController@save');
+    Route::get('/AutoCare/estimate/add/{id}', 'EstimateController@save');
+    Route::get('/AutoCare/estimate/addinvoice/{id}', 'EstimateController@convertToInvoice');
+    Route::get('/validate-tyre-stock/{productId}', 'EstimateController@validateTyreStock');
+    Route::post('/AutoCare/estimate/add', 'EstimateController@save');
+    Route::get('/AutoCare/estimate/search', 'EstimateController@view');
+    Route::post('/AutoCare/estimate/search', 'EstimateController@view')->name('AutoCare.estimate.view');
+    Route::post('/AutoCare/estimate/update', 'EstimateController@save');
+    Route::delete('/AutoCare/estimate/trash/{id}', 'EstimateController@trash');
+    Route::get('/AutoCare/estimate/delete', 'EstimateController@trashedList');
+    Route::get('/AutoCare/estimate/delete/{id}', 'EstimateController@permanemetDelete');
+    Route::get('/AutoCare/estimate/view/{id}', 'EstimateController@viewIndivisual')->name('estimate.job.view');
+    Route::get('/AutoCare/estimate/invoice/{id}', 'EstimateController@viewInvoice');
+    Route::get('/AutoCare/estimate/search-invoice', 'EstimateController@viewSearchInvoice');
+    Route::post('/AutoCare/estimate/search-invoice', 'EstimateController@viewSearchInvoice');
+    Route::get('/AutoCare/estimate/payment_history/{id}', 'EstimateController@viewpaymenthistory');
+    Route::post('/AutoCare/workshop/send-invoice-email', 'EstimateController@sendInvoiceEmail')->name('workshop.sendInvoiceEmail');
+    Route::get('/invoice/preview/{id}', 'EstimateController@previewInvoicePdf')->name('invoice.preview');
+    Route::get('/invoice/download/{id}', 'EstimateController@downloadInvoicePdf')->name('invoice.download');
+
+//estimate end
+
     Route::get('AutoCare/workshop/add/getTyreProducts', [TyresController::class, 'getTyreProducts'])->name('getTyreProducts');
     // Workshop :start
     Route::get('/dashboard', 'MasterformsController@dashboard');
@@ -475,7 +500,7 @@ Route::middleware('auth:web')->group(function () {
     Route::delete('/AutoCare/workshop/trash/{id}', 'WorkshopController@trash');
     Route::get('/AutoCare/workshop/delete', 'WorkshopController@trashedList');
     Route::get('/AutoCare/workshop/delete/{id}', 'WorkshopController@permanemetDelete');
-    Route::get('/AutoCare/workshop/view/{id}', 'WorkshopController@viewIndivisual');
+    Route::get('/AutoCare/workshop/view/{id}', 'WorkshopController@viewIndivisual')->name('workshop.job.view');
     Route::get('/AutoCare/workshop/invoice/{id}', 'WorkshopController@viewInvoice');
     Route::get('/AutoCare/workshop/search-invoice', 'WorkshopController@viewSearchInvoice');
     Route::post('/AutoCare/workshop/search-invoice', 'WorkshopController@viewSearchInvoice');
@@ -545,6 +570,7 @@ Route::middleware('auth:web')->group(function () {
 
 
     Route::get('/dashboard/bookings', [BookingController::class, 'getBookings'])->name('get.bookings');
+
     // Route::post('/bookings', [BookingController::class, 'saveBooking'])->name('save.booking');
     // Route::post('/bookings/{id}/create-job', [BookingController::class, 'createJob'])->name('create.job');
 
@@ -703,6 +729,9 @@ Route::middleware('auth:web')->group(function () {
     Route::post('/ajax/getService', 'AjaxController@getService');
     Route::post('/ajax/getProduct', 'AjaxController@getProduct');
     // Route::post('/ajax/TyresProduct', 'AjaxController@TyresProduct');
+    Route::post('/ajax/mark-as-read', 'AjaxController@markAsRead')->name('notifications.markAsRead');
+    Route::post('/ajax/mark-as-read/{id}', 'AjaxController@markAsReadSingle')->name('notifications.markAsRead.single');
+
     Route::post('/ajax/getModal', 'AjaxController@getModal');
     Route::post('/ajax/getServiceThroughServiceId', 'AjaxController@getServiceThroughServiceId');
     Route::post('/ajax/getServiceTypeForWorkshop', 'AjaxController@getServiceTypeForWorkshop');

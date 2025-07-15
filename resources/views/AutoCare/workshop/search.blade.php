@@ -166,6 +166,13 @@
                 </div>
             </div>
         </div>
+        <div class="bg-white p-2 mb-3 rounded border text-center">
+            <div class="col-8 m-auto">
+                <div class="row">
+                    <div class="col-6"><a class="btn btn-primary text-right btn-block text-center" href="{{ asset('/AutoCare/workshop/add') }}">Create New Workshop</a></div>
+                </div>
+            </div>
+        </div>
         @php
             $paid_price = 0;
             $installmentPayment = 0;
