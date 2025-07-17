@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\TyresProduct;
 use Carbon\Carbon;
 use App\Models\Booking;
+use App\Models\GarageDetails;
 use App\Models\RegionCounty;
 use App\Models\VehicleDetail;
 use App\Models\Countries;
@@ -33,6 +34,7 @@ use App\Http\Controllers\Controller;
 use App\Services\EmailValidationService;
 use App\Services\ApiOrderingService;
 use App\Services\UpdateOrderQtyService;
+use App\Rules\NoTestCustomer;
 
 class CheckoutController extends Controller
 {
@@ -828,26 +830,37 @@ private function attachVehicleToCustomer(int $customerId, ?string $vehicleRegNum
 
     protected function sendOrderConfirmationEmail(array $validated, $orderId)
     {
+        $nameRule = new NoTestCustomer();
+        $emailRule = new NoTestCustomer();
+
+        if (
+            !$nameRule->passes('customer_name', $validated['customer_name']) ||
+            !$emailRule->passes('email', $validated['email'])
+        ) {
+            Log::info('Skipping email due to spam-like customer details.', [
+                'customer_name' => $validated['customer_name'],
+                'email' => $validated['email'],
+            ]);
+            return true;
+        }
+
         try {
-            // Customer details
             $customer = [
                 'customer_name' => $validated['customer_name'],
                 'email' => $validated['email'],
             ];
 
-            // Retrieve garage details
-            $garage = \App\Models\GarageDetails::first();
-            $garageEmail = $this->getGarageEmail();
-            $garageName = $garage ? $garage->garage_name : config('mail.from.name');
+            $garage = GarageDetails::first();
+            $garageEmail = $garage?->email;
 
-            // Send email to the customer
+            // Send to customer
             Mail::to($customer['email'])->send(new SendMailToCustomer($orderId, $customer, $garage));
 
-            // Send email to the owner
+            // Send to owner
             $ownerEmail = 'info@digitalideasltd.co.uk';
             Mail::to($ownerEmail)->send(new OrderToGarage($orderId, $customer, $garage));
 
-            // Send email to the garage
+            // Send to garage
             if ($garageEmail) {
                 Mail::to($garageEmail)->send(new OrderToGarage($orderId, $customer, $garage));
             } else {
@@ -861,31 +874,6 @@ private function attachVehicleToCustomer(int $customerId, ?string $vehicleRegNum
             ]);
         }
     }
-    /**
-     * Retrieve the garage email address.
-     *
-     * @return string|null
-     */
-    private function getGarageEmail()
-    {
-        try {
-            $garage = \App\Models\GarageDetails::first();
-            if ($garage) {
-                // Log::info('Garage fetched in getGarageEmail:', ['garage' => $garage->toArray()]);
-            } else {
-                // Log::warning('No garage found in getGarageEmail.');
-            }
-
-            return $garage ? $garage->email : null;
-        } catch (\Exception $e) {
-            Log::error('Error in getGarageEmail:', [
-                'error_message' => $e->getMessage(),
-                'error_trace' => $e->getTraceAsString(),
-            ]);
-            return null;
-        }
-    }
-
 
      public function orderSuccess(Request $request)
     {

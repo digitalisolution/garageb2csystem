@@ -10,6 +10,7 @@ use App\Mail\ContactToCustomer;
 use App\Mail\ContactToAdmin;
 use App\Models\VerifyEmail;
 use Illuminate\Http\Request;
+use App\Rules\NotSpamContent;
 use Illuminate\Support\Facades\Mail;
 use App\Models\MetaSettings;
 use Verifalia\VerifaliaRestClient;
@@ -43,8 +44,6 @@ class ServiceController extends Controller
         return view('serviceDetails', compact('service'));
     }
 
-
-
     public function submitContactForm(Request $request)
     {
         // Fetch Google reCAPTCHA settings from the database
@@ -59,8 +58,8 @@ class ServiceController extends Controller
         $rules = [
             'name' => 'required|string|max:255',
             'email' => 'required|email',
-            'subject' => 'required|string|max:255',
-            'message' => 'required|string',
+            'subject' => ['required', new NotSpamContent()],
+            'message' => ['required', new NotSpamContent()],
         ];
 
         if ($recaptchaStatus === 'active') {

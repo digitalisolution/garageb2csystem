@@ -61,10 +61,9 @@
                                 <th>Season</th>
                                 <th>available</th>
                                 <th>Price</th>
-                                <th>Selling Price</th>
+                                <th>SP inc. VAT</th>
                                 <th>Trade Price</th>
                                 <th>Supplier</th>
-                                <th>date available</th>
                                 <th>Select</th>
                             </tr>
                         </thead>

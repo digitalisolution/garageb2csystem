@@ -291,15 +291,6 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <!-- <div class="radio_wrap">
-                                                                                                            <label class="radio_wrap mr-3">
-                                                                                                            <input type="radio" name="is_complete" checked value="0">No
-                                                                                                            </label>
-                                                                                                            <label class="radio_wrap">
-                                                                                                            <input type="radio" name="is_complete" {{ isset($is_complete) && $is_complete == 1 ? 'checked'
-                                                                                                            : '' }} value="1">Yes
-                                                                                                            </label>
-                                                                                                            </div> -->
                                                 <div class="invalid-feedback">
                                                     {{ $errors->has('status') ? $errors->first('status', ':status') : '' }}
                                                 </div>
@@ -685,14 +676,14 @@
                             @endphp
                             @foreach ($workshopTyreData as $key => $value)
                             @php
-            $quantity = $value->quantity ?? 1; // Default to 1 if not set
+            $quantity = $value->quantity ?? 1;
             $tax_class_id = $value->tax_class_id ?? 0;
-            $vatRate = ($tax_class_id == 9) ? 0.2 : 0; // 20% VAT if tax_class_id is 9, otherwise 0%
-            $price = $value->cost_price ?? 0; // Default to 0 if not set
-            $rate = $value->margin_rate ?? 0; // Default to 0
-            $subtotal = $rate * $quantity; // Subtotal without VAT
-            $vatAmount = $subtotal * $vatRate; // VAT amount
-            $totalAmount = $subtotal + $vatAmount; // Total with VAT
+            $vatRate = ($tax_class_id == 9) ? 0.2 : 0;
+            $price = $value->cost_price ?? 0;
+            $rate = $value->margin_rate ?? 0;
+            $subtotal = $rate * $quantity;
+            $vatAmount = $subtotal * $vatRate;
+            $totalAmount = $subtotal + $vatAmount;
                             @endphp
 
                             <tr id="AddRowForProduct{{ $incrementedId }}">
@@ -877,8 +868,8 @@
     <button type="submit" class="btn btn-sm btn-primary" name="save_only"> 
         <i class="fa fa-dot-circle-o"></i> {{ isset($id) ? 'Update' : 'Add' }}
     </button>
-    <button type="submit" class="btn btn-sm btn-success" name="save_and_sync_invoice"> 
-        <i class="fa fa-file-invoice"></i> {{ isset($id) ? 'Update & Sync Invoice' : 'Add & Sync Invoice' }}
+    <button type="submit" class="btn btn-sm btn-success" name="save_and_sync_Workshop"> 
+        <i class="fa fa-file-Workshop"></i> {{ isset($id) ? 'Update & Sync Workshop' : 'Add & Sync Workshop' }}
     </button>
     <button type="reset" class="btn btn-sm btn-danger" name="reset"> 
         <i class="fa fa-ban"></i> Reset

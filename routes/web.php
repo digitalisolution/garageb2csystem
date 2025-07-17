@@ -466,7 +466,7 @@ Route::middleware('auth:web')->group(function () {
 
     Route::get('/AutoCare/estimate/add', 'EstimateController@save');
     Route::get('/AutoCare/estimate/add/{id}', 'EstimateController@save');
-    Route::get('/AutoCare/estimate/addinvoice/{id}', 'EstimateController@convertToInvoice');
+    Route::get('/AutoCare/estimate/addWorkshop/{id}', 'EstimateController@convertToWorkshop');
     Route::get('/validate-tyre-stock/{productId}', 'EstimateController@validateTyreStock');
     Route::post('/AutoCare/estimate/add', 'EstimateController@save');
     Route::get('/AutoCare/estimate/search', 'EstimateController@view');
@@ -476,13 +476,10 @@ Route::middleware('auth:web')->group(function () {
     Route::get('/AutoCare/estimate/delete', 'EstimateController@trashedList');
     Route::get('/AutoCare/estimate/delete/{id}', 'EstimateController@permanemetDelete');
     Route::get('/AutoCare/estimate/view/{id}', 'EstimateController@viewIndivisual')->name('estimate.job.view');
-    Route::get('/AutoCare/estimate/invoice/{id}', 'EstimateController@viewInvoice');
-    Route::get('/AutoCare/estimate/search-invoice', 'EstimateController@viewSearchInvoice');
-    Route::post('/AutoCare/estimate/search-invoice', 'EstimateController@viewSearchInvoice');
     Route::get('/AutoCare/estimate/payment_history/{id}', 'EstimateController@viewpaymenthistory');
-    Route::post('/AutoCare/workshop/send-invoice-email', 'EstimateController@sendInvoiceEmail')->name('workshop.sendInvoiceEmail');
-    Route::get('/invoice/preview/{id}', 'EstimateController@previewInvoicePdf')->name('invoice.preview');
-    Route::get('/invoice/download/{id}', 'EstimateController@downloadInvoicePdf')->name('invoice.download');
+    Route::post('/AutoCare/estimate/send-estimate-email', 'EstimateController@sendEstimateEmail')->name('estimate.sendEstimateEmail');
+    Route::get('/estimate/preview/{id}', 'EstimateController@previewEstimatePdf')->name('estimate.preview');
+    Route::get('/estimate/download/{id}', 'EstimateController@downloadEstimatePdf')->name('estimate.download');
 
 //estimate end
 
@@ -648,6 +645,9 @@ Route::middleware('auth:web')->group(function () {
     // Route::get('/AutoCare/customer/statement', 'CustomerController@getStatement')->name('AutCare.customer.statement');
     Route::get('/AutoCare/customer/statement/pdf', 'CustomerController@downloadStatementPDF')->name('AutoCare.customer.statement.pdf');
     Route::post('/AutoCare/customer/statement/email', 'CustomerController@sendStatementEmail')->name('AutoCare.customer.statement.email');
+    Route::get('/customers/{id}/statement/preview', 'CustomerController@previewStatementPdf')->name('customer.statement.preview');
+Route::get('/customers/{id}/statement/download', 'CustomerController@downloadStatementPdf')->name('customer.statement.download');
+Route::post('/customers/statement/email', 'CustomerController@sendStatementEmail')->name('customer.statement.email');
 
     // Start: Master Form Details
     Route::post('/master/brands', 'MasterController@brand');

@@ -14,6 +14,7 @@ if (!function_exists('getDefaultEmailBody')) {
         $invoiceNumber = $data->id ?? 'N/A';
         $invoiceStatus = getStatusText($data->payment_status ?? null);
         $emailSignature = getGarageDetails()->garage_name;
+        $website_prefix_code = get_option('website_prefix_code');
 
         // Define the styled HTML content
         return "
@@ -24,12 +25,88 @@ if (!function_exists('getDefaultEmailBody')) {
                 Thank you for your custom.
             </p>
             <p style=\"font-family: Arial, sans-serif; font-size: 14px; color: #333;\">
-                We have prepared the following invoice for you: <strong>#{$invoiceNumber}</strong>
+                We have prepared the following invoice for you: <strong>#{$website_prefix_code}{$invoiceNumber}</strong>
             </p>
             <p style=\"font-family: Arial, sans-serif; font-size: 14px; color: #333;\">
                 Invoice status: 
                 <span style=\"background-color: " . getInvoiceStatusColor($data->payment_status ?? null) . "; color: #fff; padding: 2px 5px;\">{$invoiceStatus}</span>
             </p>
+            <p style=\"font-family: Arial, sans-serif; font-size: 14px; color: #333;\">
+                Please find the attachment below.
+            </p>
+            <p style=\"font-family: Arial, sans-serif; font-size: 14px; color: #333;\">
+                Kind Regards,<br>
+                {$emailSignature}
+            </p>
+        ";
+    }
+}
+
+if (!function_exists('getEstimateEmailBody')) {
+    /**
+     * Generate the default email body with dynamic content.
+     *
+     * @param array $data
+     * @return string
+     */
+    function getEstimateEmailBody($data)
+    {
+        // Extract dynamic values from the data array
+        $contactFirstName = $data->name ?? 'Customer';
+        $invoiceNumber = $data->id ?? 'N/A';
+        $invoiceStatus = getStatusText($data->payment_status ?? null);
+        $emailSignature = getGarageDetails()->garage_name;
+        $website_prefix_code = get_option('website_prefix_code');
+
+        // Define the styled HTML content
+        return "
+            <p style=\"font-family: Arial, sans-serif; font-size: 14px; color: #333;\">
+                Dear {$contactFirstName},
+            </p>
+            <p style=\"font-family: Arial, sans-serif; font-size: 14px; color: #333;\">
+                Thank you for your custom.
+            </p>
+            <p style=\"font-family: Arial, sans-serif; font-size: 14px; color: #333;\">
+                We have prepared the following Estimate for you: <strong>#EST-{$website_prefix_code}{$invoiceNumber}</strong>
+            </p>
+            <p style=\"font-family: Arial, sans-serif; font-size: 14px; color: #333;\">
+                Please find the attachment below.
+            </p>
+            <p style=\"font-family: Arial, sans-serif; font-size: 14px; color: #333;\">
+                Kind Regards,<br>
+                {$emailSignature}
+            </p>
+        ";
+    }
+}
+
+if (!function_exists('getStatementEmailBody')) {
+    /**
+     * Generate the default email body with dynamic content.
+     *
+     * @param array $data
+     * @return string
+     */
+    function getStatementEmailBody($data)
+    {
+        // Extract dynamic values from the data array
+        $contactFirstName = $data->name ?? 'Customer';
+        $statementNumber = $data->id ?? 'N/A';
+        $invoiceStatus = getStatusText($data->payment_status ?? null);
+        $emailSignature = getGarageDetails()->garage_name;
+
+        // Define the styled HTML content
+        return "
+            <p style=\"font-family: Arial, sans-serif; font-size: 14px; color: #333;\">
+                Dear {$contactFirstName},
+            </p>
+            <p style=\"font-family: Arial, sans-serif; font-size: 14px; color: #333;\">
+                Thank you for your custom.
+            </p>
+            <p style=\"font-family: Arial, sans-serif; font-size: 14px; color: #333;\">
+                We have prepared the following Statement for you: <strong>STAT #{$statementNumber}</strong>
+            </p>
+
             <p style=\"font-family: Arial, sans-serif; font-size: 14px; color: #333;\">
                 Please find the attachment below.
             </p>

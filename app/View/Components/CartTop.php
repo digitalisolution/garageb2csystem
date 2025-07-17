@@ -35,7 +35,7 @@ class CartTop extends ViewComponent
                 } elseif ($item['type'] === 'service') {
                     $product = CarService::find($item['id']);
                 } else {
-                    continue; // Skip unknown types
+                    continue;
                 }
 
                 if ($product) {
@@ -47,8 +47,8 @@ class CartTop extends ViewComponent
                         'price' => $product->tyre_fullyfitted_price ?? $product->cost_price,
                         'quantity' => $item['quantity'],
                         'total' => ($product->tyre_fullyfitted_price ?? $product->cost_price) * $item['quantity'],
-                        'fitting_type' => $item['fitting_type'] ?? null, // Include fitting type
-                        'tax_class_id' => $product->tax_class_id ?? 0, // Include tax class ID
+                        'fitting_type' => $item['fitting_type'] ?? null,
+                        'tax_class_id' => $product->tax_class_id ?? 0,
                     ];
                 }
             }

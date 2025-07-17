@@ -15,9 +15,9 @@
                         Workshop</a>
                     <ul class="nav-dropdown-items">
 
-                        <li class="nav-item">
+                        <!-- <li class="nav-item">
                             <a class="nav-link" href="{{ asset('/AutoCare/workshop/add') }}">Add</a>
-                        </li>
+                        </li> -->
                         <li class="nav-item">
                             <a class="nav-link" href="{{ asset('/AutoCare/workshop/search') }}">Bookings</a>
                         </li>

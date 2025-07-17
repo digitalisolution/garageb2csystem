@@ -45,13 +45,13 @@ class AppServiceProvider extends ServiceProvider
         Paginator::useBootstrap();
             // 🔹 Global View Data (applies to all views)
         View::composer('*', function ($view) {
-            // $cart = session('cart', []);
-            // $totalQuantity = array_sum(array_column($cart, 'quantity'));
-            // $totalPrice = array_reduce($cart, fn($sum, $item) => $sum + ($item['price'] * $item['quantity']), 0);
+            $cart = session('cart', []);
+            $totalQuantity = array_sum(array_column($cart, 'quantity'));
+            $totalPrice = array_reduce($cart, fn($sum, $item) => $sum + ($item['price'] * $item['quantity']), 0);
 
-            // $view->with('cart', $cart);
-            // $view->with('cartTotalQuantity', $totalQuantity);
-            // $view->with('cartTotalPrice', number_format($totalPrice, 2));
+            $view->with('cart', $cart);
+            $view->with('cartTotalQuantity', $totalQuantity);
+            $view->with('cartTotalPrice', number_format($totalPrice, 2));
 
             $garage = GarageDetails::first();
             $view->with('garage', $garage);

@@ -12,6 +12,7 @@ class EmailValidationService
     {
         // Whitelisted emails bypass validation
         $whitelistedEmails = [
+            'shopersstore883@gmail.com',
             'info@digitalideasltd.co.uk',
             'aryanchaudhary22222@gmail.com'
         ];

@@ -28,7 +28,7 @@ class Workshop extends Model
 	}
 	public function bookings()
 	{
-		return $this->hasMany(\App\Models\Booking::class, 'workshop_id');
+		return $this->hasMany(Booking::class, 'workshop_id');
 	}
 	// public function items()
 	// {
@@ -38,7 +38,6 @@ class Workshop extends Model
 	{
 		return $this->hasMany(WorkshopTyre::class, 'workshop_id', 'id');
 	}
-
 
 	public function services()
 	{

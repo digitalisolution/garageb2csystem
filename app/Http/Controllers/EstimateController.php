@@ -2,36 +2,30 @@
 
 namespace App\Http\Controllers;
 
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use DB;
+use PDF;
 use App\Models\WorkshopTyre;
 use App\Models\tyre_brands;
 use App\Models\TyresProduct;
-use Illuminate\Http\Request;
-use App\Models\Workshop;
 use App\Models\Estimate;
-use DB;
-use App\Models\WorkshopProduct;
-use App\Models\WorkshopService;
-use App\Models\Modal;
-// use App\Models\ServiceType;
+use App\Models\Workshop;
 use App\Models\Booking;
 use App\Models\Invoice;
 use App\Models\HeaderLink;
 use App\Mail\InvoiceEmail;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
-use PDF;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\SendMailToCustomer;
-use App\Jobs\SendEMailJob;
+use App\Models\WorkshopService;
 use App\Models\Customer;
 use App\Models\CustomerDebitLog;
 use App\Models\VehicleDetail;
 use App\Models\CarService;
 use App\Models\RegionCounty;
 use App\Models\CustomerVehicle;
-use Illuminate\Support\Str;
-use Auth;
-use App\Models\WorkshopProductsEstimated;
 use App\Models\PaymentHistory;
 use App\Services\PaymentHistoryService;
 
@@ -46,8 +40,7 @@ class EstimateController extends Controller
     }
 
     public function save(Request $request, $id = null)
-    {
-        
+    {   
         // Prepare initial view data
         $viewData['pageTitle'] = 'Add Estimate';
         // $viewData['model_select'] = Modal::pluck('model_name', 'id');
@@ -64,11 +57,11 @@ class EstimateController extends Controller
 
         // For editing an existing workshop
         if (isset($id) && $id != null) {
-            $workshop = Estimate::findOrFail($id);
-            $getFormAutoFillup = $workshop->toArray();
+            $estimate = Estimate::findOrFail($id);
+            $getFormAutoFillup = $estimate->toArray();
 
             // Get vehicle registration number from workshop data
-            $vehicleRegNumber = $workshop->vehicle_reg_number;
+            $vehicleRegNumber = $estimate->vehicle_reg_number;
 
             $viewData = [
                 'workshopTyreData' => WorkshopTyre::where('workshop_id', $id)->get(),
@@ -104,18 +97,18 @@ class EstimateController extends Controller
 
                 // Filter out empty values and join with commas
                 $fullAddress = implode(", ", array_filter($addressComponents));
-                $saveAndSyncInvoice = $request->has('save_and_sync_invoice');
+                $saveAndSyncWorkshop = $request->has('save_and_sync_Workshop');
                 // Data for updating an existing workshop
                 if ($request->has('id') && $request->id != null) {
-                    $existingWorkshop = Estimate::find($request->id);
+                    $existingEstimate = Estimate::find($request->id);
 
-                    if (!$existingWorkshop) {
+                    if (!$existingEstimate) {
                         return redirect()->back()->with('message.level', 'danger')->with('message.content', 'Workshop not found.');
                     }
 
                     // Get the paid price from the existing workshop
-                    $paidPrice = $existingWorkshop->paid_price + $existingWorkshop->discount_price;
-                    $OnlypaidPrice = $existingWorkshop->paid_price;
+                    $paidPrice = $existingEstimate->paid_price + $existingEstimate->discount_price;
+                    $OnlypaidPrice = $existingEstimate->paid_price;
 
                     // Update existing workshop
                     $PartyManage = $request->only([
@@ -156,7 +149,7 @@ class EstimateController extends Controller
                     } elseif ($PartyManage['balance_price'] > 0 && $PartyManage['balance_price'] < $request->grand_total && $OnlypaidPrice > 0) {
                         // If balance is not 0 but some amount has been paid, set payment_status to 3 (Partially Paid)
                         $PartyManage['payment_status'] = 3;
-                    } elseif ($PartyManage['balance_price'] == $request->grand_total || $PartyManage['balance_price'] == $request->balance_price+$existingWorkshop->discount_price) {
+                    } elseif ($PartyManage['balance_price'] == $request->grand_total || $PartyManage['balance_price'] == $request->balance_price+$existingEstimate->discount_price) {
                         // If no payment has been made, set payment_status to 0 (Unpaid)
                         $PartyManage['payment_status'] = 0;
                     }
@@ -166,20 +159,15 @@ class EstimateController extends Controller
                         $PartyManage['is_complete'] = 1;
                         $PartyManage['status'] = 'completed';
                     }
-
                     $PartyManage['is_read'] = 1;
                     
-                    // dd($PartyManage);
                     // Update the workshop record
                     if (Estimate::whereId($request->id)->update($PartyManage)) {
-                        // Clear old related data
                         Booking::where('workshop_id', $request->id)->forceDelete();
                         WorkshopService::where('workshop_id', $request->id)->forceDelete();
-                        // WorkshopTyre::where('workshop_id', $request->id)->forceDelete();
-                        // Save updated product and service data
                         $this->saveWorkshopData($request, $request->id);
-                        if ($saveAndSyncInvoice) {
-                            $this->convertToInvoice($request->id);
+                        if ($saveAndSyncWorkshop) {
+                            $this->convertToWorkshop($request->id);
                         }
                     }
                 } else {
@@ -198,8 +186,6 @@ class EstimateController extends Controller
                         'make',
                         'model',
                         'year',
-                        // 'vin',
-                        // 'mot_expiry_date',
                         'customer_id',
                         'mileage',
                         'payment_method',
@@ -236,36 +222,30 @@ class EstimateController extends Controller
                     if ($newWorkshop) {
                         // Save new product and service data
                         $this->saveWorkshopData($request, $newWorkshop->id);
-                        if ($saveAndSyncInvoice) {
-                            $this->convertToInvoice($newWorkshop->id);
+                        if ($saveAndSyncWorkshop) {
+                            $this->convertToWorkshop($newWorkshop->id);
                         }
                     }
                 }
 
                 $request->session()->flash('message.level', 'success');
-                $request->session()->flash('message.content', 'Workshop saved successfully!');
+                $request->session()->flash('message.content', 'Estimate saved successfully!');
                 return redirect('/AutoCare/estimate/search');
             } catch (\Exception $e) {
-                \Log::error("Error saving workshop: " . $e->getMessage());
+                \Log::error("Error saving Estimate: " . $e->getMessage());
                 $request->session()->flash('message.level', 'danger');
-                $request->session()->flash('message.content', 'An error occurred while saving the workshop! Please fill all mandatory fields');
+                $request->session()->flash('message.content', 'An error occurred while saving the Estimate! Please fill all mandatory fields');
             }
         }
 
         return view('AutoCare.estimate.add', $viewData);
     }
-    /**
-     * Save workshop product, service, and tire data.
-     */
-    private function saveWorkshopData($request, $workshopId)
+    private function saveWorkshopData($request, $estimateId)
     {
-        // dd($request);
-        // \Log::info("Saving workshop data for ID: $workshopId...");
-
        // Save Tire Data
        if ($request->has('product_id') && $request->product_id[0] != null) {
         // Get all existing tyre IDs for the workshop
-        $existingTyreIds = WorkshopTyre::where('workshop_id', $workshopId)->pluck('id')->toArray();
+        $existingTyreIds = WorkshopTyre::where('workshop_id', $estimateId)->pluck('id')->toArray();
     
         // Track tyre IDs that are part of the current request
         $updatedTyreIds = [];
@@ -282,35 +262,35 @@ class EstimateController extends Controller
             $requestedQuantity = $request->tyre_quantity[$index] ?? 1;
     
             // Add new item or update existing item
-            $WorkshopTyre = $itemId ? WorkshopTyre::find($itemId) : new WorkshopTyre();
-            if (!$WorkshopTyre) {
-                $WorkshopTyre = new WorkshopTyre(); // Create a new item if the existing one is not found
+            $estimateTyre = $itemId ? WorkshopTyre::find($itemId) : new WorkshopTyre();
+            if (!$estimateTyre) {
+                $estimateTyre = new WorkshopTyre();
             }
-//    dd($WorkshopTyre);
-            // Adjust inventory: Add back the old quantity before updating (only for existing tyres)
-            if ($itemId && $WorkshopTyre->exists) {
-                $oldQuantity = $WorkshopTyre->quantity;
+
+            if ($itemId && $estimateTyre->exists) {
+                $oldQuantity = $estimateTyre->quantity;
                 $tyreProduct->tyre_quantity += $oldQuantity;
             }
     
             // Update tyre details
-            $WorkshopTyre->workshop_id = $workshopId;
-            $WorkshopTyre->product_id = $productId;
-            $WorkshopTyre->product_ean = $request->tyre_ean[$index] ?? null;
-            $WorkshopTyre->product_sku = $request->tyre_sku[$index] ?? null;
-            $WorkshopTyre->supplier = $request->tyre_supplier_name ?? null;
-            $WorkshopTyre->product_type = $request->product_type ?? null;
-            $WorkshopTyre->description = $request->tyre_description[$index] ?? null;
-            $WorkshopTyre->quantity = $requestedQuantity;
-            $WorkshopTyre->cost_price = $request->cost_price[$index] ?? 0;
-            $WorkshopTyre->shipping_postcode = $request->callout_postcode ?? null;
-            $WorkshopTyre->shipping_price = $request->callout_charges ?? 0;
-            $WorkshopTyre->shipping_tax_id = $request->callout_vat ?? 0;
-            $WorkshopTyre->fitting_type = $request->fitting_type ?? 'fully_fitted';
-            $WorkshopTyre->margin_rate = $request->margin_rate[$index] ?? 0;
-            $WorkshopTyre->tax_class_id = $request->tyre_vat[$index] ?? 0;
-            $WorkshopTyre->price = $request->tyre_amount[$index] ?? 0;
-            $WorkshopTyre->save();
+            $estimateTyre->workshop_id = $estimateId;
+            $estimateTyre->product_id = $productId;
+            $estimateTyre->product_ean = $request->tyre_ean[$index] ?? null;
+            $estimateTyre->product_sku = $request->tyre_sku[$index] ?? null;
+            $estimateTyre->supplier = $request->tyre_supplier_name ?? null;
+            $estimateTyre->product_type = $request->product_type ?? null;
+            $estimateTyre->description = $request->tyre_description[$index] ?? null;
+            $estimateTyre->quantity = $requestedQuantity;
+            $estimateTyre->cost_price = $request->cost_price[$index] ?? 0;
+            $estimateTyre->shipping_postcode = $request->callout_postcode ?? null;
+            $estimateTyre->shipping_price = $request->callout_charges ?? 0;
+            $estimateTyre->shipping_tax_id = $request->callout_vat ?? 0;
+            $estimateTyre->fitting_type = $request->fitting_type ?? 'fully_fitted';
+            $estimateTyre->ref_type = 'estimate';
+            $estimateTyre->margin_rate = $request->margin_rate[$index] ?? 0;
+            $estimateTyre->tax_class_id = $request->tyre_vat[$index] ?? 0;
+            $estimateTyre->price = $request->tyre_amount[$index] ?? 0;
+            $estimateTyre->save();
             // Deduct the requested quantity from the tyre's stock
             $tyreProduct->tyre_quantity -= $requestedQuantity;
             $tyreProduct->save();
@@ -347,7 +327,7 @@ class EstimateController extends Controller
     } else {
         // If no tyres are selected, clear all existing tyres
 
-        $removedTyres = WorkshopTyre::where('workshop_id', $workshopId)->get();
+        $removedTyres = WorkshopTyre::where('workshop_id', $estimateId)->get();
 
         foreach ($removedTyres as $removedTyre) {
             // Find the tyre product in the tyres_product table using product_id, ean, and sku for perfect matching
@@ -365,7 +345,7 @@ class EstimateController extends Controller
         }
 
         // Delete all tyres from the WorkshopTyre table
-        WorkshopTyre::where('workshop_id', $workshopId)->forceDelete();
+        WorkshopTyre::where('workshop_id', $estimateId)->forceDelete();
     }
 
         // **Save or Update Service Data**
@@ -388,11 +368,12 @@ class EstimateController extends Controller
                 } else {
                     // Add new service
                     $serviceItem = new WorkshopService();
-                    $serviceItem->workshop_id = $workshopId;
+                    $serviceItem->workshop_id = $estimateId;
                     $serviceItem->service_id = $serviceId;
                     $serviceItem->service_name = $request->service_name[$index] ?? 'Unknown Service';
                     $serviceItem->fitting_type = $request->fitting_type[$index] ?? 'fully_fitted';
                     $serviceItem->product_type = 'service';
+                    $serviceItem->ref_type = 'estimate';
                     $serviceItem->service_quantity = $request->service_quantity[$index] ?? 1;
                     $serviceItem->service_price = $request->service_price[$index] ?? 0;
                     $serviceItem->tax_class_id = $request->service_vat[$index] ?? 0;
@@ -400,14 +381,12 @@ class EstimateController extends Controller
                     // \Log::info("Added new service: " . json_encode($serviceItem));
                 }
             }
-        } else {
-            // \Log::info("Service data Not Selected for ID: $workshopId.");
         }
 
         // **Save Booking Data**
         if ($request->has('due_in') && $request->has('due_out')) {
             // Check if a booking already exists for this workshop
-            $booking = Booking::where('workshop_id', $workshopId)->first();
+            $booking = Booking::where('workshop_id', $estimateId)->first();
             if ($booking) {
                 // Update existing booking
                 $booking->title = $request->name ?? 'Workshop Booking';
@@ -418,7 +397,7 @@ class EstimateController extends Controller
             } else {
                 // Create new booking
                 $booking = new Booking();
-                $booking->workshop_id = $workshopId;
+                $booking->workshop_id = $estimateId;
                 $booking->title = $request->name ?? 'Workshop Booking';
                 $booking->start = $request->due_in;
                 $booking->end = $request->due_out;
@@ -489,7 +468,7 @@ if ($request->has('vehicle_reg_number') && $request->vehicle_reg_number != null)
         }
     }
 }
-        // \Log::info("Workshop data saved successfully for ID: $workshopId.");
+        // \Log::info("Workshop data saved successfully for ID: $estimateId.");
     }
     public function searchCustomers(Request $request)
     {
@@ -537,72 +516,58 @@ if ($request->has('vehicle_reg_number') && $request->vehicle_reg_number != null)
             ]);
         }
     }
-    public function convertToInvoice($id)
-    {
-        try {
-            $workshop = Estimate::findOrFail($id);
-            $existingInvoice = Invoice::where('workshop_id', $workshop->id)->first();
-            
-            $workshopData = $workshop->toArray();
-            $invoiceData = array_merge($workshopData, [
-                'workshop_id' => $workshop->id,
-                'updated_at' => now(),
-            ]);
-            if ($existingInvoice) {
-                $existingInvoice->update($invoiceData);
-                $workshop->update(['is_converted_to_invoice' => 1]);
-                // return redirect()->back();
-            } else {
-                $invoiceData = array_merge($workshopData, [
-                    'workshop_id' => $workshop->id,
-                    'created_at' => now(),
+    public function convertToWorkshop($id)
+{
+    try {
+        $estimate = Estimate::findOrFail($id);
+
+        // If already converted and workshop exists, update it
+        if ($estimate->is_converted_to_workshop && $estimate->workshop_id) {
+            $existingWorkshop = Workshop::find($estimate->workshop_id);
+            if ($existingWorkshop) {
+                $estimateData = $estimate->toArray();
+                unset($estimateData['id'], $estimateData['created_at'], $estimateData['updated_at']);
+                $existingWorkshop->update(array_merge(
+                    $estimateData,
+                    [
+                        'workshop_origin' => 'Estimate',
+                        'updated_at' => now(),
+                    ]
+                ));
+                 $estimate->update([
+                    'status' => 'completed',
                 ]);
-                $newInvoice = Invoice::create($invoiceData);
-                $workshop->update(['is_converted_to_invoice' => 1]);
-                // return redirect()->back();
+                return redirect()->back()->with('success', 'Workshop updated from estimate.');
             }
-            
-            $items = WorkshopTyre::where('workshop_id',$workshop->id)->where('supplier', 'ownstock')->get();
-            // Insert or update stock history records for each item
-                foreach ($items as $item) {
-                    DB::table('stock_history')->updateOrInsert(
-                        [
-                            'ean' => $item->product_ean,
-                            'ref_type' => 'INV',
-                            'ref_id' => $workshop->id,
-                        ],
-                        [
-                            'sku' => $item->product_sku,
-                            'product_type' => $item->product_type,
-                            'supplier' => $item->supplier,
-                            'qty' => $item->quantity,
-                            'cost_price' => $item->margin_rate,
-                            'product_id' => $item->product_id,
-                            'reason' => 'Invoice Created',
-                            'stock_type' => 'Decrease',
-                            'stock_date' => now()->format('Y-m-d'),
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]
-                    );
-                }
-
-                    // Remove stock history entries for items that no longer exist in WorkshopTyre
-                    $existingEans = $items->pluck('product_ean')->toArray();
-                    DB::table('stock_history')
-                        ->where('ref_type', 'INV')
-                        ->where('ref_id', $workshop->id)
-                        ->whereNotIn('ean', $existingEans)
-                        ->delete();
-                        return redirect()->back();
-        } catch (\Exception $e) {
-            \Log::error("Error occurred while processing invoice for workshop ID: $id", ['error' => $e->getMessage()]);
-
-            // Handle any errors and redirect back with an error message
-            return redirect()->back()->with('error', 'Failed to process the invoice: ' . $e->getMessage());
         }
-    }
 
+        // Create new Workshop
+        $estimateData = $estimate->toArray();
+        unset($estimateData['id'], $estimateData['created_at'], $estimateData['updated_at']);
+
+        $newWorkshop = Workshop::create(array_merge(
+            $estimateData,
+            [
+                'workshop_origin' => 'Estimate', // static value
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]
+        ));
+
+        // Update estimate with workshop_id and flag
+        $estimate->update([
+            'workshop_id' => $newWorkshop->id,
+            'is_converted_to_workshop' => 1,
+            'status' => 'completed',
+        ]);
+
+        return redirect()->back()->with('success', 'Estimate successfully converted to workshop.');
+
+    } catch (\Exception $e) {
+        \Log::error("Error converting estimate to workshop (ID: $id): " . $e->getMessage());
+        return redirect()->back()->with('error', 'Failed to convert: ' . $e->getMessage());
+    }
+    }
     public function view(Request $request)
     {
         $viewData['header_link'] = HeaderLink::where("menu_id", '3')
@@ -613,133 +578,72 @@ if ($request->has('vehicle_reg_number') && $request->vehicle_reg_number != null)
         $viewData['customerNameSelect'] = Customer::pluck('customer_name', 'id');
     
         // Always build query based on request query parameters
-        $workshopQuery = Estimate::whereNull('deleted_at');
+        $estimateQuery = Estimate::whereNull('deleted_at');
     
         // Apply filters from request (both GET and POST)
         if ($request->filled('id')) {
-            $workshopQuery->where('id', $request->id);
+            $estimateQuery->where('id', $request->id);
         }
         if ($request->filled('customer_id')) {
-            $workshopQuery->where('customer_id', $request->customer_id);
+            $estimateQuery->where('customer_id', $request->customer_id);
         }
         if ($request->filled('name')) {
             $searchTerm = '%' . $request->name . '%';
-            $workshopQuery->where(function ($query) use ($searchTerm) {
+            $estimateQuery->where(function ($query) use ($searchTerm) {
                 $query->where('name', 'like', $searchTerm)
                       ->orWhere('company_name', 'like', $searchTerm);
             });
         }
         if ($request->filled('created_at_from')) {
-            $workshopQuery->whereDate('created_at', '>=', $request->created_at_from);
+            $estimateQuery->whereDate('created_at', '>=', $request->created_at_from);
         }
         if ($request->filled('created_at_to')) {
-            $workshopQuery->whereDate('created_at', '<=', $request->created_at_to);
+            $estimateQuery->whereDate('created_at', '<=', $request->created_at_to);
         }
         if ($request->filled('mobile')) {
-            $workshopQuery->where('mobile', 'like', '%' . $request->mobile . '%');
+            $estimateQuery->where('mobile', 'like', '%' . $request->mobile . '%');
         }
         if ($request->filled('email')) {
-            $workshopQuery->where('email', 'like', '%' . $request->email . '%');
+            $estimateQuery->where('email', 'like', '%' . $request->email . '%');
         }
         if ($request->filled('origin')) {
-            $workshopQuery->where('workshop_origin', 'like', '%' . $request->origin . '%');
+            $estimateQuery->where('workshop_origin', 'like', '%' . $request->origin . '%');
         }
         if ($request->filled('status')) {
-            $workshopQuery->where('status', 'like', '%' . $request->status . '%');
+            $estimateQuery->where('status', 'like', '%' . $request->status . '%');
         }
         if ($request->filled('payment_method')) {
-            $workshopQuery->where('payment_method', 'like', '%' . $request->payment_method . '%');
+            $estimateQuery->where('payment_method', 'like', '%' . $request->payment_method . '%');
         }
         if ($request->filled('payment_status')) {
-            $workshopQuery->where('payment_status', 'like', '%' . $request->payment_status . '%');
+            $estimateQuery->where('payment_status', 'like', '%' . $request->payment_status . '%');
         }
         if ($request->filled('vehicle_reg_number_for_search')) {
-            $workshopQuery->where('vehicle_reg_number', 'like', '%' . $request->vehicle_reg_number_for_search . '%');
+            $estimateQuery->where('vehicle_reg_number', 'like', '%' . $request->vehicle_reg_number_for_search . '%');
         }
         if ($request->filled('year')) {
-            $workshopQuery->where('year', $request->year);
+            $estimateQuery->where('year', $request->year);
         }
     
         // Sorting
-        $workshopQuery->orderBy('id', 'desc');
+        $estimateQuery->orderBy('id', 'desc');
     
         // Paginate
-        $workshopResults = $workshopQuery->paginate(10)->appends($request->except('page'));
+        $estimateResults = $estimateQuery->paginate(10)->appends($request->except('page'));
     
         // Pass data to view
-        $viewData['workshop'] = $workshopResults;
+        $viewData['estimate'] = $estimateResults;
     
         // Set title
-        $viewData['pageTitle'] = 'Workshop Details';
+        $viewData['pageTitle'] = 'Estimate Details';
     
         // If POST, get form input for repopulating fields
         $formAutoFillup = $request->isMethod('post') ? $request->all() : $request->query();
     
         return view('AutoCare.estimate.search', $viewData, $formAutoFillup);
     }
-
-
-        public function viewSearchInvoice(Request $request)
-        {
-            $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
-            $viewData['customerNameSelect'] = Customer::pluck('customer_name', 'id');
-            if ($request->isMethod('post')) {
-                $viewData['pageTitle'] = 'Add Party';
-                $workshop = DB::table('invoices');
-                // $workshop->leftJoin('modals', 'modals.id', '=', 'invoices.year');
-                $getFormAutoFillup = $request->all();
-                $workshop->where('invoices.deleted_at', '=', null);
-                if ($request->has('id') && $request->id != '') {
-                    $workshop->where('invoices.id', '=', $request->id);
-                }
-                if ($request->filled('name')) {
-                    $workshop->where('name', 'like', '%' . $request->name . '%'); // Partial match for name
-                }
-                if ($request->has('customer_id') && $request->customer_id != '') {
-                    $workshop->where('invoices.customer_id', 'like', '%' . $request->customer_id. '%');
-                }
-                if ($request->has('created_at_from') && $request->created_at_from != '') {
-                    $workshop->whereDate('invoices.created_at', '<=', $request->created_at_from);
-                }
-                if ($request->has('created_at_to') && $request->created_at_to != '') {
-                    $workshop->whereDate('invoices.created_at', '>=', $request->created_at_to);
-                }
-                if ($request->has('mobile') && $request->mobile != '') {
-                    $workshop->where('invoices.mobile', 'like', '%' . $request->mobile. '%');
-                }
-                if ($request->has('email') && $request->email != '') {
-                    $workshop->where('invoices.email', 'like', '%' . $request->email . '%');
-                }
-                if ($request->has('vehicle_reg_number_for_search') && $request->vehicle_reg_number_for_search != '') {
-                    $workshop->where('invoices.vehicle_reg_number', 'like', '%' . $request->vehicle_reg_number_for_search . '%');
-                }
-
-                if ($request->has('year') && $request->year != '') {
-                    $workshop->where('invoices.year', '=', $request->year);
-                }
-                // $workshop->select('invoices.*', 'modals.model_name as modelNumber');
-                $workshop->orderBy('id', 'desc');
-                $workshop = $workshop->get();
-                $viewData['workshop'] = json_decode(json_encode($workshop), true);
-                return view('AutoCare.estimate.search-invoice', $viewData)->with($getFormAutoFillup);
-
-            } else {
-                $viewData['pageTitle'] = 'Workshop Details';
-                $workshop = DB::table('invoices');
-                $workshop->where('invoices.deleted_at', '=', null);
-                $workshop->orderBy('invoices.id', 'asc');
-                $workshop = $workshop->get();
-                $viewData['workshop'] = json_decode(json_encode($workshop), true);
-                //  $workshop= DB::table('workshops');
-                //$workshop->orderBy('id','desc');
-                //$workshop= $workshop->get();
-                //$viewData['workshop']=json_decode(json_encode($workshop), true);
-                return view('AutoCare.estimate.search-invoice', $viewData);
-            }
-
-        }
     public function viewpaymenthistory($id)
-{
+    {
     // Check if the job_id exists in payment_histories
     $check = DB::table('payment_histories')
         ->where('job_id', '=', $id)
@@ -778,97 +682,97 @@ if ($request->has('vehicle_reg_number') && $request->vehicle_reg_number != null)
     // Convert to an array
     $viewData['AdminSaleView'] = json_decode(json_encode($all_view), true);
     return view('AutoCare.estimate.payment_history', $viewData);
-}
-
-public function trash(Request $request, $id)
-{
-    // Fetch header links for the view
-    $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
-
-    // Start a database transaction
-    DB::beginTransaction();
-    try {
-        // Find the workshop by ID
-        $workshop = Estimate::findOrFail($id);
-
-        if (!$workshop) {
-            throw new \Exception("Workshop not found.");
-        }
-
-        // Roll back tyre quantities in the tyres_product table
-        $WorkshopTyre = WorkshopTyre::where('workshop_id', $id)->get();
-
-        foreach ($WorkshopTyre as $item) {
-            // First, try to find the tyre product using product_id
-            $tyreProduct = TyresProduct::find($item->product_id);
-
-            // If product_id does not match, try matching by ean, sku, or both
-            if (!$tyreProduct) {
-                $tyreProduct = TyresProduct::where(function ($query) use ($item) {
-                    $query->where('tyre_ean', $item->product_ean)
-                          ->where('tyre_supplier_name',$item->supplier)
-                          ->orWhere('tyre_sku', $item->product_sku)
-                          ->orWhere(function ($subQuery) use ($item) {
-                              $subQuery->where('tyre_ean', $item->product_ean)
-                                       ->where('tyre_sku', $item->product_sku);
-                          });
-                })->first();
-            }
-
-            // If a matching tyre product is found, roll back the quantity
-            if ($tyreProduct) {
-                $tyreProduct->tyre_quantity += $item->quantity; // Add back the quantity
-                $tyreProduct->save();
-            } else {
-                // Log a warning if no matching tyre product is found
-                \Log::warning("Tyre product not found for item: " . json_encode($item));
-            }
-        }
-
-        // Delete related data
-        Booking::where('workshop_id', $id)->delete(); // Delete booking data
-        WorkshopService::where('workshop_id', $id)->delete(); // Delete workshop service data
-        WorkshopTyre::where('workshop_id', $id)->delete(); // Delete WorkshopTyre data
-
-        // Delete the invoice if it exists
-        $invoice = Invoice::where('workshop_id', $id)->first();
-        if ($invoice) {
-            $invoice->delete();
-        }
-
-        // Delete customer debit logs associated with the workshop
-        CustomerDebitLog::where('workshop_id', $id)->delete();
-
-        // Delete payment history associated with the workshop
-        PaymentHistory::where('job_id', $id)->delete();
-
-        // Finally, delete the workshop itself
-        $workshop->delete();
-
-        // Commit the transaction
-        DB::commit();
-
-        // Flash success message
-        $request->session()->flash('message.level', 'danger');
-        $request->session()->flash('message.content', 'Workshop was Deleted!');
-    } catch (\Exception $e) {
-        // Rollback the transaction in case of an error
-        DB::rollBack();
-
-        // Log the error
-        \Log::error("Error trashing workshop ID: $id", ['error' => $e->getMessage()]);
-
-        // Flash error message
-        session()->flash('status', ['danger', 'Operation Failed!']);
     }
 
-    // Prepare view data
-    $viewData['pageTitle'] = 'Workshop';
-    $viewData['workshop'] = Estimate::paginate(10);
+    public function trash(Request $request, $id)
+    {
+        // Fetch header links for the view
+        $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
 
-    // Return the search view
-    return redirect()->back();
-}
+        // Start a database transaction
+        DB::beginTransaction();
+        try {
+            // Find the workshop by ID
+            $estimate = Estimate::findOrFail($id);
+
+            if (!$estimate) {
+                throw new \Exception("Workshop not found.");
+            }
+
+            // Roll back tyre quantities in the tyres_product table
+            $estimateTyre = WorkshopTyre::where('workshop_id', $id)->get();
+
+            foreach ($estimateTyre as $item) {
+                // First, try to find the tyre product using product_id
+                $tyreProduct = TyresProduct::find($item->product_id);
+
+                // If product_id does not match, try matching by ean, sku, or both
+                if (!$tyreProduct) {
+                    $tyreProduct = TyresProduct::where(function ($query) use ($item) {
+                        $query->where('tyre_ean', $item->product_ean)
+                            ->where('tyre_supplier_name',$item->supplier)
+                            ->orWhere('tyre_sku', $item->product_sku)
+                            ->orWhere(function ($subQuery) use ($item) {
+                                $subQuery->where('tyre_ean', $item->product_ean)
+                                        ->where('tyre_sku', $item->product_sku);
+                            });
+                    })->first();
+                }
+
+                // If a matching tyre product is found, roll back the quantity
+                if ($tyreProduct) {
+                    $tyreProduct->tyre_quantity += $item->quantity; // Add back the quantity
+                    $tyreProduct->save();
+                } else {
+                    // Log a warning if no matching tyre product is found
+                    \Log::warning("Tyre product not found for item: " . json_encode($item));
+                }
+            }
+
+            // Delete related data
+            Booking::where('workshop_id', $id)->delete(); // Delete booking data
+            WorkshopService::where('workshop_id', $id)->delete(); // Delete workshop service data
+            WorkshopTyre::where('workshop_id', $id)->delete(); // Delete WorkshopTyre data
+
+            // Delete the invoice if it exists
+            // $estimate = Invoice::where('workshop_id', $id)->first();
+            // if ($estimate) {
+            //     $estimate->delete();
+            // }
+
+            // Delete customer debit logs associated with the workshop
+            CustomerDebitLog::where('workshop_id', $id)->delete();
+
+            // Delete payment history associated with the workshop
+            PaymentHistory::where('job_id', $id)->delete();
+
+            // Finally, delete the workshop itself
+            $estimate->delete();
+
+            // Commit the transaction
+            DB::commit();
+
+            // Flash success message
+            $request->session()->flash('message.level', 'danger');
+            $request->session()->flash('message.content', 'Workshop was Deleted!');
+        } catch (\Exception $e) {
+            // Rollback the transaction in case of an error
+            DB::rollBack();
+
+            // Log the error
+            \Log::error("Error trashing workshop ID: $id", ['error' => $e->getMessage()]);
+
+            // Flash error message
+            session()->flash('status', ['danger', 'Operation Failed!']);
+        }
+
+        // Prepare view data
+        $viewData['pageTitle'] = 'Workshop';
+        $viewData['workshop'] = Estimate::paginate(10);
+
+        // Return the search view
+        return redirect()->back();
+    }
     public function trashedList()
     {
         $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
@@ -899,23 +803,23 @@ public function trash(Request $request, $id)
             ->get();
     
         // Fetch workshop details
-        $workshop = Estimate::whereId($id)->first(); // Keep as an object
+        $estimate = Estimate::whereId($id)->first(); // Keep as an object
     
-        if ($workshop) {
+        if ($estimate) {
             // Format discount based on type
-            if ($workshop->discount_type === 'percentage' && $workshop->discount_value > 0 ) {
-                $formattedDiscount = '('.$workshop->discount_value . '%)';
-            } elseif ($workshop->discount_type === 'amount') {
+            if ($estimate->discount_type === 'percentage' && $estimate->discount_value > 0 ) {
+                $formattedDiscount = '('.$estimate->discount_value . '%)';
+            } elseif ($estimate->discount_type === 'amount') {
                 $formattedDiscount = '';
             } else {
                 $formattedDiscount = ''; // Default if no discount is set
             }
     
             // Add formatted discount to the workshop object
-            $workshop->formatted_discount = $formattedDiscount;
+            $estimate->formatted_discount = $formattedDiscount;
     
             // Fetch related data
-            $WorkshopTyre = DB::table('workshop_tyres')
+            $estimateTyre = DB::table('workshop_tyres')
                 ->select(
                     'workshop_tyres.*',
                     'workshop_tyres.description',
@@ -928,22 +832,22 @@ public function trash(Request $request, $id)
                     'workshop_tyres.price as UnitExitPrice',
                     'workshop_tyres.tax_class_id as ProductVat'
                 )
-                ->where('workshop_id', $workshop->id)
+                ->where('workshop_id', $estimate->id)
                 ->get();
     
-            $WorkshopService = DB::table('workshop_services')
-                ->where('workshop_id', $workshop->id)
+            $estimateService = DB::table('workshop_services')
+                ->where('workshop_id', $estimate->id)
                 ->get();
             $paymentHistory = $this->paymentHistoryService->getPaymentHistory($id);
-            $WorkshopVehicle = DB::table('vehicle_details')
-                ->where('vehicle_reg_number', $workshop->vehicle_reg_number)
+            $estimateVehicle = DB::table('vehicle_details')
+                ->where('vehicle_reg_number', $estimate->vehicle_reg_number)
                 ->get();
             // Pass data to the view
-            $viewData['WorkshopTyre'] = $WorkshopTyre;
-            $viewData['WorkshopService'] = $WorkshopService;
-            $viewData['WorkshopVehicle'] = $WorkshopVehicle;
-            $viewData['workshop'] = $workshop; // Pass the workshop object
-            $viewData['workshopId'] = $workshop->id;
+            $viewData['estimateTyre'] = $estimateTyre;
+            $viewData['estimateService'] = $estimateService;
+            $viewData['estimateVehicle'] = $estimateVehicle;
+            $viewData['estimate'] = $estimate; // Pass the workshop object
+            $viewData['estimateId'] = $estimate->id;
             $viewData['paymentHistory'] = $paymentHistory;
             return view('AutoCare.estimate.view', $viewData);
         } else {
@@ -955,80 +859,27 @@ public function trash(Request $request, $id)
     {
         $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
         $getIndivisualWorkshopDetail = Estimate::whereId($id)->first()->toArray();
-        // $WorkshopProduct = DB::table('workshop_products')
+        // $estimateProduct = DB::table('workshop_products')
         //     ->join('products', 'products.id', '=', 'workshop_products.product_id')
         // ->where('workshop_id', $getIndivisualWorkshopDetail['id'])->get();
-        $WorkshopTyre = DB::table('workshop_tyres')
+        $estimateTyre = DB::table('workshop_tyres')
             ->join('tyres_product', 'tyres_product.product_id', '=', 'workshop_tyres.product_id')
             ->where('workshop_id', $getIndivisualWorkshopDetail['id'])->get();
 
-        // $WorkshopService = DB::table('workshop_services')
+        // $estimateService = DB::table('workshop_services')
         //     ->join('services', 'services.id', '=', 'workshop_services.service_id')
         //     ->where('workshop_id', $getIndivisualWorkshopDetail['id'])->get();
-        // $viewData['WorkshopProduct'] = $WorkshopProduct;
-        $viewData['WorkshopTyre'] = $WorkshopTyre;
-        // $viewData['WorkshopService'] = $WorkshopService;
+        // $viewData['WorkshopProduct'] = $estimateProduct;
+        $viewData['WorkshopTyre'] = $estimateTyre;
+        // $viewData['WorkshopService'] = $estimateService;
         $viewData['workshopId'] = "";
         return view('AutoCare.estimate.view', $viewData)->with($getIndivisualWorkshopDetail);
     }
-    public function viewInvoice($id)
-    {
-        $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
-        $workshop = Invoice::where('workshop_id', $id)->first();
-        if ($workshop) {
-            // Format discount based on type
-            if ($workshop->discount_type === 'percentage' && $workshop->discount_value > 0 ) {
-                $formattedDiscount = '('.$workshop->discount_value . '%)';
-            } elseif ($workshop->discount_type === 'amount') {
-                $formattedDiscount = '';
-            } else {
-                $formattedDiscount = ''; // Default if no discount is set
-            }
-    
-            // Add formatted discount to the workshop object
-            $workshop->formatted_discount = $formattedDiscount;
-
-        // $workshop_products_estimateds = DB::table('workshop_products_estimateds')
-        //     ->join('products', 'products.id', '=', 'workshop_products_estimateds.product_id_es')
-        //     ->select('products.product_name', 'workshop_products_estimateds.product_quantity_es', 'workshop_products_estimateds.product_price_es as ProductWorkshopPrice', 'products.hsn as ProductHsn', 'products.unit_price_exit as UnitExitPrice', 'products.gst as ProductGst')
-        //     ->where('workshop_id_es', $getIndivisualWorkshopDetail['workshop_id'])->get();
-
-
-        // $WorkshopProduct = DB::table('workshop_products')
-        //     ->join('products', 'products.id', '=', 'workshop_products.product_id')
-        //     ->select('products.product_name', 'workshop_products.product_quantity', 'workshop_products.product_price as ProductWorkshopPrice', 'products.hsn as ProductHsn', 'products.unit_price_exit as UnitExitPrice', 'products.gst as ProductGst')
-        //     ->where('workshop_id', $getIndivisualWorkshopDetail['workshop_id'])->get();
-        $WorkshopTyre = DB::table('workshop_tyres')
-            ->select('workshop_tyres.*', 'workshop_tyres.description', 'workshop_tyres.quantity', 'workshop_tyres.tax_class_id', 'workshop_tyres.fitting_type as orderType', 'workshop_tyres.price as TyreWorkshopPrice', 'workshop_tyres.product_ean as product_ean', 'workshop_tyres.supplier as tyre_source', 'workshop_tyres.price as UnitExitPrice', 'workshop_tyres.tax_class_id as ProductVat')
-            ->where('workshop_id', $workshop['workshop_id'])->get();
-        $WorkshopService = DB::table('workshop_services')
-            ->where('workshop_id', $workshop['workshop_id'])->get();
-        $WorkshopVehicle = DB::table('vehicle_details')
-            ->where('vehicle_reg_number', $workshop['vehicle_reg_number'])->get();
-            $paymentHistory = DB::table('customer_debit_logs')
-            ->where('workshop_id', $workshop['workshop_id'])->get();
-        // $paymentHistory = $this->paymentHistoryService->getPaymentHistory($id);
-        // $viewData['WorkshopProduct'] = $WorkshopProduct;
-        $viewData['WorkshopTyre'] = $WorkshopTyre;
-        $viewData['WorkshopService'] = $WorkshopService;
-        $viewData['WorkshopVehicle'] = $WorkshopVehicle;
-        $viewData['workshop'] = $workshop; // Pass the workshop object
-        $viewData['workshopId'] = $workshop->id;
-        $viewData['paymentHistory'] = $paymentHistory;
-        // $viewData['workshop_products_estimateds'] = $workshop_products_estimateds;
-        $viewData['workshopId'] = "";
-            // dd($viewData);
-        return view('AutoCare.estimate.invoice', $viewData);
-    } else {
-        // Handle case where no workshop is found
-        return redirect()->back()->with('error', 'Workshop not found.');
-    }
-    }
-    public function sendInvoiceEmail(Request $request)
+    public function sendEstimateEmail(Request $request)
     {
         // Validate the request
         $request->validate([
-            'invoice_id' => 'required|exists:invoices,workshop_id',
+            'estimate_id' => 'required',
             'email_to' => 'required|email',
             'email_cc' => 'nullable|email',
             'attach_pdf' => 'nullable|boolean',
@@ -1036,35 +887,35 @@ public function trash(Request $request, $id)
         ]);
 
         // Fetch invoice details
-        $invoice = Invoice::where('workshop_id', $request->invoice_id)->firstOrFail();
-        $workshopTyreData = WorkshopTyre::where('workshop_id', '=', $request->invoice_id)->get();
-        $workshopServiceData = WorkshopService::where('workshop_id', '=', $request->invoice_id)->get();
-        $workshopVehicleData = VehicleDetail::where('vehicle_reg_number','=', $invoice->vehicle_reg_number)->get();
-        $paymentHistory = DB::table('customer_debit_logs')->where('workshop_id',  $request->invoice_id)->get();
-        if ($invoice) {
+        $estimate = Estimate::where('id', $request->id)->firstOrFail();
+        $estimateTyreData = WorkshopTyre::where('workshop_id', '=', $estimate->id)->get();
+        $estimateServiceData = WorkshopService::where('workshop_id', '=', $estimate->id)->get();
+        $estimateVehicleData = VehicleDetail::where('vehicle_reg_number','=', $estimate->vehicle_reg_number)->get();
+        $paymentHistory = DB::table('customer_debit_logs')->where('workshop_id',  $estimate->id)->get();
+        if ($estimate) {
             // Format discount based on type
-            if ($invoice->discount_type === 'percentage' && $invoice->discount_value > 0) {
-                $formattedDiscount = '(' . $invoice->discount_value . '%)';
-            } elseif ($invoice->discount_type === 'amount') {
+            if ($estimate->discount_type === 'percentage' && $estimate->discount_value > 0) {
+                $formattedDiscount = '(' . $estimate->discount_value . '%)';
+            } elseif ($estimate->discount_type === 'amount') {
                 $formattedDiscount = '';
             } else {
                 $formattedDiscount = ''; // Default if no discount is set
             }
 
-            // Add formatted discount to the invoice object
-            $invoice->formatted_discount = $formattedDiscount;
+            // Add formatted discount to the estimate object
+            $estimate->formatted_discount = $formattedDiscount;
         }else{
-            $invoice->formatted_discount = "No Data Found";
+            $estimate->formatted_discount = "No Data Found";
         }
         // Fetch and sanitize garage name for folder path
         $garageName = getGarageDetails()->garage_name;
         $safeGarageName = Str::slug($garageName, '_'); // Convert to a safe folder name
 
         // Define the PDF path dynamically
-        $pdfPath = "invoices/{$safeGarageName}/INV-{$invoice->workshop_id}.pdf";
+        $pdfPath = "estimates/{$safeGarageName}/EST-{$estimate->id}.pdf";
 
         // Generate the PDF dynamically and save it
-        $pdfContent = PDF::loadView('emails.invoice-pdf', compact('invoice', 'workshopServiceData','workshopVehicleData', 'workshopTyreData','paymentHistory'))->output();
+        $pdfContent = PDF::loadView('emails.estimate-pdf', compact('estimate', 'workshopServiceData','workshopVehicleData', 'workshopTyreData','paymentHistory'))->output();
         Storage::disk('public')->put($pdfPath, $pdfContent);
 
         // Full path for attachment
@@ -1079,72 +930,65 @@ public function trash(Request $request, $id)
         Mail::to($request->email_to)
             ->cc($request->email_cc)
             ->send(new InvoiceEmail(
-                $invoice,
+                $estimate,
                 $request->email_body,
                 $request->attach_pdf ? $pdfFullPath : null
             ));
             $request->session()->flash('message.level', 'success');
-            $request->session()->flash('message.content', 'Invoice email sent successfully!');
+            $request->session()->flash('message.content', 'Estimate email sent successfully!');
 
         return redirect()->back();
     }
-
-
-    public function previewInvoicePdf($id)
+    public function previewEstimatePdf($id)
     {
-        // Fetch the invoice details
-        $invoice = Invoice::where('workshop_id', $id)->firstOrFail();
-        $workshopTyreData = WorkshopTyre::where('workshop_id', '=', $id)->get();
-        $workshopServiceData = WorkshopService::where('workshop_id', '=', $id)->get();
-        $paymentHistory = DB::table('customer_debit_logs')->where('workshop_id',  $id)->get();
-        if ($invoice) {
+        // Fetch the estimate details
+        $estimate = Estimate::where('id', $id)->firstOrFail();
+        if ($estimate) {
             // Format discount based on type
-            if ($invoice->discount_type === 'percentage' && $invoice->discount_value > 0) {
-                $formattedDiscount = '(' . $invoice->discount_value . '%)';
-            } elseif ($invoice->discount_type === 'amount') {
+            if ($estimate->discount_type === 'percentage' && $estimate->discount_value > 0) {
+                $formattedDiscount = '(' . $estimate->discount_value . '%)';
+            } elseif ($estimate->discount_type === 'amount') {
                 $formattedDiscount = '';
             } else {
                 $formattedDiscount = ''; // Default if no discount is set
             }
 
-            // Add formatted discount to the invoice object
-            $invoice->formatted_discount = $formattedDiscount;
+            // Add formatted discount to the estimate object
+            $estimate->formatted_discount = $formattedDiscount;
         }else{
-            $invoice->formatted_discount = "No Data Found";
+            $estimate->formatted_discount = "No Data Found";
         }
         // Fetch and sanitize garage name
         $garageName = getGarageDetails()->garage_name;
         $safeGarageName = Str::slug($garageName, '_'); // Make it a safe folder name
 
         // Define the correct PDF path dynamically
-        $pdfPath = "invoices/{$safeGarageName}/INV-{$invoice->workshop_id}.pdf";
+        $pdfPath = "estimates/{$safeGarageName}/EST-{$estimate->id}.pdf";
 
         // Ensure the PDF exists, if not, regenerate it
         if (!Storage::disk('public')->exists($pdfPath)) {
             Log::error("PDF not found at path: {$pdfPath}, generating new PDF.");
-            $this->generateInvoicePdf($id); // Regenerate PDF if missing
+            $this->generateEstimatePdf($id); // Regenerate PDF if missing
         }
 
         // Final check: If PDF still doesn't exist, return 404
         if (!Storage::disk('public')->exists($pdfPath)) {
-            abort(404, 'Invoice PDF not found.');
+            abort(404, 'Estimate PDF not found.');
         }
 
         // Return the PDF as an inline response
         return response()->file(storage_path("app/public/{$pdfPath}"), [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="invoice.pdf"',
+            'Content-Disposition' => 'inline; filename="Estimate.pdf"',
         ]);
     }
-
-
-    public function downloadInvoicePdf($id)
+    public function downloadEstimatePdf($id)
     {
-        // Fetch the invoice details
-        $invoice = Invoice::where('workshop_id', $id)->firstOrFail();
+        // Fetch the estimate details
+        $estimate = Estimate::where('id', $id)->firstOrFail();
 
         // Define the file path
-        $pdfPath = "invoices/{$invoice->workshop_id}.pdf";
+        $pdfPath = "estimates/{$estimate->workshop_id}.pdf";
 
         // Check if the file exists
         if (!Storage::disk('public')->exists($pdfPath)) {
@@ -1152,46 +996,45 @@ public function trash(Request $request, $id)
         }
 
         // Return the PDF as a downloadable response
-        return response()->download(storage_path("app/public/{$pdfPath}"), 'invoice.pdf', [
+        return response()->download(storage_path("app/public/{$pdfPath}"), 'estimate.pdf', [
             'Content-Type' => 'application/pdf',
         ]);
     }
-
-    public function generateInvoicePdf($invoiceId)
+    public function generateEstimatePdf($estimateId)
     {
-        // Fetch the invoice details
-        $invoice = Invoice::where('workshop_id', $invoiceId)->firstOrFail();
-        $workshopTyreData = WorkshopTyre::where('workshop_id', '=', $invoiceId)->get();
-        $workshopServiceData = WorkshopService::where('workshop_id', '=', $invoiceId)->get();
-        $workshopVehicleData = VehicleDetail::where('vehicle_reg_number','=', $invoice->vehicle_reg_number)->get();
-        $paymentHistory = DB::table('customer_debit_logs')->where('workshop_id',   $invoiceId)->get();
-        if ($invoice) {
+        // Fetch the Estimate details
+        $estimate = Estimate::where('id', $estimateId)->firstOrFail();
+        $estimateTyreData = WorkshopTyre::where('workshop_id', '=', $estimateId)->get();
+        $estimateServiceData = WorkshopService::where('workshop_id', '=', $estimateId)->get();
+        $estimateVehicleData = VehicleDetail::where('vehicle_reg_number','=', $estimate->vehicle_reg_number)->get();
+        $paymentHistory = DB::table('customer_debit_logs')->where('workshop_id',   $estimateId)->get();
+        if ($estimate) {
             // Format discount based on type
-            if ($invoice->discount_type === 'percentage' && $invoice->discount_value > 0) {
-                $formattedDiscount = '(' . $invoice->discount_value . '%)';
-            } elseif ($invoice->discount_type === 'amount') {
+            if ($estimate->discount_type === 'percentage' && $estimate->discount_value > 0) {
+                $formattedDiscount = '(' . $estimate->discount_value . '%)';
+            } elseif ($estimate->discount_type === 'amount') {
                 $formattedDiscount = '';
             } else {
                 $formattedDiscount = ''; // Default if no discount is set
             }
 
-            // Add formatted discount to the invoice object
-            $invoice->formatted_discount = $formattedDiscount;
+            // Add formatted discount to the Estimate object
+            $estimate->formatted_discount = $formattedDiscount;
         }else{
-            $invoice->formatted_discount = "No Data Found";
+            $estimate->formatted_discount = "No Data Found";
         }
         // Fetch garage details and sanitize the garage name for safe file paths
         $garageName = getGarageDetails()->garage_name;
         $safeGarageName = Str::slug($garageName, '_'); // Convert to a safe folder name
 
         // Generate the PDF content
-        $pdfContent = PDF::loadView('emails.invoice-pdf', compact('invoice', 'workshopServiceData','workshopVehicleData', 'workshopTyreData','paymentHistory'))->output();
+        $pdfContent = PDF::loadView('emails.estimate-pdf', compact('estimate', 'estimateServiceData','estimateVehicleData', 'estimateTyreData','paymentHistory'))->output();
 
         // Define the file path dynamically based on garage name
-        $pdfPath = "invoices/{$safeGarageName}/INV-{$invoice->workshop_id}.pdf";
+        $pdfPath = "estimates/{$safeGarageName}/EST-{$estimate->id}.pdf";
 
         // Ensure the directory exists before saving
-        Storage::disk('public')->makeDirectory("invoices/{$safeGarageName}");
+        Storage::disk('public')->makeDirectory("estimates/{$safeGarageName}");
 
         // Save the PDF to the storage/app/public directory
         Storage::disk('public')->put($pdfPath, $pdfContent);

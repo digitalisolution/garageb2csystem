@@ -97,8 +97,6 @@ class ServiceController extends Controller
         return redirect()->route('services.index')->with('success', 'Service created successfully!');
     }
 
-
-
     public function edit(CarService $service)
     {
         return view('AutoCare.services.create', compact('service'));

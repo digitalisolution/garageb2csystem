@@ -28,7 +28,7 @@ class Estimate extends Model
 	}
 	public function bookings()
 	{
-		return $this->hasMany(\App\Models\Booking::class, 'workshop_id');
+		return $this->hasMany(Booking::class, 'workshop_id');
 	}
 	// public function items()
 	// {

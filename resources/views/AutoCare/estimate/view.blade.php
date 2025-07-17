@@ -92,20 +92,20 @@
 
         .ingray_strip .item {}
     </style>
-    <title>Workshop Detail</title>
+    <title>Estimate Detail</title>
 </head>
 
 <body>
     <!-- Container -->
     <div class="container-fluid invoice-container">
        <div class="text-right">
-        @if ($workshop->is_converted_to_invoice == 1)
-            <a href="{{ url('/') }}/AutoCare/workshop/addinvoice/{{ $workshop->id }}" class="btn btn-warning btn-sm">
-                <i class="fa fa-pencil" aria-hidden="true"></i> Update Invoice
+        @if ($estimate->is_converted_to_workshop == 1)
+            <a href="{{ url('/') }}/AutoCare/estimate/addinvoice/{{ $estimate->id }}" class="btn btn-warning btn-sm">
+                <i class="fa fa-pencil" aria-hidden="true"></i> Update Workshop
             </a>
         @else
-            <a href="{{ url('/') }}/AutoCare/workshop/addinvoice/{{ $workshop->id}}" class="btn btn-primary btn-sm">
-                <i class="fa fa-wpexplorer" aria-hidden="true"></i> Convert to Invoice
+            <a href="{{ url('/') }}/AutoCare/estimate/addinvoice/{{ $estimate->id}}" class="btn btn-primary btn-sm">
+                <i class="fa fa-wpexplorer" aria-hidden="true"></i> Convert to Workshop
             </a>
         @endif
        </div>
@@ -146,15 +146,15 @@ $defaultLogoPath = public_path("frontend/themes/theme/img/logo/logo.png");
                         <img id="logo" src="{{ asset('frontend/themes/theme/img/logo/logo.png') }}" title="Garage Name"
                             alt="Garage Name" class="img-bank" /><br>
                     @endif
-                    <h5 class="mt-2"><strong>Job No:</strong> JOB-{{ $workshop->id }}</h5>
-                    @if($WorkshopTyre && $WorkshopTyre->isNotEmpty())
-                        @php $tyre = $WorkshopTyre->first(); @endphp
+                    <h5 class="mt-2"><strong>Estimate No:</strong> EST-{{ $estimate->id }}</h5>
+                    @if($estimateTyre && $estimateTyre->isNotEmpty())
+                        @php $tyre = $estimateTyre->first(); @endphp
                         <h5 class="mt-2"><strong>{{ strtoupper(str_replace('_',' ',$tyre->fitting_type)) }}</strong></h5>
                     @endif
 
-                    @if($workshop->payment_status == 1)
+                    @if($estimate->payment_status == 1)
                         <span class="badge-green">Paid</span>
-                    @elseif($workshop->payment_status == 3)
+                    @elseif($estimate->payment_status == 3)
                         <span class="badge-green">Partial</span>
                     @else
                         <span class="badge-red">Unpaid</span>
@@ -164,13 +164,13 @@ $defaultLogoPath = public_path("frontend/themes/theme/img/logo/logo.png");
             </div>
         </header>
 @php
-if (isset($workshop->workshop_date)) {
-    $workshop_date = date('d/m/Y', strtotime($workshop->workshop_date));
+if (isset($estimate->workshop_date)) {
+    $estimate_date = date('d/m/Y', strtotime($estimate->workshop_date));
 } else {
-    $workshop_date = "";
+    $estimate_date = "";
 }
-if (isset($workshop->due_out)) {
-    $due_out = date('d/m/Y', strtotime($workshop->due_out));
+if (isset($estimate->due_out)) {
+    $due_out = date('d/m/Y', strtotime($estimate->due_out));
 } else {
     $due_out = "";
 }
@@ -178,27 +178,27 @@ if (isset($workshop->due_out)) {
         <!-- Main Content -->
         <main>
             <div class="ingray_strip">
-                <div class="item"><strong>Job Date:</strong> {{ $workshop_date }}</div>
+                <div class="item"><strong>Estimate Date:</strong> {{ $estimate_date }}</div>
                 <div class="item"> <strong>End Date:</strong> {{ $due_out }}</div>
-                <div class="item"> <strong>Job#:</strong> JOB-{{ $workshop->id }}</div>
+                <div class="item"> <strong>Est#:</strong> EST-{{ $estimate->id }}</div>
             </div>
             <div class="row">
                 <div class="col-sm-6"> <strong>Bill To</strong>
                 <address class="mt-2">
-                    @if ($workshop->name)
-                        <strong>{{ $workshop->name }}</strong><br />
+                    @if ($estimate->name)
+                        <strong>{{ $estimate->name }}</strong><br />
                     @endif
-                    @if ($workshop->company_name)
-                        Company Name: <strong>{{ $workshop->company_name }}</strong><br />
+                    @if ($estimate->company_name)
+                        Company Name: <strong>{{ $estimate->company_name }}</strong><br />
                     @endif
-                    @if ($workshop->reference)
-                        Reference: <strong>{{ $workshop->reference }}</strong><br />
+                    @if ($estimate->reference)
+                        Reference: <strong>{{ $estimate->reference }}</strong><br />
                     @endif
-                    @if ($workshop->mobile || $workshop->email)
-                        Telephone: {{ $workshop->mobile }}<br /> Email: {{ $workshop->email }}<br />
+                    @if ($estimate->mobile || $estimate->email)
+                        Telephone: {{ $estimate->mobile }}<br /> Email: {{ $estimate->email }}<br />
                     @endif
-                    @if ( $workshop->address )
-                        Addres: {{ $workshop->address }}, {{ $workshop->city }}, {{ $workshop->county }}, {{ $workshop->zone }}, {{ $workshop->country }}
+                    @if ( $estimate->address )
+                        Addres: {{ $estimate->address }}, {{ $estimate->city }}, {{ $estimate->county }}, {{ $estimate->zone }}, {{ $estimate->country }}
                     @endif
                 </address>
                 </div>
@@ -218,7 +218,7 @@ if (isset($workshop->due_out)) {
                 <thead>
                     <tr class="bg-light">
                         <td colspan="7" align="center">
-                            <h4 class="m-0 text-uppercase">JOB</h4>
+                            <h4 class="m-0 text-uppercase">Estimate</h4>
                         </td>
                     </tr>
                     <tr class="bg-light">
@@ -235,52 +235,52 @@ if (isset($workshop->due_out)) {
                     <tr>
                         <!-- Registration Number -->
                         <td class="text-uppercase">
-                            {{ $WorkshopVehicle->isNotEmpty() && $WorkshopVehicle[0]->vehicle_reg_number
-    ? $WorkshopVehicle[0]->vehicle_reg_number
+                            {{ $estimateVehicle->isNotEmpty() && $estimateVehicle[0]->vehicle_reg_number
+    ? $estimateVehicle[0]->vehicle_reg_number
     : ($getIndivisualWorkshopDetail['vehicle_reg_number'] ?? '--') }}
                         </td>
         
                         <!-- Make -->
                         <td>
-                            {{ $WorkshopVehicle->isNotEmpty() && $WorkshopVehicle[0]->vehicle_make
-    ? $WorkshopVehicle[0]->vehicle_make
+                            {{ $estimateVehicle->isNotEmpty() && $estimateVehicle[0]->vehicle_make
+    ? $estimateVehicle[0]->vehicle_make
     : ($getIndivisualWorkshopDetail['vehicle_make'] ?? '--') }}
                         </td>
         
                         <!-- Model / Year -->
                         <td>
-                            {{ $WorkshopVehicle->isNotEmpty() && $WorkshopVehicle[0]->vehicle_model
-    ? $WorkshopVehicle[0]->vehicle_model
+                            {{ $estimateVehicle->isNotEmpty() && $estimateVehicle[0]->vehicle_model
+    ? $estimateVehicle[0]->vehicle_model
     : ($getIndivisualWorkshopDetail['vehicle_model'] ?? '--') }}
                             /
-                            {{ $WorkshopVehicle->isNotEmpty() && $WorkshopVehicle[0]->vehicle_year
-    ? $WorkshopVehicle[0]->vehicle_year
+                            {{ $estimateVehicle->isNotEmpty() && $estimateVehicle[0]->vehicle_year
+    ? $estimateVehicle[0]->vehicle_year
     : ($getIndivisualWorkshopDetail['vehicle_first_registered'] ?? '--') }}
                         </td>
         
                         <!-- Registration Date -->
                         <td>
-                            {{ $WorkshopVehicle->isNotEmpty() && $WorkshopVehicle[0]->vehicle_first_registered
-    ? \Carbon\Carbon::parse($WorkshopVehicle[0]->vehicle_first_registered)->format('d/m/Y')
+                            {{ $estimateVehicle->isNotEmpty() && $estimateVehicle[0]->vehicle_first_registered
+    ? \Carbon\Carbon::parse($estimateVehicle[0]->vehicle_first_registered)->format('d/m/Y')
     : '--' }}
                         </td>
         
                         <!-- VIN -->
                         <td>
-                            {{ $WorkshopVehicle->isNotEmpty() && $WorkshopVehicle[0]->vehicle_vin
-    ? $WorkshopVehicle[0]->vehicle_vin
+                            {{ $estimateVehicle->isNotEmpty() && $estimateVehicle[0]->vehicle_vin
+    ? $estimateVehicle[0]->vehicle_vin
     : ($getIndivisualWorkshopDetail['vehicle_vin'] ?? '--') }}
                         </td>
         
                         <!-- Mileage -->
                         <td>
-                            {{ $WorkshopVehicle->isNotEmpty() ? '--' : ($getIndivisualWorkshopDetail['vehicle_mileage'] ?? '--') }}
+                            {{ $estimateVehicle->isNotEmpty() ? '--' : ($getIndivisualWorkshopDetail['vehicle_mileage'] ?? '--') }}
                         </td>
         
                         <!-- MOT Expiry Date -->
                         <td>
-                            {{ $WorkshopVehicle->isNotEmpty() && $WorkshopVehicle[0]->vehicle_mot_expiry_date
-    ? \Carbon\Carbon::parse($WorkshopVehicle[0]->vehicle_mot_expiry_date)->format('d/m/Y')
+                            {{ $estimateVehicle->isNotEmpty() && $estimateVehicle[0]->vehicle_mot_expiry_date
+    ? \Carbon\Carbon::parse($estimateVehicle[0]->vehicle_mot_expiry_date)->format('d/m/Y')
     : '--' }}
                         </td>
                     </tr>
@@ -299,7 +299,7 @@ $paid_price = $paid_price ?? 0;
 $itemIndex = 1;
             @endphp
 
-            @if (!empty($WorkshopTyre) || !empty($WorkshopService))
+            @if (!empty($estimateTyre) || !empty($estimateService))
             <div class="invoice_item">
                     <table class="table border mb-0">
                         <thead>
@@ -315,7 +315,7 @@ $itemIndex = 1;
                         </thead>
                         <tbody>
 
-                            @foreach($WorkshopTyre as $tyre)
+                            @foreach($estimateTyre as $tyre)
                                             @php
         $quantity = $tyre->quantity ?? 1;
         $vatRate = $tyre->tax_class_id == 9 ? 0.2 : 0;
@@ -353,7 +353,7 @@ $itemIndex = 1;
                                 @endif
                             
 
-                            @foreach($WorkshopService as $service)
+                            @foreach($estimateService as $service)
                                             @php
         $quantity = $service->service_quantity ?? 1;
         $vatRate = $service->tax_class_id == 9 ? 0.2 : 0;
@@ -379,7 +379,7 @@ $itemIndex = 1;
                     </table>
                 </div>
             @endif
-        @if (!empty($WorkshopTyre) && isset($tyre))
+        @if (!empty($estimateTyre) && isset($tyre))
                                                 <div class="table-responsive">
                                                     <table class="table border mb-0">
                                                         <thead>
@@ -390,7 +390,7 @@ $itemIndex = 1;
                                                                 @endif
                                                                 <td><strong>VAT</strong></td>
                                                                 <td><strong>Total</strong></td>
-                                                                <td><strong>Discount{{ $workshop->formatted_discount }}</strong></td>
+                                                                <td><strong>Discount{{ $estimate->formatted_discount }}</strong></td>
                                                                 <td><strong>Amount Due</strong></td>
                                                                 <td align="right"><strong>Amount Paid</strong></td>
                                                             </tr>
@@ -412,10 +412,10 @@ $itemIndex = 1;
                                                                     <td>£{{ number_format($tyre->shipping_price, 2) }}</td>
                                                                 @endif
                                                                 <td>£{{ number_format($shippingVatPrice, 2) }}</td>
-                                                                <td>£{{ number_format($workshop->grandTotal, 2) }}</td>
-                                                                <td>£{{ number_format($workshop->discount_price, 2) }}</td>
-                                                                <td><strong>£{{ number_format($workshop->balance_price, 2) }}</strong></td>
-                                                                <td align="right"><strong>£{{ number_format($workshop->paid_price, 2) }}</strong></td>
+                                                                <td>£{{ number_format($estimate->grandTotal, 2) }}</td>
+                                                                <td>£{{ number_format($estimate->discount_price, 2) }}</td>
+                                                                <td><strong>£{{ number_format($estimate->balance_price, 2) }}</strong></td>
+                                                                <td align="right"><strong>£{{ number_format($estimate->paid_price, 2) }}</strong></td>
                                                             </tr>
                                                         </tbody>
                                                     </table>
@@ -445,7 +445,7 @@ $itemIndex = 1;
                                                                 <td>£{{ number_format($subTotal, 2) }}</td>
                                                                 <td>£{{ number_format($total_Tax_Amount, 2) }}</td>
                                                                 <td>£{{ number_format($grandTotal, 2) }}</td>
-                                                                <td>£{{ number_format($workshop->discount_price, 2) }}</td>
+                                                                <td>£{{ number_format($estimate->discount_price, 2) }}</td>
                                                                 <td><strong>£{{ number_format($balancePrice, 2) }}</strong></td>
                                                                 <td align="right"><strong>£{{ number_format($paid_price, 2) }}</strong></td>
                                                             </tr>
@@ -456,7 +456,7 @@ $itemIndex = 1;
         </main>
         <!-- Footer -->
         <footer class="text-center mt-4">
-            <p><strong>Descripition/Notes:</strong> {{ $workshop->notes }}</p>
+            <p><strong>Descripition/Notes:</strong> {{ $estimate->notes }}</p>
             <div class="btn-group btn-group-sm d-print-none"> <a href="javascript:window.print()"
                     class="btn btn-light border text-black-50 shadow-none"><i class="fa fa-print"></i> Print &
                     Download</a> </div>

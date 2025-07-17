@@ -58,6 +58,7 @@
                             @csrf
                             <div class="row">
                                 <div class="col-lg-6">
+                                    <input type="text" name="website" class="d-none">
                                     <input name="name" placeholder="Name*" type="text" value="{{ old('name') }}" required>
                                     @error('name') <span class="text-danger">{{ $message }}</span> @enderror
                                 </div>

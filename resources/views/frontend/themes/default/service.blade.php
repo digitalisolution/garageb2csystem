@@ -138,8 +138,8 @@
       <form id="quoteEnquiryForm" method="POST" action="{{ route('service.enquiry.submit') }}">
         @csrf
         <div class="modal-header">
-          <h5 class="modal-title" id="quoteModalLabel">Get a Quote</h5>
-          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title" id="quoteModalLabel">Get a Quote</h4>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
 
         <div class="modal-body">
@@ -270,7 +270,9 @@
                             }).then((result) => {
                                 if (result.isConfirmed) {
                                     window.location.href = "{{ route('checkout') }}";
-                                }
+                                } else {
+                                location.reload();
+                            }
                             });
 
                             let newTotalQuantity = data.totalQuantity;
@@ -287,7 +289,7 @@
                             for (const key in data.product) {
                                 if (data.product.hasOwnProperty(key)) {
                                     const item = data.product[key];
-                                    console.log(item);
+                                    // console.log(item);
                                     const itemTotalPrice = (item.price * item.quantity).toFixed(2); 
                                     const itemVAT = item.tax_class_id == 9 ? itemTotalPrice * 0.20 : 0;
 

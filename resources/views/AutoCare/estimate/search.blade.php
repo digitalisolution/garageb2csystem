@@ -18,7 +18,7 @@
                     {{ Form::text('id', isset($id) ? $id : old('id'), [
         'class' => 'form-control',
         'id' => 'id',
-        'placeholder' => 'Job Id'
+        'placeholder' => 'Estimate Id'
     ]) }}
                 </div>
 
@@ -122,12 +122,12 @@
                         @endif
 
                         <!-- Notifications -->
-                        @if(session('success'))
-                            <div class="alert alert-success alert-dismissible fade show m-3" role="alert">
-                                {{ session('success') }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        @endif
+                        <!-- @if(session('success'))
+                                <div class="alert alert-success alert-dismissible fade show m-3" role="alert">
+                                    {{ session('success') }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            @endif -->
 
                         @if(session('error'))
                             <div class="alert alert-danger alert-dismissible fade show m-3" role="alert">
@@ -175,27 +175,31 @@
                         <table id="" class="table table-hover" style="font-size: 13px;">
                             <thead class="thead-dark">
                                 <tr>
-                                    <th style="white-space: nowrap">Estimate Date</th>
-                                    <th style="white-space: nowrap">Estimate Id</th>
+                                    <th style="white-space: nowrap">Est. Date</th>
+                                    <th style="white-space: nowrap">Est. Id</th>
+                                    <th style="white-space: nowrap">Workshop Id</th>
                                     <th style="white-space: nowrap" style="white-space: nowrap">Customer Name</th>
                                     <th style="white-space: nowrap">Mobile</th>
-                                    <th style="white-space: nowrap">Vehicle Reg. No</th>
+                                    <th style="white-space: nowrap">Veh. Reg. No</th>
+                                    <th style="white-space: nowrap">Total</th>
                                     <th style="white-space: nowrap">Origin</th>
                                     <th style="white-space: nowrap">Status</th>
+                                    <th style="white-space: nowrap">Workshop Convert</th>
                                     <th align="right">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($workshop as $key => $value)
+                                @foreach ($estimate as $key => $value)
                                     @php
                                         $due_in = isset($value->due_in) ? date('d/m/Y', strtotime($value->due_in)) : '';
                                         $created_at = isset($value->created_at) ? date('d/m/Y H:i:s', strtotime($value->created_at)) : '';
                                         $due_out = isset($value->due_out) ? date('d/m/Y', strtotime($value->due_out)) : '';
-                                        $workshop_date = isset($value->workshop_date) ? date('d/m/Y H:i:s', strtotime($value->workshop_date)) : '';
+                                        $estimate_date = isset($value->workshop_date) ? date('d/m/Y H:i:s', strtotime($value->workshop_date)) : '';
                                     @endphp
                                     <tr>
-                                        <td>{{ $workshop_date }}</td>
+                                        <td>{{ $estimate_date }}</td>
                                         <td>{{ $value->id }}</td>
+                                        <td>{{ $value->workshop_id }}</td>
                                         <td>{{ $value->name }}</td>
                                         <td>
                                             @if (isset($value->mobile))
@@ -203,9 +207,16 @@
                                             @endif
                                         </td>
                                         <td class="text-uppercase">{{ $value->vehicle_reg_number }}</td>
+                                        <td>£{{ number_format($value->grandTotal, 2, '.', '') }}</td>
                                         <td><span class="{{ $value->workshop_origin }}">{{ $value->workshop_origin }}</span>
                                         </td>
                                         <td><span class="{{ $value->status }}">{{ $value->status }}</span></td>
+                                        <td>
+                                            <span
+                                                class="{{ $value->is_converted_to_workshop == 1 ? 'workhop' : ($value->is_converted_to_workshop == 0 ? 'estimate' : 'estimate') }}">
+                                                {{ $value->is_converted_to_workshop == 1 ? 'Workhop' : ($value->is_converted_to_workshop == 0 ? 'Estimate' : 'Estimate') }}
+                                            </span>
+                                        </td>
 
                                         <td style="white-space: nowrap;" align="right">
                                             <div class="btn-group" role="group">
@@ -217,13 +228,21 @@
                                                 <ul class="dropdown-menu dropdown-menu-right btngroup-dropdown"
                                                     aria-labelledby="btnGroupDrop{{ $value->id }}">
 
-                                                       
-                                                        <li>
-                                                            <a href="{{ url('/AutoCare/estimate/addinvoice/' . $value->id) }}"
-                                                                class="dropdown-item btn btn-primary btn-sm">
-                                                                <i class="fa fa-upload"></i> Convert to Workshop
-                                                            </a>
-                                                        </li>
+                                                    @if ($value->is_converted_to_workshop == 1)
+                                                    <li>
+                                                        <a href="{{ url('/AutoCare/estimate/addWorkshop/' . $value->id) }}"
+                                                            class="dropdown-item btn btn-primary btn-sm">
+                                                            <i class="fa fa-upload"></i> Sync to Workshop
+                                                        </a>
+                                                    </li>
+                                                    @else
+                                                    <li>
+                                                        <a href="{{ url('/AutoCare/estimate/addWorkshop/' . $value->id) }}"
+                                                            class="dropdown-item btn btn-primary btn-sm">
+                                                            <i class="fa fa-upload"></i> Convert to Workshop
+                                                        </a>
+                                                    </li>
+                                                    @endif
 
                                                     {{-- View / Edit --}}
                                                     <li>
@@ -233,31 +252,26 @@
                                                             <i class="fa fa-eye"></i> Est View
                                                         </a>
                                                     </li>
-
-                                                    @if ($value->is_workshop == 1)
-                                                     
+                                                    <li>
+                                                        <a href="{{ url('/AutoCare/estimate/add/' . $value->id) }}"
+                                                            class="dropdown-item btn btn-success btn-sm">
+                                                            <i class="fa fa-edit"></i> Edit
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                         <button type="button" class="dropdown-item btn btn-info btn-sm"
+                                                                    data-toggle="modal" data-target="#estimateEmailModal{{ $value->id }}">
+                                                                    <i class="fa fa-envelope"></i>Send To Email
+                                                                </button>
+                                                    </li>
+                                                    @if ($role_id == 1)
                                                         <li>
-                                                            <a href="{{ url('/AutoCare/estimate/add/' . $value->id) }}"
-                                                                class="dropdown-item btn btn-success btn-sm">
-                                                                <i class="fa fa-edit"></i> Edit
+                                                            <a href="{{ route('estimate.preview', $value->id) }}" target="_blank"
+                                                                class="dropdown-item btn btn-info btn-sm">
+                                                                <i class="fa fa-eye"></i> Preview PDF
                                                             </a>
                                                         </li>
                                                     @endif
-                                                     <li>
-                                                            <button type="button" class="dropdown-item btn btn-info btn-sm"
-                                                                data-toggle="modal" data-target="#emailModal{{ $value->id }}">
-                                                                <i class="fa fa-envelope"></i> Email Estimate
-                                                            </button>
-                                                            @include('AutoCare.workshop.invoice-email-modal', ['invoiceId' => $value->id])
-                                                        </li>
-                                                        @if ($role_id == 1)
-                                                            <li>
-                                                                <a href="{{ route('invoice.preview', $value->id) }}" target="_blank"
-                                                                    class="dropdown-item btn btn-info btn-sm">
-                                                                    <i class="fa fa-eye"></i> Preview PDF
-                                                                </a>
-                                                            </li>
-                                                        @endif
 
                                                     {{-- Delete --}}
                                                     <li>
@@ -276,6 +290,7 @@
                                             </div>
                                         </td>
                                     </tr>
+                                    @include('AutoCare.estimate.estimate-email-modal', ['estimateId' => $value->id])
                                 @endforeach
                             </tbody>
                         </table>
@@ -287,7 +302,7 @@
         <div class="row">
             <!-- Laravel Pagination Links -->
             <div class="pagination-container">
-                {{ $workshop->appends(request()->except('page'))->links('pagination::bootstrap-5') }}
+                {{ $estimate->appends(request()->except('page'))->links('pagination::bootstrap-5') }}
             </div>
 
         </div>

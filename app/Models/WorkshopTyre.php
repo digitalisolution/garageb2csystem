@@ -8,6 +8,7 @@ class WorkshopTyre extends Model
 {
     protected $fillable = [
         'workshop_id',
+        'ref_type',
         'product_id',
         'description',
         'model',

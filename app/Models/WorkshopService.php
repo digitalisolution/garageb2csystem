@@ -15,6 +15,7 @@ class WorkshopService extends Model
 		'service_type_id',
 		'service_id',
 		'workshop_id',
+		'ref_type',
 		'tax_class_id',
 		'service_name',
 		'fitting_type',

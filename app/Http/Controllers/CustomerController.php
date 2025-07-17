@@ -6,7 +6,6 @@ use App\Models\VehicleDetail;
 use Illuminate\Http\Request;
 use App\Models\Customer;
 use App\Models\Invoice;
-use App\Models\PaymentHistory;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Models\RegionCounty;
@@ -15,7 +14,11 @@ use DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use App\Models\HeaderLink;
-
+use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\StatementEmail;
+use Illuminate\Support\Str;
 class CustomerController extends Controller
 {
     public function __construct()
@@ -570,6 +573,142 @@ class CustomerController extends Controller
         return redirect()->route('AutoCare.customer.vehicles', ['id' => $id])
             ->with('error', 'Vehicle not found or not linked to this customer.');
     }
+    public function sendStatementEmail(Request $request)
+    {
+        // Validate request
+        $request->validate([
+            'customer_id' => 'required|exists:customers,id',
+            'email_to' => 'required|email',
+            'email_cc' => 'nullable|email',
+            'attach_pdf' => 'boolean',
+            'email_body' => 'nullable|string',
+        ]);
 
+        // Get customer
+        $customer = Customer::findOrFail($request->customer_id);
+
+        // Generate PDF
+        $this->generateStatementPdf($customer->id);
+
+        // Build PDF path
+        $garageName = getGarageDetails()->garage_name;
+        $safeGarageName = Str::slug($garageName, '_');
+        $pdfPath = "statements/{$safeGarageName}/STAT-{$customer->id}.pdf";
+        $pdfFullPath = storage_path("app/public/{$pdfPath}");
+
+        // Prepare data for email
+        $data = [
+            'customer' => $customer,
+            'totalInvoiced' => $request->totalInvoiced ?? 0,
+            'totalPaid' => $request->totalPaid ?? 0,
+            'balanceDue' => $request->balanceDue ?? 0,
+            'body' => $request->email_body
+        ];
+
+        // Send email with optional attachment
+        Mail::to($request->email_to)
+            ->cc($request->email_cc)
+            ->send(new StatementEmail($data, $request->attach_pdf ? $pdfFullPath : null));
+
+        return redirect()->back()->with('success', 'Statement sent successfully!');
+    }
+    public function previewStatementPdf($id)
+{
+    $this->generateStatementPdf($id); // Always regenerate latest version
+
+    $garageName = getGarageDetails()->garage_name;
+    $safeGarageName = Str::slug($garageName, '_');
+    $pdfPath = "statements/{$safeGarageName}/STAT-{$id}.pdf";
+
+    if (!Storage::disk('public')->exists($pdfPath)) {
+        abort(404, 'Statement PDF not found.');
+    }
+
+    return response()->file(storage_path("app/public/{$pdfPath}"), [
+        'Content-Type' => 'application/pdf',
+        'Content-Disposition' => 'inline; filename="statement.pdf"'
+    ]);
+    }
+    public function downloadStatementPdf($id)
+    {
+    $this->generateStatementPdf($id); // Regenerate fresh statement
+
+    $garageName = getGarageDetails()->garage_name;
+    $safeGarageName = Str::slug($garageName, '_');
+    $pdfPath = "statements/{$safeGarageName}/STAT-{$id}.pdf";
+
+    if (!Storage::disk('public')->exists($pdfPath)) {
+        abort(404, 'Statement PDF not found.');
+    }
+
+    return response()->download(storage_path("app/public/{$pdfPath}"), "Statement-{$id}.pdf", [
+        'Content-Type' => 'application/pdf',
+    ]);
+    }
+    public function generateStatementPdf($id)
+    {
+        // Fetch customer and statement data
+        $customer = Customer::findOrFail($id);
+        $query = Invoice::where('customer_id', $id)->orderBy('created_at', 'asc');
+
+        if (request()->filled('from') && request()->filled('to')) {
+            try {
+                $from = \Carbon\Carbon::createFromFormat('d-m-Y', request('from'))->startOfDay();
+                $to = \Carbon\Carbon::createFromFormat('d-m-Y', request('to'))->endOfDay();
+                $query->whereBetween('created_at', [$from, $to]);
+            } catch (\Exception $e) {
+                abort(400, 'Invalid date format. Use DD-MM-YYYY.');
+            }
+        }
+
+        $invoices = $query->get();
+        // Build transactions list
+        $transactions = collect();
+        foreach ($invoices as $invoice) {
+            $transactions->push([
+                'date' => $invoice->created_at->format('d-m-Y'),
+                'details' => 'Invoice #' . $invoice->workshop_id,
+                'type' => 'Invoice',
+                'amount' => $invoice->grandTotal,
+                'paid_price' => $invoice->paid_price,
+                'balance_price' => $invoice->balance_price
+            ]);
+        }
+
+        $totalInvoiced = $invoices->sum('grandTotal');
+        $totalPaid = $invoices->sum('paid_price');
+        $balanceDue = $totalInvoiced - $totalPaid;
+
+        // Format discount for each invoice
+        foreach ($invoices as &$invoice) {
+            if ($invoice->discount_type === 'percentage' && $invoice->discount_value > 0) {
+                $invoice->formatted_discount = '(' . $invoice->discount_value . '%)';
+            } else {
+                $invoice->formatted_discount = '';
+            }
+        }
+
+        // Generate PDF content
+        $pdf = PDF::loadView('AutoCare.customer.statement-pdf', compact(
+            'customer',
+            'invoices',
+            'transactions',
+            'totalInvoiced',
+            'totalPaid',
+            'balanceDue'
+        ));
+
+        // Define folder name based on garage
+        $garageName = getGarageDetails()->garage_name;
+        $safeGarageName = Str::slug($garageName, '_');
+
+        // Define path
+        $pdfPath = "statements/{$safeGarageName}/STAT-{$customer->id}.pdf";
+
+        // Save PDF
+        Storage::disk('public')->put($pdfPath, $pdf->output());
+
+        return storage_path("app/public/{$pdfPath}");
+    }
 
 }

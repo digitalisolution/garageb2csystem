@@ -9,10 +9,6 @@
 			<div class="bg-white p-3">
 				@include('AutoCare.customer.menu')
 				<div class="short__item">
-					<div class="bg-light p-2 text-center border rounded mb-4">
-						<h5 class="m-0"><strong>Statement</strong></h5>
-					</div>
-
 					<div class="statement_bank">
 						<div class="item">
 							<div class="form-group">
@@ -56,40 +52,89 @@
 						</div>
 						<div class="print-download ml-auto">
 							<!-- <a href="javascript:window.print()" class="btn btn-light border text-black-50 shadow-none"><i class="fa fa-print"></i> Print &amp;
-															Download</a> -->
-							<button class="btn btn-success" id="printStatement"><i class="fa fa-print"></i> Print</button>
-							<button class="btn btn-primary" id="downloadPDF"><i class="fa fa-file-pdf"></i> Download
-								PDF</button>
-							<button class="btn btn-warning" id="sendEmail"><i class="fa fa-envelope"></i> Send via
-								Email</button>
+																			Download</a> -->
+							<a href="{{ route('customer.statement.preview', $customer->id) }}" target="_blank"
+								class="btn btn-primary">Preview</a>
+							<a href="{{ route('customer.statement.download', $customer->id) }}"
+								class="btn btn-success">Download</a>
+
+							<!-- Modal Trigger -->
+							<button type="button" class="btn btn-info" data-bs-toggle="modal"
+								data-bs-target="#sendStatementModal">
+								Send to Email
+							</button>
 
 						</div>
 
 					</div>
 
 					<!-- Customer Details -->
-					<div class="border px-4 py-4">
-						<div class="row">
-							<div class="col-lg-5 col-md-5 col-sm-6 col-12">
-								<address>
-									<h4 class="text-4 mb-1">{{ $customer->customer_name }}</h4>
-									Telephone: {{ $customer->customer_contact_number }}<br>
-									Email: {{ $customer->customer_email }}<br>
-									Address: {{ $customer->customer_address }}
-								</address>
-							</div>
+					<div class="border p-4">
+						<div class="pb-4">
+							<div class="row align-items-end">
+								<div class="col-lg-5 col-md-5 col-sm-6 col-12">
+									<address>
+										<h4 class="text-4 mb-1">{{$garage->garage_name}}</h4>
+										Registration No: {{$garage->company_number}}<br>
+										VAT Number: {{$garage->vat_number}}<br>
+										Telephone: {{$garage->phone}}<br>
+										Email: {{$garage->email}}<br>
+										{{$garage->street}},{{$garage->city}},{{$garage->zone}},{{$garage->country}}
+									</address>
+								</div>
+ <?php
+// Get the current domain
+$domain = request()->getHost();
+$domain = str_replace('.', '-', $domain);
+// Set the path for domain-specific logo if it exists
+$domainLogoPath = public_path("frontend/{$domain}/img/logo/{$garage->logo}");
+$themeLogoPath = public_path("frontend/themes/{$garage->theme}/img/logo/{$garage->logo}");
+$defaultLogoPath = public_path("frontend/themes/theme/img/logo/logo.png");
+                ?>
+								<div class="col-lg-5 col-md-5 col-sm-6 col-12 offset-md-2 text-sm-end">
+									<address class="text-sm-end">
+															 @if(!empty($garage->logo))
+                        <img id="logo" src="{{ asset('frontend/' . $domain . '/img/logo/' . $garage->logo) }}"
+                            title="Garage Name" alt="Logo" width="auto" height="70" /><br>
+                    @elseif(!empty($garage->logo) && file_exists($themeLogoPath))
+                        <img id="logo" src="{{ asset('frontend/themes/' . $garage->theme . '/img/logo/' . $garage->logo) }}"
+                            title="Garage Name" alt="Logo" width="auto" height="70" /><br>
+                    @else
 
-							<div class="col-lg-5 col-md-5 col-sm-6 col-12 offset-md-2 text-sm-end">
-								<address class="text-sm-end">
-									<h4 class="text-4 mb-1">{{$garage->garage_name}}</h4>
-									Registration No: {{$garage->company_number}}<br>
-									VAT Number: {{$garage->vat_number}}<br>
-									Telephone: {{$garage->phone}}<br>
-									Email: {{$garage->email}}<br>
-									{{$garage->street}},{{$garage->city}},{{$garage->zone}},{{$garage->country}}
-								</address>
-							</div>
+                        <img id="logo" src="{{ asset('frontend/themes/theme/img/logo/logo.png') }}" title="Garage Name"
+                             alt="Logo" width="auto" height="70" /><br>
+                    @endif
+									</address>
+								</div>
 
+							</div>
+						</div>
+						<div class="text-center">
+							<h2 class="m-0 text-uppercase"><strong>Statement</strong></h2>
+						</div>
+						<div class="pl-5 pt-4">
+							<div class="row align-items-end">
+								<div class="col-lg-5 col-md-5 col-sm-6 col-12">
+									<address>
+										<h4 class="text-4 mb-1">{{ $customer->customer_name }}</h4>
+										Telephone: {{ $customer->customer_contact_number }}<br>
+										Email: {{ $customer->customer_email }}<br>
+										Address: {{ $customer->customer_address }}
+									</address>
+								</div>
+
+								<div class="col-lg-5 col-md-5 col-sm-6 col-12 offset-md-2 text-sm-end">
+									<address class="text-sm-end">
+										<h4 class="text-4 mb-1">{{$garage->garage_name}}</h4>
+										Registration No: {{$garage->company_number}}<br>
+										VAT Number: {{$garage->vat_number}}<br>
+										Telephone: {{$garage->phone}}<br>
+										Email: {{$garage->email}}<br>
+										{{$garage->street}},{{$garage->city}},{{$garage->zone}},{{$garage->country}}
+									</address>
+								</div>
+
+							</div>
 						</div>
 					</div>
 
@@ -163,6 +208,48 @@
 			</div>
 		</div>
 	@endif
+
+	<!-- Send Statement Email Modal -->
+	<div class="modal fade" id="sendStatementModal" tabindex="-1" aria-labelledby="sendStatementModalLabel"
+		aria-hidden="true">
+		<div class="modal-dialog modal-md">
+			<form action="{{ route('customer.statement.email') }}" method="POST">
+				@csrf
+				<input type="hidden" name="customer_id" value="{{ $customer->id }}">
+
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="sendStatementModalLabel">Send Statement</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+					</div>
+					<div class="modal-body">
+						<div class="mb-3">
+							<label for="email_to" class="form-label">To</label>
+							<input type="email" name="email_to" value="{{ $customer->customer_email }}" class="form-control"
+								required>
+						</div>
+						<div class="mb-3">
+							<label for="email_cc" class="form-label">CC (Optional)</label>
+							<input type="email" name="email_cc" class="form-control">
+						</div>
+						<div class="mb-3 form-check">
+							<input type="checkbox" name="attach_pdf" value="1" checked class="form-check-input"
+								id="attachPdfCheck">
+							<label class="form-check-label pl-0" for="attachPdfCheck">Attach PDF</label>
+						</div>
+						<div class="form-group">
+							<label for="email_body">Body:</label>
+							<textarea id="email_body" name="email_body">{!! getStatementEmailBody($customer) !!}</textarea>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="submit" class="btn btn-primary">Send Email</button>
+						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
 	<!-- JavaScript for Functionality -->
 	<script>
 		$(document).ready(function () {
@@ -238,24 +325,24 @@
 					let transactionsHtml = '';
 					response.transactionsHtml.forEach(transaction => {
 						transactionsHtml += `
-																<tr>
-																	<td class="no-wrap">${transaction.date}</td>
-																	<td>${transaction.details}</td>
-																	<td>${transaction.type}</td>
-																	<td class="text-right">£${transaction.amount.toFixed(2)}</td>
-																	<td class="text-right">£${transaction.paid_price.toFixed(2)}</td>
-																	<td class="text-right">£${transaction.balance_price.toFixed(2)}</td>
-																</tr>
-															`;
+																		<tr>
+																			<td class="no-wrap">${transaction.date}</td>
+																			<td>${transaction.details}</td>
+																			<td>${transaction.type}</td>
+																			<td class="text-right">£${transaction.amount.toFixed(2)}</td>
+																			<td class="text-right">£${transaction.paid_price.toFixed(2)}</td>
+																			<td class="text-right">£${transaction.balance_price.toFixed(2)}</td>
+																		</tr>
+																	`;
 					});
 
 					// Add the balance due row
 					transactionsHtml += `
-															<tr>
-																<td class="text-right" colspan="5"><strong>Balance Due</strong></td>
-																<td class="text-right"><strong>£${response.balanceDue.toFixed(2)}</strong></td>
-															</tr>
-														`;
+																	<tr>
+																		<td class="text-right" colspan="5"><strong>Balance Due</strong></td>
+																		<td class="text-right"><strong>£${response.balanceDue.toFixed(2)}</strong></td>
+																	</tr>
+																`;
 
 					$('#transactionsTable').html(transactionsHtml);
 				},
@@ -265,4 +352,10 @@
 			});
 		}
 	</script>
+	<style>
+		.tox-statusbar__branding,
+		.tox-promotion {
+			display: none;
+		}
+	</style>
 @endsection

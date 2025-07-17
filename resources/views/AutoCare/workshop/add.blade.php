@@ -1870,10 +1870,13 @@
                         <td>${product.tyre_season || ''}</td>
                         <td>${product.tyre_quantity || ''}</td>
                         <td>${!isNaN(parseFloat(product.tyre_price)) ? parseFloat(product.tyre_price).toFixed(2) : ''}</td>
-                        <td>${product.selected_price || ''}</td>
+                        <td>${
+                        product.tax_class_id === 9
+                            ? (parseFloat(product.selected_price || 0) * 1.2).toFixed(2)
+                            : parseFloat(product.selected_price || 0).toFixed(2)
+                        }</td>
                         <td>${product.trade_costprice || ''}</td>
                         <td>${product.tyre_supplier_name || ''}</td>
-                        <td>${product.date_available || ''}</td>
                         <td><button class="btn btn-primary selectTyre" data-product-id="${product.product_id || ''}">+Add</button></td>
                         </tr>
                         `);
