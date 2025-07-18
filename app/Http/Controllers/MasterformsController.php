@@ -19,6 +19,7 @@ use App\Models\tyre_brands;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Role;
+use App\Models\RegionCounty;
 use Analytics;
 
 class MasterformsController extends Controller
@@ -268,6 +269,8 @@ class MasterformsController extends Controller
 		$viewData['tyre_brand_name'] = tyre_brands::pluck('name', 'brand_id');
 		$viewData['registered_vehicle_select'] = VehicleDetail::pluck('vehicle_reg_number', 'vehicle_reg_number');
 		$viewData['customerNameSelect'] = Customer::pluck('customer_name', 'id');
+		$viewData['counties'] = RegionCounty::where('status', 1)->get();
+		 $viewData['brands'] = tyre_brands::where('status', 1)->get();
 		//print_r($totalPendingJob[0]->totalPendingJob);
 		//exit;
 		// dd($viewData);

@@ -120,7 +120,7 @@ class EstimateController extends Controller
                         'reference',
                         'payment_status',
                         'is_complete',
-                        'workshop_date',
+                        'estimate_date',
                         'vehicle_reg_number',
                         'make',
                         'model',
@@ -181,7 +181,7 @@ class EstimateController extends Controller
                         'reference',
                         'payment_status',
                         'is_complete',
-                        'workshop_date',
+                        'estimate_date',
                         'vehicle_reg_number',
                         'make',
                         'model',
@@ -201,7 +201,7 @@ class EstimateController extends Controller
                     $PartyManage['country'] = $request->shipping_address_country;
                     $PartyManage['grandTotal'] = $request->grand_total;
                     $PartyManage['year'] = $request->first_registered;
-                    $PartyManage['workshop_origin'] = 'Admin';
+                    $PartyManage['estimate_origin'] = 'Admin';
                     $PartyManage['fitting_type'] = $request->fitting_type ?? 'fully_fitted';
 
                     // Check if payment_status is "1" (paid)
@@ -530,7 +530,7 @@ if ($request->has('vehicle_reg_number') && $request->vehicle_reg_number != null)
                 $existingWorkshop->update(array_merge(
                     $estimateData,
                     [
-                        'workshop_origin' => 'Estimate',
+                        'estimate_origin' => 'Estimate',
                         'updated_at' => now(),
                     ]
                 ));
@@ -548,7 +548,7 @@ if ($request->has('vehicle_reg_number') && $request->vehicle_reg_number != null)
         $newWorkshop = Workshop::create(array_merge(
             $estimateData,
             [
-                'workshop_origin' => 'Estimate', // static value
+                'estimate_origin' => 'Estimate', // static value
                 'created_at' => now(),
                 'updated_at' => now(),
             ]
@@ -607,7 +607,7 @@ if ($request->has('vehicle_reg_number') && $request->vehicle_reg_number != null)
             $estimateQuery->where('email', 'like', '%' . $request->email . '%');
         }
         if ($request->filled('origin')) {
-            $estimateQuery->where('workshop_origin', 'like', '%' . $request->origin . '%');
+            $estimateQuery->where('estimate_origin', 'like', '%' . $request->origin . '%');
         }
         if ($request->filled('status')) {
             $estimateQuery->where('status', 'like', '%' . $request->status . '%');

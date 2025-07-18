@@ -303,6 +303,10 @@
         .fc-event-time {
             margin-right: 5px;
         }
+        .fc-timegrid-event-harness-inset .fc-timegrid-event, .fc-timegrid-event.fc-event-mirror, .fc-timegrid-more-link{
+        max-width: 150px !important;
+        max-height: 50px !important;
+        }
 
         #booking_info .bg-white span {
             margin: 4px;

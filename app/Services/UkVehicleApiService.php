@@ -54,9 +54,10 @@ class UkVehicleApiService
                 ];
             }
             
-            if (
+             if (
                 isset($data['ResponseInformation']['StatusCode']) &&
-                $data['ResponseInformation']['StatusCode'] === 0 &&
+                $data['ResponseInformation']['StatusCode'] === 0 ||
+                 $data['ResponseInformation']['StatusCode'] === 1 &&
                 $data['ResponseInformation']['IsSuccessStatusCode'] === true
             ) {
                 // Extract the relevant data from the 'Results' key

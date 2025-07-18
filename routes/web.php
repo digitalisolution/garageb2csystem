@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\ViewController\HomeController;
+use App\Http\Controllers\ViewController\ServiceViewController;
 use App\Http\Controllers\ServiceController;
 // use App\Http\Controllers\ViewController\SlugController;
 use App\Http\Controllers\ViewController\SitemapController;
@@ -154,8 +155,8 @@ Route::get('/years', [CarserviceProductController::class, 'getYears'])->name('ye
 Route::get('/engines', [CarserviceProductController::class, 'getEngines'])->name('engines');
 
 
-Route::get('/service', [App\Http\Controllers\ViewController\ServiceController::class, 'services'])->name('service'); 
-Route::post('/service-enquiry', [App\Http\Controllers\ServiceController::class, 'handleEnquiry'])->name('service.enquiry.submit');
+Route::get('/service', [ServiceViewController::class, 'services'])->name('service'); 
+Route::post('/service-enquiry', [ServiceViewController::class, 'handleEnquiry'])->name('service.enquiry.submit');
 
 Route::get('/cart/fetch', [CartController::class, 'fetchCartItems'])->name('cart.fetch');
 
@@ -803,7 +804,7 @@ Route::get('blogs', [App\Http\Controllers\ViewController\BlogController::class, 
 Route::get('blogs/{slug}', [App\Http\Controllers\ViewController\BlogController::class, 'show'])->name('blogs.show');
 Route::get('/blogs/category/{slug}', [App\Http\Controllers\ViewController\BlogController::class, 'category'])->name('blogs.category');
 
-Route::post('/contact-submit', [App\Http\Controllers\ViewController\ServiceController::class, 'submitContactForm'])->name('contact.submit');
+Route::post('/contact-submit', [ServiceViewController::class, 'submitContactForm'])->name('contact.submit');
 Route::get('/contact-submit', function () {
     return redirect('/contact');
 });

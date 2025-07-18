@@ -164,8 +164,8 @@ $defaultLogoPath = public_path("frontend/themes/theme/img/logo/logo.png");
             </div>
         </header>
 @php
-if (isset($estimate->workshop_date)) {
-    $estimate_date = date('d/m/Y', strtotime($estimate->workshop_date));
+if (isset($estimate->estimate_date)) {
+    $estimate_date = date('d/m/Y', strtotime($estimate->estimate_date));
 } else {
     $estimate_date = "";
 }
@@ -179,7 +179,9 @@ if (isset($estimate->due_out)) {
         <main>
             <div class="ingray_strip">
                 <div class="item"><strong>Estimate Date:</strong> {{ $estimate_date }}</div>
+                @if ($due_out)
                 <div class="item"> <strong>End Date:</strong> {{ $due_out }}</div>
+                @endif
                 <div class="item"> <strong>Est#:</strong> EST-{{ $estimate->id }}</div>
             </div>
             <div class="row">

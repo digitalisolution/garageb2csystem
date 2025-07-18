@@ -194,7 +194,7 @@
                                         $due_in = isset($value->due_in) ? date('d/m/Y', strtotime($value->due_in)) : '';
                                         $created_at = isset($value->created_at) ? date('d/m/Y H:i:s', strtotime($value->created_at)) : '';
                                         $due_out = isset($value->due_out) ? date('d/m/Y', strtotime($value->due_out)) : '';
-                                        $estimate_date = isset($value->workshop_date) ? date('d/m/Y H:i:s', strtotime($value->workshop_date)) : '';
+                                        $estimate_date = isset($value->estimate_date) ? date('d/m/Y H:i:s', strtotime($value->estimate_date)) : '';
                                     @endphp
                                     <tr>
                                         <td>{{ $estimate_date }}</td>
@@ -208,7 +208,7 @@
                                         </td>
                                         <td class="text-uppercase">{{ $value->vehicle_reg_number }}</td>
                                         <td>£{{ number_format($value->grandTotal, 2, '.', '') }}</td>
-                                        <td><span class="{{ $value->workshop_origin }}">{{ $value->workshop_origin }}</span>
+                                        <td><span class="{{ $value->workshop_origin }}">{{ $value->estimate_origin }}</span>
                                         </td>
                                         <td><span class="{{ $value->status }}">{{ $value->status }}</span></td>
                                         <td>

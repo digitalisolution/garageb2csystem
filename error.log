@@ -120,3 +120,28 @@
 [Thu Jul 17 02:21:23.561783 2025] [ssl:warn] [pid 3621509] AH01909: digitalideasltd.co.uk:443:0 server certificate does NOT include an ID which matches the server name
 [Thu Jul 17 02:21:27.900362 2025] [ssl:warn] [pid 3621509] AH01909: digitalideasltd.in:443:0 server certificate does NOT include an ID which matches the server name
 [Thu Jul 17 02:21:27.902157 2025] [ssl:warn] [pid 3621509] AH01909: digitalideasltd.co.uk:443:0 server certificate does NOT include an ID which matches the server name
+[Thu Jul 17 06:05:18.509167 2025] [ssl:warn] [pid 1010826] AH01909: digitalideasltd.in:443:0 server certificate does NOT include an ID which matches the server name
+[Thu Jul 17 06:05:18.510969 2025] [ssl:warn] [pid 1010826] AH01909: digitalideasltd.co.uk:443:0 server certificate does NOT include an ID which matches the server name
+[Thu Jul 17 06:05:18.571927 2025] [ssl:warn] [pid 1010827] AH01909: digitalideasltd.in:443:0 server certificate does NOT include an ID which matches the server name
+[Thu Jul 17 06:05:18.573581 2025] [ssl:warn] [pid 1010827] AH01909: digitalideasltd.co.uk:443:0 server certificate does NOT include an ID which matches the server name
+[Thu Jul 17 10:21:16.949976 2025] [access_compat:error] [pid 1021667] [client 172.68.186.6:40326] AH01797: client denied by server configuration: /var/www/demositegarage/public/.env.txt
+[Thu Jul 17 10:21:55.684313 2025] [access_compat:error] [pid 1021659] [client 172.71.241.138:50366] AH01797: client denied by server configuration: /var/www/demositegarage/public/.env.ini
+[Thu Jul 17 10:22:03.806305 2025] [access_compat:error] [pid 1021629] [client 162.158.216.76:35794] AH01797: client denied by server configuration: /var/www/demositegarage/public/wp-config.backup.txt
+[Thu Jul 17 16:27:16.612533 2025] [ssl:warn] [pid 1010827] AH01909: digitalideasltd.in:443:0 server certificate does NOT include an ID which matches the server name
+[Thu Jul 17 16:27:16.614236 2025] [ssl:warn] [pid 1010827] AH01909: digitalideasltd.co.uk:443:0 server certificate does NOT include an ID which matches the server name
+[Thu Jul 17 16:27:20.964129 2025] [ssl:warn] [pid 1010827] AH01909: digitalideasltd.in:443:0 server certificate does NOT include an ID which matches the server name
+[Thu Jul 17 16:27:20.966042 2025] [ssl:warn] [pid 1010827] AH01909: digitalideasltd.co.uk:443:0 server certificate does NOT include an ID which matches the server name
+[Thu Jul 17 16:27:22.874314 2025] [ssl:warn] [pid 1010827] AH01909: digitalideasltd.in:443:0 server certificate does NOT include an ID which matches the server name
+[Thu Jul 17 16:27:22.875968 2025] [ssl:warn] [pid 1010827] AH01909: digitalideasltd.co.uk:443:0 server certificate does NOT include an ID which matches the server name
+[Thu Jul 17 16:27:27.228537 2025] [ssl:warn] [pid 1010827] AH01909: digitalideasltd.in:443:0 server certificate does NOT include an ID which matches the server name
+[Thu Jul 17 16:27:27.230252 2025] [ssl:warn] [pid 1010827] AH01909: digitalideasltd.co.uk:443:0 server certificate does NOT include an ID which matches the server name
+[Fri Jul 18 00:00:04.121801 2025] [ssl:warn] [pid 1010827] AH01909: digitalideasltd.in:443:0 server certificate does NOT include an ID which matches the server name
+[Fri Jul 18 00:00:04.123869 2025] [ssl:warn] [pid 1010827] AH01909: digitalideasltd.co.uk:443:0 server certificate does NOT include an ID which matches the server name
+[Fri Jul 18 05:17:19.636663 2025] [ssl:warn] [pid 1010827] AH01909: digitalideasltd.in:443:0 server certificate does NOT include an ID which matches the server name
+[Fri Jul 18 05:17:19.638370 2025] [ssl:warn] [pid 1010827] AH01909: digitalideasltd.co.uk:443:0 server certificate does NOT include an ID which matches the server name
+[Fri Jul 18 05:17:24.001729 2025] [ssl:warn] [pid 1010827] AH01909: digitalideasltd.in:443:0 server certificate does NOT include an ID which matches the server name
+[Fri Jul 18 05:17:24.003605 2025] [ssl:warn] [pid 1010827] AH01909: digitalideasltd.co.uk:443:0 server certificate does NOT include an ID which matches the server name
+[Fri Jul 18 05:17:25.752879 2025] [ssl:warn] [pid 1010827] AH01909: digitalideasltd.in:443:0 server certificate does NOT include an ID which matches the server name
+[Fri Jul 18 05:17:25.754606 2025] [ssl:warn] [pid 1010827] AH01909: digitalideasltd.co.uk:443:0 server certificate does NOT include an ID which matches the server name
+[Fri Jul 18 05:17:30.123118 2025] [ssl:warn] [pid 1010827] AH01909: digitalideasltd.in:443:0 server certificate does NOT include an ID which matches the server name
+[Fri Jul 18 05:17:30.124839 2025] [ssl:warn] [pid 1010827] AH01909: digitalideasltd.co.uk:443:0 server certificate does NOT include an ID which matches the server name

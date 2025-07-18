@@ -180,20 +180,4 @@ class ServiceController extends Controller
         return redirect()->route('services.index')->with('success', 'Service deleted successfully!');
     }
 
-    public function handleEnquiry(Request $request)
-{
-    $data = $request->validate([
-        'vehicle_reg' => 'required',
-        'first_name' => 'required',
-        'email' => 'required|email',
-        'address' => 'required',
-        'selected_services' => 'required|array',
-    ]);
-
-    // Example: save to DB or send email
-    // Mail::to('admin@example.com')->send(new QuoteEnquiryMail($data));
-
-    return back()->with('success', 'Your enquiry has been sent.');
-}
-
 }

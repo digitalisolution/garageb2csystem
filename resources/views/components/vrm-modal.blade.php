@@ -11,7 +11,32 @@
                 <h4 class="modal-title" id="vehicleDataModalLabel"><strong>Confirm your tyre size</strong></h4>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body py-3 px-5">
+            <div class="modal-body p-0">
+                <div class="bg-light py-4 px-4">
+                <div class="your_vehicle_result">
+                        <div class="vrm_plate"><img src="frontend/themes/default/img/icon-img/reg_icon.png" alt="uk icon" width="auto" height="35" loading="lazy"> <span>av07gvk</span></div>
+                        <div><img class="default-img" src="frontend/themes/default/img/brand-logo/uniroyal.jpg" alt="" width="auto" height="50"></div>
+                </div>
+                <div class="your_vehicle_data">
+                        <div class="item">
+                            Model
+                            <span>Galaxy Ghia TDCi 6g</span>
+                        </div>
+                        <div class="item">
+                            Year
+                            <span>2007</span>
+                        </div>
+                        <div class="item">
+                            Engine Capacity
+                            <span>1997 CC</span>
+                        </div>
+                        <div class="item">
+                            Fuel
+                            <span>Deisel</span>
+                        </div>
+                </div>
+            </div>
+                <div class="py-3 px-4">
                 <div class="tyre-result">
                     <h5><strong>Your Vehicle</strong></h5>
                     <div id="vehicleDataContent">
@@ -25,6 +50,7 @@
                     <select class="tyre-select" id="tyreSizeSelect" aria-label="Select Tyre Size">
                         <!-- Dynamic tyre sizes will be inserted here -->
                     </select>
+                </div>
                 </div>
             </div>
             <div class="px-5">

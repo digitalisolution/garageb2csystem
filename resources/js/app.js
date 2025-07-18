@@ -475,39 +475,41 @@ function populateModal(bookingData) {
 
     // Populate Workshop Items and Services in Table
     const itemsTableBody = document.getElementById('workshopItems');
-    itemsTableBody.innerHTML = ''; // Clear previous items
+    itemsTableBody.innerHTML = '';
     let index = 1;
 
-    // Initialize totals
     let subtotal = 0;
     let totalVAT = 0;
-    let shippingPrice = 0; // Single shipping price
-    let shippingVAT = 0; // VAT for shipping
+    let shippingPrice = 0;
+    let shippingVAT = 0;
     let hasMobileFitting = false;
 
+    // Process Items First
     if (workshop.items && workshop.items.length > 0) {
-        workshop.items.forEach((item) => {
+        workshop.items.forEach((item, i) => {
             let quantity = item.quantity || 1;
             let rate = parseFloat(item.margin_rate) || 0;
             let vatPercentage = item.tax_class_id === 9 ? 20 : (parseFloat(item.vat) || 0);
             let vatAmount = (rate * vatPercentage) / 100;
             let total = (rate + vatAmount) * quantity;
-           let fittingType = item.fitting_type.replace(/_/g, ' ') // Replace underscores with spaces
-    .split(' ') // Split into words
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize each word
-    .join(' ');
-            // Add to totals
+
+            let fittingType = item.fitting_type
+                ?.replace(/_/g, ' ')
+                .split(' ')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+
             subtotal += rate * quantity;
             totalVAT += vatAmount * quantity;
 
-            // Check if the item has fitting_type as mobile_fitted
+            // Check for mobile fitting and store shipping details (only set once)
             if (item.fitting_type === 'mobile_fitted') {
                 hasMobileFitting = true;
-                // Add the shipping price once (single value)
-                shippingPrice = parseFloat(item.shipping_price) || 0;
-                // Calculate shipping VAT if shipping_tax_id is 9
-                if (item.shipping_tax_id === 9) {
-                    shippingVAT = shippingPrice * 0.2; // 20% VAT for shipping
+                if (shippingPrice === 0) { // Only set if not already set
+                    shippingPrice = parseFloat(item.shipping_price) || 0;
+                    if (item.shipping_tax_id === 9) {
+                        shippingVAT = shippingPrice * 0.2;
+                    }
                 }
             }
 
@@ -516,19 +518,20 @@ function populateModal(bookingData) {
                     <td>${index++}</td>
                     <td>
                         <strong>${item.model || item.description}</strong>
-                        <span class="d-block">${item.description || 'N/A'}</span>
+                        <span class="d-block">${item.description || 'N/A'}</br>${item.product_ean} (${item.supplier})</span>
                     </td>
                     <td class="text-center">${quantity}</td>
                     <td class="text-right">£${rate.toFixed(2)}</td>
                     <td class="text-right">${vatPercentage}%</td>
                     <td class="text-right">£${total.toFixed(2)}</td>
-                </tr>
-            `;
-             document.getElementById("fittingType").textContent = fittingType || 'N/A';
+                </tr>`;
+
             itemsTableBody.innerHTML += row;
+            document.getElementById("fittingType").textContent = fittingType || 'N/A';
         });
     }
 
+    // Process Services Second
     if (workshop.services && workshop.services.length > 0) {
         workshop.services.forEach((service) => {
             let rate = parseFloat(service.service_price) || 0;
@@ -557,28 +560,55 @@ function populateModal(bookingData) {
         });
     }
 
-    totalVAT += shippingVAT; // Add shipping VAT to total VAT
+    // Add Mobile Fitting Callout Charge at the END (only once)
+    if (hasMobileFitting && shippingPrice > 0) {
+        const shippingTotal = shippingPrice + shippingVAT;
 
-    // Calculate grand total
-    const grandTotal = subtotal + totalVAT + shippingPrice;
-
-    // Display shipping charges separately above the subtotal
-    const shippingChargesElement = document.getElementById("calloutcharge");
-    const shippingChargestrElement = document.getElementById("calloutchargetr");
-    if (hasMobileFitting) {
-        shippingChargesElement.textContent = `Callout Charges: £${shippingPrice.toFixed(2)}`;
-        shippingChargesElement.style.display = "block"; // Show the shipping charges
-    } else {
-        shippingChargesElement.textContent = "";
-        shippingChargesElement.style.display = "none"; // Hide the shipping charges
-        shippingChargestrElement.style.display = "none";
+        const calloutRow = `
+            <tr>
+                <td></td>
+                <td>
+                    <strong>Mobile Fitting Callout Charge</strong>
+                    <span class="d-block">Applied to Mobile Fitted service</span>
+                </td>
+                <td class="text-center">1</td>
+                <td class="text-right">£${shippingPrice.toFixed(2)}</td>
+                <td class="text-right">20%</td>
+                <td class="text-right">£${shippingTotal.toFixed(2)}</td>
+            </tr>`;
+        
+        itemsTableBody.innerHTML += calloutRow;
+        // subtotal += shippingPrice;
+        totalVAT += shippingVAT;
     }
 
-    // Display totals in the modal
+    // Calculate correct grand total
+    const grandTotal = subtotal + totalVAT + shippingPrice;
+
+    // Handle callout charges display in summary
+    const shippingChargesElement = document.getElementById("calloutcharge");
+    const shippingChargestrElement = document.getElementById("calloutchargetr");
+    
+    if (hasMobileFitting && shippingPrice > 0) {
+        shippingChargesElement.textContent = `Callout Charges: £${shippingPrice.toFixed(2)}`;
+        shippingChargesElement.style.display = "block";
+        if (shippingChargestrElement) {
+            shippingChargestrElement.style.display = "table-row";
+        }
+    } else {
+        shippingChargesElement.textContent = "";
+        shippingChargesElement.style.display = "none";
+        if (shippingChargestrElement) {
+            shippingChargestrElement.style.display = "none";
+        }
+    }
+
+    // Update summary totals
     document.getElementById("subtotal").textContent = 'Sub-Total: £' + subtotal.toFixed(2);
     document.getElementById("totalvat").textContent = 'VAT (20%): £' + totalVAT.toFixed(2);
     document.getElementById("grandtotal").textContent = 'Grand Total: £' + grandTotal.toFixed(2);
 
+    // Handle empty table
     if (itemsTableBody.innerHTML === '') {
         itemsTableBody.innerHTML = `
             <tr>
@@ -587,7 +617,6 @@ function populateModal(bookingData) {
         `;
     }
 
-    // ✅ Set the dynamic edit button link
     if (document.getElementById("editBookingBtn")) {
         document.getElementById("editBookingBtn").href = `/AutoCare/workshop/add/${workshop.id}`;
     }
