@@ -19,8 +19,12 @@ use App\Models\RegionCounty;
 use App\Models\Countries;
 use App\Models\WorkshopService;
 use App\Services\EmailValidationService;
-use App\Http\Requests\BaseFormRequest;
+use App\Http\Requests\EnquiryFormRequest;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use App\Rules\NoTestCustomer;
+use App\Mail\EnquiryToCustomer;
 
 class ServiceViewController extends Controller
 {
@@ -38,7 +42,7 @@ class ServiceViewController extends Controller
         $vehicleData = Session::get('vehicleData', []);
         $counties = RegionCounty::pluck('name', 'zone_id');
         $countries = Countries::pluck('name', 'country_id');
-        return view('service.service', compact('services', 'vehicleData', 'counties','countries'));
+        return view('service.service', compact('services', 'vehicleData', 'counties', 'countries'));
     }
 
     public function show($slug)
@@ -117,95 +121,199 @@ class ServiceViewController extends Controller
             'user_message' => $validated['message'],
         ];
 
-    Mail::to('info@digitalideasltd.co.uk')->send(new ContactToAdmin($emailData, $garage));
-    Mail::to($garage->email)->send(new ContactToAdmin($emailData, $garage));
+        Mail::to('info@digitalideasltd.co.uk')->send(new ContactToAdmin($emailData, $garage));
+        Mail::to($garage->email)->send(new ContactToAdmin($emailData, $garage));
 
-    // Send confirmation to customer
-    Mail::to($validated['email'])->send(new ContactToCustomer($emailData, $garage));
+        // Send confirmation to customer
+        Mail::to($validated['email'])->send(new ContactToCustomer($emailData, $garage));
 
         return redirect()->back()->with('success', 'Your inquiry has been sent successfully!');
     }
 
-    public function handleEnquiry(BaseFormRequest $request)
+    public function handleEnquiry(EnquiryFormRequest $request)
     {
-            $validated = $request->validate([
-                'vehicle_reg' => 'nullable|string|max:8',
-                'mileage' => 'nullable|string',
-                'first_name' => 'required|string|min:2|max:50|regex:/^[A-Za-z\s]+$/',
-                'last_name' => 'nullable|string|min:2|max:50|regex:/^[A-Za-z\s]+$/',
-                'email' => 'required|email',
-                'phone' => 'nullable|string|min:10|max:15|regex:/^[0-9\-\+\(\)\s]+$/',
-                'address' => 'required||string|min:5|max:200',
-                'company' => 'nullable|string|max:100',
-                'city' => 'required|string|max:100',
-                'county' => 'required|string|max:50',
-                'country' => 'required|string|max:50',
-                'postcode' => 'required|string|max:10|regex:/^[A-Za-z0-9\s]{3,10}$/',
-                'message' => 'nullable|string|min:2|max:500|regex:/^[A-Za-z\s]+$/',
-                'selected_services' => 'required|array',
-            ]);
-
-            $validationResult = $this->emailValidationService->validateEmail($validated['email'],$validated['email']);
+            $validated = $request->validated();
+            $validationResult = $this->emailValidationService->validateEmail($validated['email'], $validated['email']);
             if (!$validationResult['status']) {
-                return back()->withErrors(['customer_email' => $validationResult['message']])->withInput();
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['email' => [$validationResult['message']]],
+                    'message' => 'Email validation failed.'
+                ], 422);
             }
-            
-            $countyName = RegionCounty::where('zone_id', $validated['county'])->value('name');
-            $countryName = Countries::where('country_id', $validated['country'])->value('name');
-            // $customer = Customer::firstOrCreate(
-            // ['customer_email' => $validated['email']],
-            // [
-            //             'customer_name' => $validated['customer_name'],
-            //             'customer_last_name' => $validated['last_name'],
-            //             'customer_contact_number' => $validated['phone_number'],
-            //             'customer_address' => $validated['address'],
-            //             'billing_address_city' => $validated['city'],
-            //             'billing_address_postcode' => $validated['postcode'],
-            //             'billing_address_county' => $validated['county'],
-            //             'billing_address_country' => $validated['country'],
-            //             'company_name' => $validated['company_name'],
-            // ]
-            // );
 
-            $estimate = Estimate::create([
-                // 'customer_id' => $customer->id,
-                'name' => $validated['first_name'].' '.$validated['last_name'] ?? 'Customer',
-                'email' => $validated['email'] ?? null,
-                'mobile' => $validated['phone'] ?? null,
-                'address' => $validated['address'] ?? null,
-                'company_name' => $validated['company'] ?? null,
-                'city' => $validated['city'] ?? null,
-                'county' => $countyName ?? null,
-                'country' => $countryName ?? null,
-                'zone' => $validated['postcode'] ?? null,
-                'notes' => $validated['message'] ?? null,
-                'vehicle_reg_number' => $validated['vehicle_reg'] ?? null,
-                'status' => 'pending',
-                'estimate_origin' => 'Website',
-                'estimate_date' => Carbon::now(), // optional
-                'fitting_type' => 'fully_fitted', // or based on form
-                'grandTotal' => 0,
-                'balance_price' => 0,
-            ]);
+            // Prevent duplicate entries in last 24 hours
+            $duplicateCheck = Estimate::where('email', $validated['email'])
+                ->where('vehicle_reg_number', $validated['vehicle_reg'])
+                ->where('created_at', '>=', now()->subHours(24))
+                ->where('estimate_origin', 'Website')
+                ->exists();
 
-            $services = CarService::whereIn('service_id', $validated['selected_services'])->get();
+            if ($duplicateCheck) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['email' => ['You have already submitted an enquiry for this vehicle in the last 24 hours.']],
+                    'message' => 'Duplicate enquiry detected.'
+                ], 422);
+            }
 
-            foreach ($services as $service) {
-                WorkshopService::create([
-                    'workshop_id' => $estimate->id,
-                    'ref_type' => 'estimate',
-                    'service_id' => $service->service_id,
-                    'service_name' => $service->name,
-                    'tax_class_id' => $service->tax_class_id,
-                    'quantity' => 1,
-                    'service_price' => $service->price ?? 0,
-                    'product_type' => 'service',
+            // Start DB transaction
+            DB::beginTransaction();
+
+            try {
+
+                $countyName = RegionCounty::where('zone_id', $validated['county'])->value('name');
+                $countryName = Countries::where('country_id', $validated['country'])->value('name');
+
+                if (!$countyName || !$countryName) {
+                    throw new \Exception('Invalid county or country selected.');
+                }
+
+                // Check if customer exists
+                $customer = Customer::where('customer_email', strtolower(trim($validated['email'])))->first();
+
+                if (!$customer) {
+                    // Create new customer
+                    $customer = Customer::create([
+                        'customer_name' => trim($validated['first_name']),
+                        'customer_last_name' => trim($validated['last_name'] ?? ''),
+                        'customer_email' => strtolower(trim($validated['email'])),
+                        'customer_contact_number' => $validated['phone'] ? preg_replace('/\D/', '', $validated['phone']) : null,
+                        'customer_address' => trim($validated['address']),
+                        'customer_city' => trim($validated['city']),
+                        'customer_county' => $countyName,
+                        'customer_country' => $countryName,
+                        'customer_postcode' => strtoupper(trim($validated['postcode'])),
+                        'customer_origin' => 'Website',
+                        'customer_status' => 'active',
+                    ]);
+                }
+
+                // Create estimate
+                $estimate = Estimate::create([
+                    'customer_id' => $customer->id,
+                    'name' => trim($validated['first_name'] . ' ' . ($validated['last_name'] ?? '')),
+                    'email' => strtolower(trim($validated['email'])),
+                    'mobile' => $validated['phone'] ? preg_replace('/\D/', '', $validated['phone']) : null,
+                    'address' => trim($validated['address']),
+                    'city' => trim($validated['city']),
+                    'county' => $countyName,
+                    'country' => $countryName,
+                    'zone' => strtoupper(trim($validated['postcode'])),
+                    'notes' => $validated['message'] ?? null,
+                    'vehicle_reg_number' => $validated['vehicle_reg'] ? strtoupper(trim($validated['vehicle_reg'])) : null,
+                    'mileage' => $validated['mileage'] ? trim($validated['mileage']) : null,
+                    'status' => 'pending',
+                    'estimate_origin' => 'Website',
+                    'estimate_date' => now(),
                     'fitting_type' => 'fully_fitted',
+                    'grandTotal' => 0,
+                    'balance_price' => 0,
                 ]);
-            }
 
-            return back()->with('success', 'Your enquiry has been sent successfully.');
+                // Validate and get services
+                $services = CarService::whereIn('service_id', $validated['selected_services'])->get();
+
+                if ($services->count() !== count($validated['selected_services'])) {
+                    throw new \Exception('Some selected services are invalid.');
+                }
+
+                $totalAmount = 0;
+
+                // Attach services to estimate
+                foreach ($services as $service) {
+                    $servicePrice = floatval($service->price ?? 0);
+                    $totalAmount += $servicePrice;
+
+                    WorkshopService::create([
+                        'workshop_id' => $estimate->id,
+                        'ref_type' => 'estimate',
+                        'service_id' => $service->service_id,
+                        'service_name' => $service->name,
+                        'tax_class_id' => $service->tax_class_id,
+                        'quantity' => 1,
+                        'service_price' => $servicePrice,
+                        'product_type' => 'service',
+                        'fitting_type' => 'fully_fitted',
+                    ]);
+                }
+
+                // Update estimate with total amount
+                $estimate->update([
+                    'grandTotal' => $totalAmount,
+                    'balance_price' => $totalAmount,
+                ]);
+
+                // Commit transaction
+                DB::commit();
+                
+                if ($validated['email']) {
+                $this->sendEnquiryConfirmationEmail($validated, $estimate->id);
+                }
+
+                // Return success JSON
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Your enquiry has been submitted successfully! We will contact you soon.',
+                    'estimate_id' => $estimate->id,
+                ]);
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'There was an error saving your enquiry.',
+                    'error_details' => $e->getMessage()
+                ], 500);
+            }
     }
 
+        protected function sendEnquiryConfirmationEmail(array $validated, $orderId)
+    {
+        $nameRule = new NoTestCustomer();
+        $emailRule = new NoTestCustomer();
+
+        if (
+            !$nameRule->passes('customer_name', trim($validated['first_name'])) ||
+            !$emailRule->passes('email', strtolower(trim($validated['email'])))
+        ) {
+            Log::info('Skipping email due to spam-like customer details.', [
+                'customer_name' => $validated['first_name'],
+                'email' => $validated['email'],
+            ]);
+            return true;
+        }
+
+        try {
+            $customer = [
+                'customer_name' =>trim($validated['first_name']),
+                'email' => strtolower(trim($validated['email'])),
+            ];
+
+            $garage = GarageDetails::first();
+            $garageEmail = $garage?->email;
+
+            // Send to customer
+            Mail::to($customer['email'])->send(new EnquiryToCustomer($orderId, $customer, $garage));
+
+            // Send to owner
+            $ownerEmail = 'info@digitalideasltd.co.uk';
+            Mail::to($ownerEmail)->send(new EnquiryToCustomer($orderId, $customer, $garage));
+
+            // Send to garage
+            if ($garageEmail) {
+                Mail::to($garageEmail)->send(new EnquiryToCustomer($orderId, $customer, $garage));
+            } else {
+                Log::warning('Garage email not found.', ['email' => $garageEmail]);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Error during email submission.', [
+                'error_message' => $e->getMessage(),
+                'error_trace' => $e->getTraceAsString(),
+            ]);
+        }
+    }
 
 }
+
