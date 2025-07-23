@@ -992,15 +992,15 @@ document.addEventListener("DOMContentLoaded", function () {
             const tyreSizeSelection = document.getElementById('tyreSizeSelection');
             const tyreSizeSelect = document.getElementById('tyreSizeSelect');
             const continueButton = document.getElementById('continueButton');
-            modalContent.innerHTML = '<p>Loading...</p>'; // Initial loading message
-            tyreSizeSelection.style.display = 'none'; // Hide tyre size selection initially
-            continueButton.style.display = 'none'; // Hide continue button initially
+            modalContent.innerHTML = '<p>Loading...</p>';
+            tyreSizeSelection.style.display = 'none';
+            continueButton.style.display = 'none';
 
             try {
                 // Fetch VRM details from the API
                 const response = await fetch(`${window.location.origin}/vehicle-data?vrm=${vrm}`, {
                     headers: {
-                        'X-Request-Token': 'wrt9fe40d38302123a634c305ef580', // Use Laravel's Blade syntax for dynamic values
+                        'X-Request-Token': 'wrt9fe40d38302123a634c305ef580',
                         'Content-Type': 'application/json'
                     }
                 });
@@ -1024,13 +1024,41 @@ document.addEventListener("DOMContentLoaded", function () {
 
                     // Display vehicle details in the modal
                     modalContent.innerHTML = `
+                    <div class="bg-light py-4 px-4 mb-3">
+                    <div class="your_vehicle_result d-flex justify-content-between align-items-center">
+                        <div class="vrm_plate d-flex align-items-center">
+                            <img src="frontend/themes/default/img/icon-img/reg_icon.png" alt="uk icon" width="auto" height="35" loading="lazy">
+                            <span class="ms-2 text-uppercase">${vrm}</span>
+                        </div>
+                       <div id="brandImageContainer"></div>
+                    </div>
+                    <div class="your_vehicle_data mt-3 d-flex flex-wrap gap-3">
+                        <div class="item">
+                            Model
+                            <span>${vehicleDetails.Model || 'N/A'}</span>
+                        </div>
+                        <div class="item">
+                            Year
+                            <span>${vehicleDetails.DateOfFirstRegistration ? new Date(vehicleDetails.DateOfFirstRegistration).getFullYear() : 'N/A'}</span>
+                        </div>
+                        <div class="item">
+                            Engine Capacity
+                            <span>${vehicleDetails.EngineCapacityCc || 'N/A'} CC</span>
+                        </div>
+                        <div class="item">
+                            Fuel
+                            <span>${vehicleDetails.FuelType || 'N/A'}</span>
+                        </div>
+                    </div>
+                </div>
                 <p>We have identified the tyre size(s) that may fit your <b>${vehicleDetails.Make}</b>
                 <b> ${vehicleDetails.Model}</b>
                 <b> Year: ${vehicleDetails.DateOfFirstRegistration ? new Date(vehicleDetails.DateOfFirstRegistration).getFullYear() : 'N/A'}</b>
                 <b> Engine Capacity: ${vehicleDetails.EngineCapacityCc || 'N/A'} CC</b>.
                 Please select your tyre size below before clicking 'Continue'.</p>
             `;
-
+                    const brandImage = getBrandImage(vehicleDetails.Make);     
+                    document.getElementById('brandImageContainer').appendChild(brandImage);
                     // Display tyre size selection dropdown
                     if (tyreSizes.size > 0) {
                         tyreSizeSelection.style.display = 'block';
@@ -1059,7 +1087,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         const selectedTyreSize = this.value;
                         const fittingType = document.getElementById('vrmSearchForm').querySelector('input[name="fitting_type"]:checked')?.value || null;
                         if (selectedTyreSize) {
-                            continueButton.style.display = 'inline-block'; // Show the continue button
+                            continueButton.style.display = 'inline-block';
                             continueButton.onclick = function () {
                                 // Parse the selected tyre size
                                 const widthProfile = selectedTyreSize.split('R')[0].split('/');
@@ -1079,7 +1107,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                 document.getElementById('tyreSearchForm').submit();
                             };
                         } else {
-                            continueButton.style.display = 'none'; // Hide the continue button if no selection
+                            continueButton.style.display = 'none';
                         }
                     });
 
@@ -1090,7 +1118,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         model: vehicleDetails.Model,
                         year: vehicleDetails.DateOfFirstRegistration ? new Date(vehicleDetails.DateOfFirstRegistration).getFullYear() : 'N/A',
                         engine: vehicleDetails.EngineCapacityCc || 'N/A',
-                        tyreSizes: Array.from(tyreSizes), // Convert Set to Array for JSON serialization
+                        tyreSizes: Array.from(tyreSizes),
                     };
 
                     try {
@@ -1131,6 +1159,34 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     }
+
+
+    function getBrandImage(make) {
+        // console.log(make);
+    const makeSlug = make.toLowerCase() + ".webp";
+    const localUrl = window.carImageConfig.localPath + "/" + makeSlug;
+    const cdnUrl = window.carImageConfig.cdnBase + makeSlug;
+    const fallback = window.carImageConfig.defaultImage;
+
+    const img = document.createElement('img');
+    img.className = "default-img";
+    img.alt = "Brand Logo";
+    // img.width = "auto";
+    img.height = 50;
+    img.src = cdnUrl;
+
+    img.onerror = function () {
+        this.onerror = null;
+        this.src = localUrl;
+        this.onerror = function () {
+            this.src = fallback;
+        };
+    };
+
+    return img;
+}
+
+
     });
       // Prevent the form's default submit behavior
 document.addEventListener("DOMContentLoaded", function () {

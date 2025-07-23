@@ -42,12 +42,12 @@ class WorkshopController extends Controller
     {
         $this->middleware('auth');
         $this->paymentHistoryService = $paymentHistoryService;
-        $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
     }
-
+    
     public function save(Request $request, $id = null)
     {
         
+        $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
         // Prepare initial view data
         $viewData['pageTitle'] = 'Add Workshop';
         // $viewData['model_select'] = Modal::pluck('model_name', 'id');
@@ -71,7 +71,7 @@ class WorkshopController extends Controller
             $vehicleRegNumber = $workshop->vehicle_reg_number;
 
             $viewData = [
-                'workshopTyreData' => WorkshopTyre::where('workshop_id', $id)->get(),
+                'workshopTyreData' => WorkshopTyre::where('workshop_id', $id)->where('ref_type', 'workshop')->get(),
                 'workshopServiceData' => WorkshopService::where('workshop_id', $id)->get(),
                 'workshopVehicleData' => VehicleDetail::where('vehicle_reg_number', $vehicleRegNumber)->get()
             ];
@@ -259,15 +259,11 @@ class WorkshopController extends Controller
      */
     private function saveWorkshopData($request, $workshopId)
     {
-        // dd($request);
-        // \Log::info("Saving workshop data for ID: $workshopId...");
-
-       // Save Tire Data
+       
        if ($request->has('product_id') && $request->product_id[0] != null) {
-        // Get all existing tyre IDs for the workshop
-        $existingTyreIds = WorkshopTyre::where('workshop_id', $workshopId)->pluck('id')->toArray();
+
+        $existingTyreIds = WorkshopTyre::where('workshop_id', $workshopId)->where('ref_type', 'workshop')->pluck('id')->toArray();
     
-        // Track tyre IDs that are part of the current request
         $updatedTyreIds = [];
     
         foreach ($request->product_id as $index => $productId) {
@@ -282,11 +278,11 @@ class WorkshopController extends Controller
             $requestedQuantity = $request->tyre_quantity[$index] ?? 1;
     
             // Add new item or update existing item
-            $WorkshopTyre = $itemId ? WorkshopTyre::find($itemId) : new WorkshopTyre();
+            $WorkshopTyre = $itemId ? WorkshopTyre::where('ref_type', 'workshop')->find($itemId) : new WorkshopTyre();
             if (!$WorkshopTyre) {
-                $WorkshopTyre = new WorkshopTyre(); // Create a new item if the existing one is not found
+                $WorkshopTyre = new WorkshopTyre();
+                $WorkshopTyre->ref_type = 'workshop';
             }
-//    dd($WorkshopTyre);
             // Adjust inventory: Add back the old quantity before updating (only for existing tyres)
             if ($itemId && $WorkshopTyre->exists) {
                 $oldQuantity = $WorkshopTyre->quantity;
@@ -296,6 +292,7 @@ class WorkshopController extends Controller
             // Update tyre details
             $WorkshopTyre->workshop_id = $workshopId;
             $WorkshopTyre->product_id = $productId;
+            $WorkshopTyre->ref_type = 'workshop';
             $WorkshopTyre->product_ean = $request->tyre_ean[$index] ?? null;
             $WorkshopTyre->product_sku = $request->tyre_sku[$index] ?? null;
             $WorkshopTyre->supplier = $request->tyre_supplier_name ?? null;
@@ -324,7 +321,7 @@ class WorkshopController extends Controller
         // Remove tyres that are no longer part of the request
         $tyresToRemove = array_diff($existingTyreIds, $updatedTyreIds);
         if (!empty($tyresToRemove)) {
-            $removedTyres = WorkshopTyre::whereIn('id', $tyresToRemove)->get();
+            $removedTyres = WorkshopTyre::whereIn('id', $tyresToRemove)->where('ref_type', 'workshop')->get();
     
             foreach ($removedTyres as $removedTyre) {
                 // Find the tyre product in the tyres_product table using product_id, ean, and sku for perfect matching
@@ -342,12 +339,12 @@ class WorkshopController extends Controller
             }
     
             // Delete the removed tyres from the WorkshopTyre table
-            WorkshopTyre::whereIn('id', $tyresToRemove)->forceDelete();
+            WorkshopTyre::whereIn('id', $tyresToRemove)->where('ref_type', 'workshop')->forceDelete();
         }
     } else {
         // If no tyres are selected, clear all existing tyres
 
-        $removedTyres = WorkshopTyre::where('workshop_id', $workshopId)->get();
+        $removedTyres = WorkshopTyre::where('workshop_id', $workshopId)->where('ref_type', 'workshop')->get();
 
         foreach ($removedTyres as $removedTyre) {
             // Find the tyre product in the tyres_product table using product_id, ean, and sku for perfect matching
@@ -365,7 +362,7 @@ class WorkshopController extends Controller
         }
 
         // Delete all tyres from the WorkshopTyre table
-        WorkshopTyre::where('workshop_id', $workshopId)->forceDelete();
+        WorkshopTyre::where('workshop_id', $workshopId)->where('ref_type', 'workshop')->forceDelete();
     }
 
         // **Save or Update Service Data**
@@ -374,7 +371,7 @@ class WorkshopController extends Controller
                 $serviceItemId = $request->service_item_id[$index] ?? null; // Hidden field for existing services
                 if ($serviceItemId) {
                     // Update existing service
-                    $serviceItem = WorkshopService::find($serviceItemId);
+                    $serviceItem = WorkshopService::where('ref_type', 'workshop')->find($serviceItemId);
                     if ($serviceItem) {
                         $serviceItem->service_id = $serviceId;
                         $serviceItem->service_name = $request->service_name[$index] ?? 'Unknown Service';
@@ -390,6 +387,7 @@ class WorkshopController extends Controller
                     $serviceItem = new WorkshopService();
                     $serviceItem->workshop_id = $workshopId;
                     $serviceItem->service_id = $serviceId;
+                    $serviceItem->ref_type = 'workshop';
                     $serviceItem->service_name = $request->service_name[$index] ?? 'Unknown Service';
                     $serviceItem->fitting_type = $request->fitting_type[$index] ?? 'fully_fitted';
                     $serviceItem->product_type = 'service';
@@ -562,7 +560,7 @@ if ($request->has('vehicle_reg_number') && $request->vehicle_reg_number != null)
                 // return redirect()->back();
             }
             
-            $items = WorkshopTyre::where('workshop_id',$workshop->id)->where('supplier', 'ownstock')->get();
+            $items = WorkshopTyre::where('workshop_id',$workshop->id)->where('ref_type', 'workshop')->where('supplier', 'ownstock')->get();
             // Insert or update stock history records for each item
                 foreach ($items as $item) {
                     DB::table('stock_history')->updateOrInsert(
@@ -855,7 +853,7 @@ public function trash(Request $request, $id)
         }
 
         // Roll back tyre quantities in the tyres_product table
-        $WorkshopTyre = WorkshopTyre::where('workshop_id', $id)->get();
+        $WorkshopTyre = WorkshopTyre::where('workshop_id', $id)->where('ref_type', 'workshop')->get();
 
         foreach ($WorkshopTyre as $item) {
             // First, try to find the tyre product using product_id
@@ -886,8 +884,8 @@ public function trash(Request $request, $id)
 
         // Delete related data
         Booking::where('workshop_id', $id)->delete(); // Delete booking data
-        WorkshopService::where('workshop_id', $id)->delete(); // Delete workshop service data
-        WorkshopTyre::where('workshop_id', $id)->delete(); // Delete WorkshopTyre data
+        WorkshopService::where('workshop_id', $id)->where('ref_type', 'workshop')->delete(); // Delete workshop service data
+        WorkshopTyre::where('workshop_id', $id)->where('ref_type', 'workshop')->delete(); // Delete WorkshopTyre data
 
         // Delete the invoice if it exists
         $invoice = Invoice::where('workshop_id', $id)->first();
@@ -974,8 +972,7 @@ public function trash(Request $request, $id)
             $workshop->formatted_discount = $formattedDiscount;
     
             // Fetch related data
-            $WorkshopTyre = DB::table('workshop_tyres')
-                ->select(
+            $WorkshopTyre = WorkshopTyre::select(
                     'workshop_tyres.*',
                     'workshop_tyres.description',
                     'workshop_tyres.quantity',
@@ -988,10 +985,11 @@ public function trash(Request $request, $id)
                     'workshop_tyres.tax_class_id as ProductVat'
                 )
                 ->where('workshop_id', $workshop->id)
+                ->where('ref_type', 'workshop')
                 ->get();
     
-            $WorkshopService = DB::table('workshop_services')
-                ->where('workshop_id', $workshop->id)
+            $WorkshopService = WorkshopService::where('workshop_id', $workshop->id)
+                ->where('ref_type', 'workshop')
                 ->get();
             $paymentHistory = $this->paymentHistoryService->getPaymentHistory($id);
             $WorkshopVehicle = DB::table('vehicle_details')
@@ -1017,9 +1015,8 @@ public function trash(Request $request, $id)
         // $WorkshopProduct = DB::table('workshop_products')
         //     ->join('products', 'products.id', '=', 'workshop_products.product_id')
         // ->where('workshop_id', $getIndivisualWorkshopDetail['id'])->get();
-        $WorkshopTyre = DB::table('workshop_tyres')
-            ->join('tyres_product', 'tyres_product.product_id', '=', 'workshop_tyres.product_id')
-            ->where('workshop_id', $getIndivisualWorkshopDetail['id'])->get();
+        $WorkshopTyre = WorkshopTyre::join('tyres_product', 'tyres_product.product_id', '=', 'workshop_tyres.product_id')
+            ->where('workshop_id', $getIndivisualWorkshopDetail['id'])->where('ref_type', 'workshop')->get();
 
         // $WorkshopService = DB::table('workshop_services')
         //     ->join('services', 'services.id', '=', 'workshop_services.service_id')
@@ -1057,11 +1054,11 @@ public function trash(Request $request, $id)
         //     ->join('products', 'products.id', '=', 'workshop_products.product_id')
         //     ->select('products.product_name', 'workshop_products.product_quantity', 'workshop_products.product_price as ProductWorkshopPrice', 'products.hsn as ProductHsn', 'products.unit_price_exit as UnitExitPrice', 'products.gst as ProductGst')
         //     ->where('workshop_id', $getIndivisualWorkshopDetail['workshop_id'])->get();
-        $WorkshopTyre = DB::table('workshop_tyres')
-            ->select('workshop_tyres.*', 'workshop_tyres.description', 'workshop_tyres.quantity', 'workshop_tyres.tax_class_id', 'workshop_tyres.fitting_type as orderType', 'workshop_tyres.price as TyreWorkshopPrice', 'workshop_tyres.product_ean as product_ean', 'workshop_tyres.supplier as tyre_source', 'workshop_tyres.price as UnitExitPrice', 'workshop_tyres.tax_class_id as ProductVat')
-            ->where('workshop_id', $workshop['workshop_id'])->get();
+        $WorkshopTyre = WorkshopTyre::select('workshop_tyres.*', 'workshop_tyres.description', 'workshop_tyres.quantity', 'workshop_tyres.tax_class_id', 'workshop_tyres.fitting_type as orderType', 'workshop_tyres.price as TyreWorkshopPrice', 'workshop_tyres.product_ean as product_ean', 'workshop_tyres.supplier as tyre_source', 'workshop_tyres.price as UnitExitPrice', 'workshop_tyres.tax_class_id as ProductVat')
+            ->where('workshop_id', $workshop['workshop_id'])->where('ref_type', 'workshop')->get();
         $WorkshopService = DB::table('workshop_services')
-            ->where('workshop_id', $workshop['workshop_id'])->get();
+            ->where('workshop_id', $workshop['workshop_id'])
+            ->where('ref_type', 'workshop')->get();
         $WorkshopVehicle = DB::table('vehicle_details')
             ->where('vehicle_reg_number', $workshop['vehicle_reg_number'])->get();
             $paymentHistory = DB::table('customer_debit_logs')
@@ -1096,8 +1093,8 @@ public function trash(Request $request, $id)
 
         // Fetch invoice details
         $invoice = Invoice::where('workshop_id', $request->invoice_id)->firstOrFail();
-        $workshopTyreData = WorkshopTyre::where('workshop_id', '=', $request->invoice_id)->get();
-        $workshopServiceData = WorkshopService::where('workshop_id', '=', $request->invoice_id)->get();
+        $workshopTyreData = WorkshopTyre::where('workshop_id', '=', $request->invoice_id)->where('ref_type', 'workshop')->get();
+        $workshopServiceData = WorkshopService::where('workshop_id', '=', $request->invoice_id)->where('ref_type', 'workshop')->get();
         $workshopVehicleData = VehicleDetail::where('vehicle_reg_number','=', $invoice->vehicle_reg_number)->get();
         $paymentHistory = DB::table('customer_debit_logs')->where('workshop_id',  $request->invoice_id)->get();
         if ($invoice) {
@@ -1153,8 +1150,8 @@ public function trash(Request $request, $id)
     {
         // Fetch the invoice details
         $invoice = Invoice::where('workshop_id', $id)->firstOrFail();
-        $workshopTyreData = WorkshopTyre::where('workshop_id', '=', $id)->get();
-        $workshopServiceData = WorkshopService::where('workshop_id', '=', $id)->get();
+        $workshopTyreData = WorkshopTyre::where('workshop_id', '=', $id)->where('ref_type', 'workshop')->get();
+        $workshopServiceData = WorkshopService::where('workshop_id', '=', $id)->where('ref_type', 'workshop')->get();
         $paymentHistory = DB::table('customer_debit_logs')->where('workshop_id',  $id)->get();
         if ($invoice) {
             // Format discount based on type
@@ -1220,8 +1217,8 @@ public function trash(Request $request, $id)
     {
         // Fetch the invoice details
         $invoice = Invoice::where('workshop_id', $invoiceId)->firstOrFail();
-        $workshopTyreData = WorkshopTyre::where('workshop_id', '=', $invoiceId)->get();
-        $workshopServiceData = WorkshopService::where('workshop_id', '=', $invoiceId)->get();
+        $workshopTyreData = WorkshopTyre::where('workshop_id', '=', $invoiceId)->where('ref_type', 'workshop')->get();
+        $workshopServiceData = WorkshopService::where('workshop_id', '=', $invoiceId)->where('ref_type', 'workshop')->get();
         $workshopVehicleData = VehicleDetail::where('vehicle_reg_number','=', $invoice->vehicle_reg_number)->get();
         $paymentHistory = DB::table('customer_debit_logs')->where('workshop_id',   $invoiceId)->get();
         if ($invoice) {

@@ -64,8 +64,8 @@ class EstimateController extends Controller
             $vehicleRegNumber = $estimate->vehicle_reg_number;
 
             $viewData = [
-                'workshopTyreData' => WorkshopTyre::where('workshop_id', $id)->get(),
-                'workshopServiceData' => WorkshopService::where('workshop_id', $id)->get(),
+                'workshopTyreData' => WorkshopTyre::where('workshop_id', $id)->where('ref_type', 'estimate')->get(),
+                'workshopServiceData' => WorkshopService::where('workshop_id', $id)->where('ref_type', 'estimate')->get(),
                 'workshopVehicleData' => VehicleDetail::where('vehicle_reg_number', $vehicleRegNumber)->get()
             ];
             $viewData['counties'] = RegionCounty::where('status', 1)->get();
@@ -164,7 +164,7 @@ class EstimateController extends Controller
                     // Update the workshop record
                     if (Estimate::whereId($request->id)->update($PartyManage)) {
                         Booking::where('workshop_id', $request->id)->forceDelete();
-                        WorkshopService::where('workshop_id', $request->id)->forceDelete();
+                        WorkshopService::where('workshop_id', $request->id)->where('ref_type', 'estimate')->forceDelete();
                         $this->saveWorkshopData($request, $request->id);
                         if ($saveAndSyncWorkshop) {
                             $this->convertToWorkshop($request->id);
@@ -245,7 +245,7 @@ class EstimateController extends Controller
        // Save Tire Data
        if ($request->has('product_id') && $request->product_id[0] != null) {
         // Get all existing tyre IDs for the workshop
-        $existingTyreIds = WorkshopTyre::where('workshop_id', $estimateId)->pluck('id')->toArray();
+        $existingTyreIds = WorkshopTyre::where('workshop_id', $estimateId)->where('ref_type', 'estimate')->pluck('id')->toArray();
     
         // Track tyre IDs that are part of the current request
         $updatedTyreIds = [];
@@ -262,9 +262,10 @@ class EstimateController extends Controller
             $requestedQuantity = $request->tyre_quantity[$index] ?? 1;
     
             // Add new item or update existing item
-            $estimateTyre = $itemId ? WorkshopTyre::find($itemId) : new WorkshopTyre();
+            $estimateTyre = $itemId ? WorkshopTyre::where('ref_type', 'estimate')->find($itemId) : new WorkshopTyre();
             if (!$estimateTyre) {
                 $estimateTyre = new WorkshopTyre();
+                $estimateTyre->ref_type = 'estimate';
             }
 
             if ($itemId && $estimateTyre->exists) {
@@ -304,7 +305,7 @@ class EstimateController extends Controller
         // Remove tyres that are no longer part of the request
         $tyresToRemove = array_diff($existingTyreIds, $updatedTyreIds);
         if (!empty($tyresToRemove)) {
-            $removedTyres = WorkshopTyre::whereIn('id', $tyresToRemove)->get();
+            $removedTyres = WorkshopTyre::whereIn('id', $tyresToRemove)->where('ref_type', 'estimate')->get();
     
             foreach ($removedTyres as $removedTyre) {
                 // Find the tyre product in the tyres_product table using product_id, ean, and sku for perfect matching
@@ -322,12 +323,12 @@ class EstimateController extends Controller
             }
     
             // Delete the removed tyres from the WorkshopTyre table
-            WorkshopTyre::whereIn('id', $tyresToRemove)->forceDelete();
+            WorkshopTyre::whereIn('id', $tyresToRemove)->where('ref_type', 'estimate')->forceDelete();
         }
     } else {
         // If no tyres are selected, clear all existing tyres
 
-        $removedTyres = WorkshopTyre::where('workshop_id', $estimateId)->get();
+        $removedTyres = WorkshopTyre::where('workshop_id', $estimateId)->where('ref_type', 'estimate')->get();
 
         foreach ($removedTyres as $removedTyre) {
             // Find the tyre product in the tyres_product table using product_id, ean, and sku for perfect matching
@@ -345,7 +346,7 @@ class EstimateController extends Controller
         }
 
         // Delete all tyres from the WorkshopTyre table
-        WorkshopTyre::where('workshop_id', $estimateId)->forceDelete();
+        WorkshopTyre::where('workshop_id', $estimateId)->where('ref_type', 'estimate')->forceDelete();
     }
 
         // **Save or Update Service Data**
@@ -354,7 +355,7 @@ class EstimateController extends Controller
                 $serviceItemId = $request->service_item_id[$index] ?? null; // Hidden field for existing services
                 if ($serviceItemId) {
                     // Update existing service
-                    $serviceItem = WorkshopService::find($serviceItemId);
+                    $serviceItem = WorkshopService::where('ref_type', 'estimate')->find($serviceItemId);
                     if ($serviceItem) {
                         $serviceItem->service_id = $serviceId;
                         $serviceItem->service_name = $request->service_name[$index] ?? 'Unknown Service';
@@ -700,7 +701,7 @@ if ($request->has('vehicle_reg_number') && $request->vehicle_reg_number != null)
             }
 
             // Roll back tyre quantities in the tyres_product table
-            $estimateTyre = WorkshopTyre::where('workshop_id', $id)->get();
+            $estimateTyre = WorkshopTyre::where('workshop_id', $id)->where('ref_type', 'estimate')->get();
 
             foreach ($estimateTyre as $item) {
                 // First, try to find the tyre product using product_id
@@ -731,8 +732,8 @@ if ($request->has('vehicle_reg_number') && $request->vehicle_reg_number != null)
 
             // Delete related data
             Booking::where('workshop_id', $id)->delete(); // Delete booking data
-            WorkshopService::where('workshop_id', $id)->delete(); // Delete workshop service data
-            WorkshopTyre::where('workshop_id', $id)->delete(); // Delete WorkshopTyre data
+            WorkshopService::where('workshop_id', $id)->where('ref_type', 'estimate')->delete();
+            WorkshopTyre::where('workshop_id', $id)->where('ref_type', 'estimate')->delete();
 
             // Delete the invoice if it exists
             // $estimate = Invoice::where('workshop_id', $id)->first();
@@ -888,8 +889,8 @@ if ($request->has('vehicle_reg_number') && $request->vehicle_reg_number != null)
 
         // Fetch invoice details
         $estimate = Estimate::where('id', $request->id)->firstOrFail();
-        $estimateTyreData = WorkshopTyre::where('workshop_id', '=', $estimate->id)->get();
-        $estimateServiceData = WorkshopService::where('workshop_id', '=', $estimate->id)->get();
+        $estimateTyreData = WorkshopTyre::where('workshop_id', '=', $estimate->id)->where('ref_type', 'estimate')->get();
+        $estimateServiceData = WorkshopService::where('workshop_id', '=', $estimate->id)->where('ref_type', 'estimate')->get();
         $estimateVehicleData = VehicleDetail::where('vehicle_reg_number','=', $estimate->vehicle_reg_number)->get();
         $paymentHistory = DB::table('customer_debit_logs')->where('workshop_id',  $estimate->id)->get();
         if ($estimate) {
@@ -1004,8 +1005,8 @@ if ($request->has('vehicle_reg_number') && $request->vehicle_reg_number != null)
     {
         // Fetch the Estimate details
         $estimate = Estimate::where('id', $estimateId)->firstOrFail();
-        $estimateTyreData = WorkshopTyre::where('workshop_id', '=', $estimateId)->get();
-        $estimateServiceData = WorkshopService::where('workshop_id', '=', $estimateId)->get();
+        $estimateTyreData = WorkshopTyre::where('workshop_id', '=', $estimateId)->where('ref_type', 'estimate')->get();
+        $estimateServiceData = WorkshopService::where('workshop_id', '=', $estimateId)->where('ref_type', 'estimate')->get();
         $estimateVehicleData = VehicleDetail::where('vehicle_reg_number','=', $estimate->vehicle_reg_number)->get();
         $paymentHistory = DB::table('customer_debit_logs')->where('workshop_id',   $estimateId)->get();
         if ($estimate) {

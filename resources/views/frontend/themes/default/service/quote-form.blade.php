@@ -5,7 +5,7 @@
             <form id="quoteEnquiryForm" method="POST" action="{{ route('service.enquiry.submit') }}">
                 @csrf
                 <div class="modal-header">
-                    <h3 class="modal-title" id="quoteModalLabel">Get a Quote</h3>
+                    <h3 class="modal-title" id="quoteModalLabel">Request an Estimate</h3>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
 
@@ -27,12 +27,6 @@
                                 </div>
                                 <div class="col-lg-6 col-md-6 col-12">
                                     <div class="form-group">
-                                        <label>Vehicle Mileage</label>
-                                        <input type="text" name="mileage" class="form-control">
-                                    </div>
-                                </div>
-                                <div class="col-lg-6 col-md-6 col-12">
-                                    <div class="form-group">
                                         <label>First Name*</label>
                                         <input type="text" name="first_name" class="form-control" required>
                                     </div>
@@ -41,12 +35,6 @@
                                     <div class="form-group">
                                         <label>Last Name</label>
                                         <input type="text" name="last_name" class="form-control">
-                                    </div>
-                                </div>
-                                <div class="col-lg-6 col-md-6 col-12">
-                                    <div class="form-group">
-                                        <label>Company</label>
-                                        <input type="text" name="company" class="form-control">
                                     </div>
                                 </div>
                                 <div class="col-lg-6 col-md-6 col-12">
@@ -96,7 +84,7 @@
                                         <select id="country" name="country" class="form-control" required>
                                             <option value="">Select Country</option>
                                             @foreach ($countries as $id => $name)
-                                                <option value="{{ $id }}">{{ $name }}</option>
+                                                <option value="{{ $id }}" selected>{{ $name }}</option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -112,7 +100,7 @@
                         <!-- Right Column (Service Checkboxes) -->
                         <div class="col-md-5">
                             <div class="quote_selected_services">
-                                <h4>Frequently Selected Services*</h4>
+                                <h4>Selected Services*</h4>
                                 <div class="quote_service-wrap">
                                     @foreach($services as $service)
                                         <label for="service_{{ $service->service_id }}" class="quote_service-wrap-error">
@@ -131,7 +119,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-theme border"><strong>Quote Now</strong></button>
+                    <button type="submit" class="btn btn-theme border"><strong>Send Now</strong></button>
                 </div>
             </form>
         </div>
@@ -139,15 +127,20 @@
 </div>
 
 <script>
+        window.carImageConfig = {
+        cdnBase: "{{ config('cdn.carbrands_cdn_url') }}",
+        localPath: "{{ asset('frontend/themes/default/img/brand-logo/uniroyal.jpg') }}",
+        defaultImage: "{{ asset('frontend/themes/default/img/brand-logo/uniroyal.jpg') }}"
+    };
 document.addEventListener('DOMContentLoaded', function () {
     // Handle modal trigger buttons
     document.querySelectorAll('.btn-enquiry-modal').forEach(button => {
         button.addEventListener('click', function () {
-            const serviceName = this.getAttribute('data-service');
+            const serviceId = this.getAttribute('data-id');
 
-            // Pre-select the service in the modal if needed
+            // Pre-select only the matching service checkbox
             document.querySelectorAll('#quoteEnquiryModal input[name="selected_services[]"]').forEach(input => {
-                input.checked = input.value === serviceName;
+                input.checked = (input.value === serviceId);
             });
 
             $('#quoteEnquiryModal').modal('show');

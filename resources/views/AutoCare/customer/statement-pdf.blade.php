@@ -79,6 +79,7 @@ $defaultLogoPath = public_path("frontend/themes/theme/img/logo/logo.png");
 						<th>Beginning Balance</th>
 						<th>Invoiced Amount</th>
 						<th>Amount Paid</th>
+						<th>discount Price</th>
 						<th>Balance Due</th>
 					</tr>
 				</thead>
@@ -87,6 +88,7 @@ $defaultLogoPath = public_path("frontend/themes/theme/img/logo/logo.png");
 						<td class="no-wrap">£0.00</td>
 						<td>£<span id="totalInvoiced">{{ number_format($totalInvoiced, 2) }}</span></td>
 						<td>£<span id="totalPaid">{{ number_format($totalPaid, 2) }}</span></td>
+						<td>£<span id="discountPrice">{{ number_format($discountPrice, 2) }}</span></td>
 						<td>£<span id="balanceDue">{{ number_format($balanceDue, 2) }}</span>
 						</td>
 					</tr>

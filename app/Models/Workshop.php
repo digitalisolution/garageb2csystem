@@ -24,7 +24,7 @@ class Workshop extends Model
 	// In Workshop Model
 	public function tyres()
 	{
-		return $this->hasMany(WorkshopTyre::class, 'workshop_id', 'id'); // Replace with your correct foreign key
+		return $this->hasMany(WorkshopTyre::class, 'workshop_id', 'id')->where('ref_type', 'workshop');
 	}
 	public function bookings()
 	{
@@ -36,12 +36,12 @@ class Workshop extends Model
 	// }
 	public function items()
 	{
-		return $this->hasMany(WorkshopTyre::class, 'workshop_id', 'id');
+		return $this->hasMany(WorkshopTyre::class, 'workshop_id', 'id')->where('ref_type', 'workshop');
 	}
 
 	public function services()
 	{
-		return $this->hasMany(WorkshopService::class, 'workshop_id', 'id');
+		return $this->hasMany(WorkshopService::class, 'workshop_id', 'id')->where('ref_type', 'workshop');
 	}
 
 	public function customer()

@@ -483,6 +483,7 @@ function populateModal(bookingData) {
     let shippingPrice = 0;
     let shippingVAT = 0;
     let hasMobileFitting = false;
+    let shippingPostcode = null;
 
     // Process Items First
     if (workshop.items && workshop.items.length > 0) {
@@ -492,6 +493,7 @@ function populateModal(bookingData) {
             let vatPercentage = item.tax_class_id === 9 ? 20 : (parseFloat(item.vat) || 0);
             let vatAmount = (rate * vatPercentage) / 100;
             let total = (rate + vatAmount) * quantity;
+            shippingPostcode = item.shipping_postcode;
 
             let fittingType = item.fitting_type
                 ?.replace(/_/g, ' ')
@@ -505,6 +507,7 @@ function populateModal(bookingData) {
             // Check for mobile fitting and store shipping details (only set once)
             if (item.fitting_type === 'mobile_fitted') {
                 hasMobileFitting = true;
+                shippingPostcode = item.shipping_postcode;
                 if (shippingPrice === 0) { // Only set if not already set
                     shippingPrice = parseFloat(item.shipping_price) || 0;
                     if (item.shipping_tax_id === 9) {
@@ -568,7 +571,7 @@ function populateModal(bookingData) {
             <tr>
                 <td></td>
                 <td>
-                    <strong>Mobile Fitting Callout Charge</strong>
+                    <strong>Mobile Fitting Callout Charge (${shippingPostcode || 'N/A'}) </strong>
                     <span class="d-block">Applied to Mobile Fitted service</span>
                 </td>
                 <td class="text-center">1</td>

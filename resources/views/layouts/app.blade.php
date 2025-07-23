@@ -114,6 +114,11 @@ $favicon = asset("frontend/themes/default/img/favicon.png") . '?v=' . time();
             @yield('scripts')   
         </main>
     </div>
+    <script>
+    window.carImageConfig = {
+        cdnBase: "{{ config('cdn.carbrands_cdn_url') }}",
+    };
+    </script>
     {!! include_dynamic_view('footer') !!}
     <script src="{{ asset('frontend/themes/default/js/vendor/modernizr-3.11.7.min.js') }}" defer></script>
     <script src="{{ asset('frontend/themes/default/js/vendor/jquery-v3.6.0.min.js') }}" defer></script>

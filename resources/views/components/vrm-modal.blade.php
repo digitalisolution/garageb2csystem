@@ -12,7 +12,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-0">
-                <div class="bg-light py-4 px-4">
+                <!-- <div class="bg-light py-4 px-4">
                 <div class="your_vehicle_result">
                         <div class="vrm_plate"><img src="frontend/themes/default/img/icon-img/reg_icon.png" alt="uk icon" width="auto" height="35" loading="lazy"> <span>av07gvk</span></div>
                         <div><img class="default-img" src="frontend/themes/default/img/brand-logo/uniroyal.jpg" alt="" width="auto" height="50"></div>
@@ -35,7 +35,7 @@
                             <span>Deisel</span>
                         </div>
                 </div>
-            </div>
+            </div> -->
                 <div class="py-3 px-4">
                 <div class="tyre-result">
                     <h5><strong>Your Vehicle</strong></h5>

@@ -3,13 +3,43 @@
     <div class="product-wrap recommended_tyres mb-25">
         <div class="product-img">
             <div class="tyre_card align-items-center">
-                <div class="tyre-picture"><img class="default-img"
-                        src="{{ $tyre->tyre_image ?? 'frontend/themes/default/img/product/sample-tyre.png' }}" alt="{{ $tyre->tyre_model }}">
+                @php
+                //dd($tyre);
+                    $cdnBase = config('cdn.tyre_cdn_url');
+                    $localPath = 'frontend/themes/img/tyre_images/';
+                    $imageName = $tyre->tyre_image ?? '';
+                    $localFullPath = public_path($localPath . $imageName);
+
+                    if (!empty($imageName) && file_exists($localFullPath)) {
+                    $imageUrl = asset($localPath . $imageName);
+                    } elseif (!empty($imageName)) {
+                    $imageUrl = $cdnBase . $imageName;
+                    } else {
+                    $imageUrl = asset('frontend/themes/default/img/product/sample-tyre.png');
+                    }
+                @endphp
+                <div class="tyre-picture">
+                    <img src="{{ $imageUrl }}" alt="{{ $tyre->tyre_model }}" width="100" onerror="this.onerror=null;this.src='{{ asset('frontend/themes/default/img/product/sample-tyre.png') }}';">
                 </div>
+
                 <div class="rec_des">
+                    @php
+
+                    $cdnLogoBase = config('cdn.brandlogo_cdn_url');
+                    $localPath = 'frontend/themes/default/img/brand-logo/';
+                    $imageName = $tyre->brand_logo ?? '';
+                    $localFullPath = public_path($localPath . $imageName);
+
+                    if (!empty($imageName) && file_exists($localFullPath)) {
+                    $cdnLogoUrl = asset($localPath . $imageName);
+                    } elseif (!empty($imageName)) {
+                    $cdnLogoUrl = $cdnLogoBase . $imageName;
+                    } else {
+                    $cdnLogoUrl = asset('frontend/themes/default/img/brand-logo/no-image.png');
+                    }
+                    @endphp
                 <div class="tyre-description mt-1">
-                    <img class="default-img" src="frontend/themes/default/img/brand-logo/{{ $tyre->brand_logo }}"
-                        alt="{{ $tyre->tyre_brand_name }}" width="auto" height="50">
+                    <img src="{{ $cdnLogoUrl }}"alt="{{ $tyre->tyre_brand_name }}" class="default-img" width="auto" height="50" onerror="this.onerror=null;this.src='{{ asset('frontend/themes/default/img/brand-logo/no-image.png') }}';">
                 </div>
                 <div class="rec_desc">
                     <p class="mb-0 tyre_model"><strong>{{ $tyre->tyre_model }}</strong></p>
@@ -85,7 +115,7 @@
                             </div>
                         </div>
                     </div>
-                    <a href="" class="fa fa-info-circle info_icon"></a>
+                    <a href="#" class="info_icon" data-bs-toggle="modal" data-bs-target="#tyreLabelModal" data-brand="{{ $tyre->tyre_brand_name ?? 'Unknown' }}" data-size="{{ $tyre->tyre_width }}/{{ $tyre->tyre_profile }}R{{ $tyre->tyre_diameter }} {{ $tyre->tyre_loadindex }}{{ $tyre->tyre_speed }}{{ $tyre->tyre_extraload ? ' XL' : '' }}" data-fuel="{{ strtoupper($tyre->tyre_fuel) }}" data-wet="{{ strtoupper($tyre->tyre_wetgrip) }}" data-noise="{{ $tyre->tyre_noisedb ?? '70' }}"> <i class="fa fa-info-circle"></i> </a>
                     </div>
                 </div>
             </div>
@@ -143,16 +173,68 @@
 @endforeach
 
 <!-- Modal -->
-<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog">
+<div class="modal fade" id="tyreLabelModal" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-sm" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-2">
-                <img src="frontend/themes/default/img/D_D_71.png" class="img-adjust">
+                <div class="tlWrap">
+                    <div class="tyreLabelOuter">
+                        <div id="tyreDetailsWrap">
+                            <div class="detailsRow">
+                                <div id="supName"></div> <!-- brand -->
+                            </div>
+                            <div class="detailsRow">
+                                <div id="tyreSize"></div> <!-- size -->
+                            </div>
+                        </div>
+
+                        <div id="fuelwetWrap">
+                            <div class="tyreRating" id="fuelRating">
+                                <div class="scaleMarker" id="fuelMarker">B</div>
+                            </div>
+                            <div class="tyreRating" id="wetRating">
+                                <div class="scaleMarker" id="wetMarker">A</div>
+                            </div>
+                        </div>
+
+                        <div id="nsiWrap">
+                            <div class="nsiItem" id="noise">
+                                <div class="nField" id="nValue">70</div>
+                                <div id="db">db</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+    $(document).ready(function () {
+        $('.info_icon').on('click', function () {
+            const brand = $(this).data('brand');
+            const size = $(this).data('size');
+            const fuel = $(this).data('fuel');
+            const wet = $(this).data('wet');
+            const noise = $(this).data('noise');
+
+            $('#supName').text(brand);
+            $('#tyreSize').text(size);
+
+            $('#fuelMarker')
+                .text(fuel)
+                .removeClass().addClass('scaleMarker scale' + fuel);
+
+            $('#wetMarker')
+                .text(wet)
+                .removeClass().addClass('scaleMarker scale' + wet);
+
+            $('#nValue').text(noise);
+        });
+    });
+</script>
 <!-- Modal end -->

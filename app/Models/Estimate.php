@@ -17,14 +17,9 @@ class Estimate extends Model
 		'is_read' => 'boolean',
 	];
 
-	// public function SubmitedPartDetail()
-	//    {
-	//        return $this->hasOne('App\SubmitedPartDetail');
-	//    }
-	// In Workshop Model
 	public function tyres()
 	{
-		return $this->hasMany(WorkshopTyre::class, 'workshop_id', 'id'); // Replace with your correct foreign key
+		return $this->hasMany(WorkshopTyre::class, 'workshop_id', 'id')->where('ref_type', 'estimate');
 	}
 	public function bookings()
 	{
@@ -36,13 +31,13 @@ class Estimate extends Model
 	// }
 	public function items()
 	{
-		return $this->hasMany(WorkshopTyre::class, 'workshop_id', 'id');
+		return $this->hasMany(WorkshopTyre::class, 'workshop_id', 'id')->where('ref_type', 'estimate');
 	}
 
 
 	public function services()
 	{
-		return $this->hasMany(WorkshopService::class, 'workshop_id', 'id');
+		return $this->hasMany(WorkshopService::class, 'workshop_id', 'id')->where('ref_type', 'estimate');;
 	}
 
 	public function customer()

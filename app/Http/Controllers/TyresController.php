@@ -283,7 +283,7 @@ class TyresController extends Controller
                 'tyre_price' => $request->tyre_price,
                 'tyre_description' => $request->tyre_season . ' Tyre '
                     . $brandName . ' '
-                    . $request->model . ' '
+                    . $request->tyre_model . ' '
                     . $request->tyre_width . '/'
                     . $request->tyre_profile . 'R'
                     . $request->tyre_diameter . ' '

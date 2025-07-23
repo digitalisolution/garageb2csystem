@@ -300,18 +300,18 @@
 
                         @php
     use Carbon\Carbon;
-    $defaultDate = isset($workshop_date) ? $workshop_date : Carbon::now()->format('Y-m-d H:i:s');
+    $defaultDate = isset($estimate_date) ? $estimate_date : Carbon::now()->format('Y-m-d H:i:s');
                         @endphp
                         <div class="col-md-3">
-                            <label class="control-label" for="workshop_date">Workshop Date:&emsp;</label>
-                            {{ Form::text('workshop_date', $defaultDate, [
+                            <label class="control-label" for="estimate_date">Workshop Date:&emsp;</label>
+                            {{ Form::text('estimate_date', $defaultDate, [
         'class' => 'form-control',
         'id' => 'created_at',
         'placeholder' => 'Workshop Date',
         'data-date-format' => 'DD-MM-YYYY HH:mm:ss'
     ]) }}
                             <div class="invalid-feedback">
-                                {{ $errors->has('workshop_date') ? $errors->first('workshop_date', ':message') : '' }}
+                                {{ $errors->has('estimate_date') ? $errors->first('estimate_date', ':message') : '' }}
                             </div>
                         </div>
                     </div>

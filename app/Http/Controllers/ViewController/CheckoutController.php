@@ -748,6 +748,7 @@ private function attachVehicleToCustomer(int $customerId, ?string $vehicleRegNum
                 if ($item['type'] === 'tyre') {
                     $tyreData = [
                         'workshop_id' => $workshopId,
+                        'ref_type' => 'workshop',
                         'product_ean' => $item['ean'],
                         'product_sku' => $item['sku'],
                         'product_id' => $item['id'],
@@ -772,6 +773,7 @@ private function attachVehicleToCustomer(int $customerId, ?string $vehicleRegNum
                     $serviceData = [
                         'workshop_id' => $workshopId,
                         'service_id' => $item['id'],
+                        'ref_type' => 'workshop',
                         'service_name' => $item['model'],
                         'service_price' => $item['price'],
                         'fitting_type' => $item['fitting_type'],

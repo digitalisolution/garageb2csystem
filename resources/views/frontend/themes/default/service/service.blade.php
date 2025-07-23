@@ -21,6 +21,56 @@
         </div>
     </div>
 
+    <div class="quote_slide slide-menu-right">
+        <div class="d-flex gap-3 align-items-center">
+            <h4 class="m-0">Request an Estimate</h4>
+            <button class="close-menu ml-auto">Close &rarr;</button>
+        </div>
+    
+    
+</div>
+
+<button class="toggle-slide-right">Slide Quote Right</button>
+
+
+<style type="text/css">
+.mask {display: none;position: fixed;top: 0;left: 0;z-index: 100;width: 100%;height: 100%;background: rgba(0, 0, 0, 0.8);}
+.quote_slide {position: fixed;z-index: 1000;background-color: #fff;overflow: hidden;-webkit-transition: all 0.3s;-moz-transition: all 0.3s;-ms-transition: all 0.3s;-o-transition: all 0.3s;transition: all 0.3s;padding:30px;}
+.slide-menu-right {right: -70%;top: 0;width: 70%;height: 100%;}
+.toggle-slide-right {color: #fff;background: black;border: 1px solid grey;border-radius: 5px;display: block;margin: 20px auto;padding: 10px;top: 0;}
+button.close-menu{color: #fff;background: black;border-radius: 5px;}
+body.smr-open .slide-menu-right {right: 0}
+</style>
+<script type="text/javascript">
+changePickupStoreMenu();
+
+function changePickupStoreMenu(){
+ 
+    var body = $('body'),
+        mask = $('<div class="mask"></div>'),
+        toggleSlideRight = document.querySelector( ".toggle-slide-right" ),
+        slideMenuRight = document.querySelector( ".slide-menu-right" ),
+        activeNav = '';
+    ;
+    $('body').append(mask);
+ 
+    /* slide menu right */
+    toggleSlideRight.addEventListener( "click", function(){
+        $('body').addClass("smr-open");
+        $('.mask').fadeIn();
+        activeNav = "smr-open";
+    } );
+ 
+    /* hide active menu if close menu button is clicked */
+    $(document).on('click', ".close-menu", function(el,i){
+        $('body').removeClass(activeNav);
+        activeNav = "";
+        $('.mask').fadeOut();
+    });
+ 
+}
+</script>
+
     <div class="pt-70 pb-70">
         <div class="container">
             <div class="row">
@@ -100,6 +150,7 @@
                                                 <a href="javascript:void(0);" class="btn btn-theme-select btn-enquiry-modal"
                                                     data-id="{{ $service->service_id }}" data-name="{{ $service->name }}">Quote
                                                     Now</a>
+                                                     @include('service/quote-form')
                                             @elseif($service->cost_price = 0 && $service->price_type == 'free')
                                                 <a href="javascript:void(0);" class="btn btn-theme-select add-to-cart"
                                                     data-id="{{ $service->service_id }}" data-name="{{ $service->name }}"
@@ -136,7 +187,6 @@
             </div>
         </div>
     </div>
-    @include('service/quote-form')
 @endsection
 
 

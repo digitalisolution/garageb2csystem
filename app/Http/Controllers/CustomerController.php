@@ -602,6 +602,7 @@ class CustomerController extends Controller
             'totalInvoiced' => $request->totalInvoiced ?? 0,
             'totalPaid' => $request->totalPaid ?? 0,
             'balanceDue' => $request->balanceDue ?? 0,
+            'discountPrice' => $request->discountPrice ?? 0,
             'body' => $request->email_body
         ];
 
@@ -676,7 +677,8 @@ class CustomerController extends Controller
         }
 
         $totalInvoiced = $invoices->sum('grandTotal');
-        $totalPaid = $invoices->sum('paid_price');
+        $discountPrice = $invoices->sum('discount_price');
+        $totalPaid = $invoices->sum('paid_price')+ $discountPrice;
         $balanceDue = $totalInvoiced - $totalPaid;
 
         // Format discount for each invoice
@@ -695,6 +697,7 @@ class CustomerController extends Controller
             'transactions',
             'totalInvoiced',
             'totalPaid',
+            'discountPrice',
             'balanceDue'
         ));
 
