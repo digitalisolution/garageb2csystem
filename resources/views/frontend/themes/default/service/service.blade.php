@@ -21,16 +21,14 @@
         </div>
     </div>
 
-    <div class="quote_slide slide-menu-right">
+    <!-- <div class="quote_slide slide-menu-right">
         <div class="d-flex gap-3 align-items-center">
             <h4 class="m-0">Request an Estimate</h4>
             <button class="close-menu ml-auto">Close &rarr;</button>
         </div>
-    
-    
-</div>
+    </div> 
 
-<button class="toggle-slide-right">Slide Quote Right</button>
+<button class="toggle-slide-right">Slide Quote Right</button>-->
 
 
 <style type="text/css">
@@ -71,7 +69,40 @@ function changePickupStoreMenu(){
 }
 </script>
 
-    <div class="pt-70 pb-70">
+<style type="text/css">
+.modal{transition: width 10s;}
+    .modal.right .modal-dialog {
+        position: fixed;
+        margin: auto;
+        height: 100%;
+        right:0;
+        
+        
+    }
+
+    .modal.right .modal-content {
+        height: 100%;
+        overflow-y: auto;
+    }
+    
+    .modal.right .modal-body {
+        padding: 15px 15px 80px;
+    }
+
+
+
+        
+/*Right*/
+    .modal.right.fade .modal-dialog {
+        right: -720px;
+        -webkit-transition: opacity 0.3s linear, right 0.3s ease-out;
+           -moz-transition: opacity 0.3s linear, right 0.3s ease-out;
+             -o-transition: opacity 0.3s linear, right 0.3s ease-out;
+                transition: opacity 0.3s linear, right 0.3s ease-out;
+    }
+  
+</style>    
+<div class="pt-70 pb-70">
         <div class="container">
             <div class="row">
                 <div class="col-lg-9">

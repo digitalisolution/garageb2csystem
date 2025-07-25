@@ -63,9 +63,9 @@
                                     @error('name') <span class="text-danger">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="col-lg-6">
-                                    <input name="email" placeholder="Email*" type="email" value="{{ old('email') }}"
-                                        required>
+                                    @include('components.otp-verification')
                                     @error('email') <span class="text-danger">{{ $message }}</span> @enderror
+                                    @error('otp_code') <span class="text-danger">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="col-lg-12">
                                     <input name="subject" placeholder="Subject*" type="text" value="{{ old('subject') }}"
@@ -92,6 +92,4 @@
             </div>
         </div>
     </div>
-
-
 @endsection

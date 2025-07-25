@@ -42,12 +42,11 @@
 .your_vehicle_result{display:flex;gap:20px;justify-content:space-between;}
 .your_vehicle_result .vrm_plate{background:#e7be01;text-transform:uppercase;font-weight:bold;padding:6px;border-radius:10px;display:flex;gap:6px;align-items:center;}
 .your_vehicle_result .vrm_plate span{border:solid 1px #222;padding:6px 20px;border-radius:6px;display:inline-block;font-size:1.5rem;}
-.your_vehicle_data{display:flex;gap:20px 30px;flex-wrap:wrap;margin-top:30px;justify-content: space-between;}
-.your_vehicle_data .item{text-align:center;font-weight:bold;color:#fb8c00;}
+.your_vehicle_data{display:flex;gap:20px 30px;flex-wrap:wrap;margin-top:30px;justify-content: space-between;background: #fff;
+    padding: 15px;border: solid 1px #ddd;border-radius: 4px;}
+.your_vehicle_data .item{font-weight:bold;color:#fb8c00;}
 .your_vehicle_data .item span{font-weight:normal;display:block;color:#000;font-size:90%;}
-@media screen and (max-width:600px){
-	.your_vehicle_data .item{width:45%;}
-}
+
 
 /* tyre label */
 div.tlWrap {width:100%;max-width:280px;height:auto;}

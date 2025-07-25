@@ -34,6 +34,7 @@ use App\Http\Controllers\TyreImportController;
 //use App\Http\Controllers\EdenApiController;
 use App\Http\Controllers\VrmController;
 use App\Http\Controllers\VehicleDetailController;
+use App\Http\Controllers\OtpVerificationController;
 // use App\Http\Controllers\ViewController\BrandController;
 use App\Http\Controllers\ViewController\CalendarController;
 use App\Http\Controllers\HTMLTemplateController;
@@ -808,6 +809,12 @@ Route::post('/contact-submit', [ServiceViewController::class, 'submitContactForm
 Route::get('/contact-submit', function () {
     return redirect('/contact');
 });
+
+Route::post('/otp/send', [OtpVerificationController::class, 'send'])->middleware('throttle.otp')->name('otp.send');
+
+
+
+
 
 // End: Frontend Routes
 Route::get('/', [HomeController::class, 'index'])->name('home');

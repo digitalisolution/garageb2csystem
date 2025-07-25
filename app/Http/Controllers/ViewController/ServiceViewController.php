@@ -19,6 +19,7 @@ use App\Models\RegionCounty;
 use App\Models\Countries;
 use App\Models\WorkshopService;
 use App\Services\EmailValidationService;
+use App\Packages\OtpEmailVerification\OtpService;
 use App\Http\Requests\EnquiryFormRequest;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -29,10 +30,12 @@ use App\Mail\EnquiryToCustomer;
 class ServiceViewController extends Controller
 {
     protected $emailValidationService;
+    protected $otpService;
 
-    public function __construct(EmailValidationService $emailValidationService)
+    public function __construct(EmailValidationService $emailValidationService,OtpService $otpService)
     {
         $this->emailValidationService = $emailValidationService;
+        $this->otpService = $otpService;
     }
 
     public function services()
@@ -58,6 +61,7 @@ class ServiceViewController extends Controller
 
     public function submitContactForm(Request $request)
     {
+
         // Fetch Google reCAPTCHA settings from the database
         $recaptchaSettings = MetaSettings::whereIn('name', ['google_recaptcha_site_key', 'google_recaptcha_secret_key', 'google_recaptcha_status'])
             ->pluck('content', 'name');
@@ -70,6 +74,7 @@ class ServiceViewController extends Controller
         $rules = [
             'name' => 'required|string|max:255',
             'email' => 'required|email',
+            'otp_code' => 'required|string|max:6',
             'subject' => ['required', new NotSpamContent()],
             'message' => ['required', new NotSpamContent()],
         ];
@@ -97,6 +102,10 @@ class ServiceViewController extends Controller
             if (!$recaptchaData['success']) {
                 return back()->withErrors(['g-recaptcha-response' => 'Google reCAPTCHA verification failed. Please try again.'])->withInput();
             }
+        }
+
+        if (!$this->otpService->verify($request->email, $request->otp_code)) {
+        return back()->withErrors(['otp_code' => 'Invalid or expired OTP'])->withInput();
         }
 
         // Retrieve garage details

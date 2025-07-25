@@ -1,4 +1,4 @@
-<div class="modal fade" id="quoteEnquiryModal" tabindex="-1" role="dialog" aria-labelledby="quoteModalLabel"
+<div class="modal right slide" id="quoteEnquiryModal" tabindex="-1" role="dialog" aria-labelledby="quoteModalLabel"
     aria-hidden="true">
     <div class="modal-dialog modal-xl" role="document">
         <div class="modal-content">
