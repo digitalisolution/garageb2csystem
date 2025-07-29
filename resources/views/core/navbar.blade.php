@@ -34,7 +34,7 @@ $defaultLogoPath = public_path("frontend/themes/theme/img/logo/logo.png");
   <button class="navbar-toggler sidebar-toggler d-md-down-none" type="button">
     <span class="navbar-toggler-icon"></span>
   </button>
-
+<div class="garage-name">{{ getGarageDetails()->garage_name }}</div>
   <ul class="nav navbar-nav d-md-down-none">
     {{--
     <li class="nav-item px-3">
@@ -182,12 +182,3 @@ $defaultLogoPath = public_path("frontend/themes/theme/img/logo/logo.png");
   });
 </script>
 
-<style type="text/css">
-.notification-item{display:flex;gap:0;line-height:normal;}
-.notification-item a{color:#333;}
-.notification-item a:hover, .notification-item a:focus{text-decoration:none;background-color:transparent;}
-.app-header.navbar .dropdown-item:active{background-color:#f0f3f5;}
-.app-header.navbar .dropdown-item{white-space:inherit;}
-.notification-item .mark-as-read-btn i{color:darkturquoise;}
-.notification-item .Unpaid, .notification-item .Paid, .notification-item .Partially{padding:2px 5px;}
-</style>

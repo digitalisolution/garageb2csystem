@@ -1,13 +1,15 @@
 <div id="otp-verification-wrapper">
-    <div class="form-group mb-2">
-       <input type="email" name="email" id="email" placeholder="Email*" class="form-control" value="{{ old('email') }}" required>
-       <div id="otpMessage" class="text-sm"></div>
-        <button type="button" id="sendOtpBtn" class="btn btn-sm btn-primary mt-0">Send OTP</button>
+    <div class="form-group">
+    <div class="d-flex gap-2 mb-4">
+       <input type="email" name="email" id="email" placeholder="Email*" class="form-control mb-0" value="{{ old('email') }}" required>
+        <button type="button" id="sendOtpBtn" class="btn btn-sm btn-primary mt-0 no-wrap">Send OTP</button>
     </div>
+    <div id="otpMessage" class="text-sm"></div>
+</div>
 
     <div id="otpField" style="display:none;" class="form-group mt-2">
-        <label for="otp_code">Enter OTP</label>
-       <input type="text" name="otp_code" id="otp_code" class="form-control" required>
+        <!-- <label for="otp_code"></label> -->
+       <input type="text" name="otp_code" id="otp_code" class="form-control" placeholder="Enter OTP" required>
     </div>
 </div>
 

@@ -57,12 +57,12 @@
                             method="POST">
                             @csrf
                             <div class="row">
-                                <div class="col-lg-6">
+                                <div class="col-lg-12">
                                     <input type="text" name="website" class="d-none">
                                     <input name="name" placeholder="Name*" type="text" value="{{ old('name') }}" required>
                                     @error('name') <span class="text-danger">{{ $message }}</span> @enderror
                                 </div>
-                                <div class="col-lg-6">
+                                <div class="col-lg-12 otpbar">
                                     @include('components.otp-verification')
                                     @error('email') <span class="text-danger">{{ $message }}</span> @enderror
                                     @error('otp_code') <span class="text-danger">{{ $message }}</span> @enderror

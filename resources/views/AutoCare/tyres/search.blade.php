@@ -9,9 +9,11 @@
             <div class="mb-3">
                 <a href="{{ route('AutoCare.tyres.edit', ['product_id' => 'new']) }}" class="btn btn-primary">Add Tyre</a>
                 <!-- Add Ownstock Button -->
+                @if(get_option('add_ownstock_inventry'))
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ownstockModal">
                     Add Ownstock
                 </button>
+                @endif
             </div>
 
             <!-- Search Form -->

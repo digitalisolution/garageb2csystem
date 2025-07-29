@@ -9556,3 +9556,12 @@ table.dataTable thead th, table.dataTable thead td{padding:10px 10px !important;
 .select2-container--default .select2-selection--single .select2-selection__clear {color: #888;line-height: 23px;font-size: 1.3em;}
 .stock-availability{background:green;padding:3px 10px;border-radius:0px;color:#fff;font-weight: 600;font-size: 14px;margin-top: 12px;border-radius: 3px;text-align:center;}
 
+.btngroup-dropdown{max-height:200px;overflow-y:auto;}
+.garage-name{background: #000;color: #fff;padding: 15px 20px;font-weight: 600;font-size: 1rem;}
+.notification-item{display:flex;gap:0;line-height:normal;}
+.notification-item a{color:#333;}
+.notification-item a:hover, .notification-item a:focus{text-decoration:none;background-color:transparent;}
+.app-header.navbar .dropdown-item:active{background-color:#f0f3f5;}
+.app-header.navbar .dropdown-item{white-space:inherit;}
+.notification-item .mark-as-read-btn i{color:darkturquoise;}
+.notification-item .Unpaid, .notification-item .Paid, .notification-item .Partially{padding:2px 5px;}
