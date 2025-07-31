@@ -4,6 +4,7 @@ namespace App\Http\Controllers\ViewController;
 use App\Models\tyre_brands;
 use App\Models\MetaSettings;
 use App\Models\GarageDetails;
+use App\Models\TyresProduct;
 use App\Http\Controllers\Controller; // Import the base Controller class
 use Illuminate\Http\Request;
 

@@ -16,7 +16,9 @@
                     <th>Reason</th>
                     <th>Type</th>
                     <th>Qty</th>
+                    <th>Available Qty</th>
                     <th>Price</th>
+                    <th>Updated By</th>
                     <th>Date</th>
                 </tr>
             </thead>
@@ -66,14 +68,16 @@ function fetchStockHistory(ean, page) {
                             <td>${reasonToShow}</td>
                             <td>${record.stock_type}</td>
                             <td>${record.qty}</td>
+                            <td>${record.available_qty}</td>
                             <td>£${record.cost_price}</td>
+                            <td>${record.user_name ?? 'System'}</td>
                             <td>${record.created_at}</td>
                         </tr>
                     `;
                     $('#stockHistoryTable tbody').append(row);
                 });
             } else {
-                $('#stockHistoryTable tbody').append('<tr><td colspan="7">No stock history found for this EAN.</td></tr>');
+                $('#stockHistoryTable tbody').append('<tr><td colspan="9">No stock history found for this EAN.</td></tr>');
             }
 
             updatePaginationControls(response);

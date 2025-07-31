@@ -1218,14 +1218,62 @@ document.addEventListener("DOMContentLoaded", function () {
 
                     // Update the modal with vehicle details
                     modalContent.innerHTML = `
-                    <h4><strong>Make:</strong> ${vehicleDetails.Make || 'N/A'}</h4>
-                    <h4><strong>Model:</strong> ${vehicleDetails.Model || 'N/A'}</h4>
-                    <h4><strong>Year:</strong> ${vehicleDetails.DateOfFirstRegistration ? new Date(vehicleDetails.DateOfFirstRegistration).getFullYear() : 'N/A'}</h4>
-                   <h4><strong>Registration Number:</strong> ${vehicleDetails.Vrm.toUpperCase()}</h4>
-                    <h4><strong>Engine Capacity:</strong> ${vehicleDetails.EngineCapacityCc || 'N/A'} CC</h4>
+                     <div class="bg-light py-4 px-4 mb-3 border rounded">
+                        <div class="your_vehicle_result d-flex justify-content-between align-items-center">
+                            <div class="vrm_plate d-flex align-items-center">
+                                <img src="frontend/themes/default/img/icon-img/reg_icon.png" alt="uk icon" width="auto" height="35" loading="lazy">
+                                <span class="ms-2 text-uppercase">${vehicleDetails.Vrm.toUpperCase()}</span>
+                            </div>
+                           <div id="brandImageContainer"></div>
+                        </div>
+                        <div class="your_vehicle_data mt-4 d-flex flex-wrap gap-3">
+                            <div class="item">
+                                Model
+                                <span>${vehicleDetails.Model || 'N/A'}</span>
+                            </div>
+                            <div class="item">
+                                Year
+                                <span>${vehicleDetails.DateOfFirstRegistration ? new Date(vehicleDetails.DateOfFirstRegistration).getFullYear() : 'N/A'}</span>
+                            </div>
+                            <div class="item">
+                                Engine Capacity
+                                <span>${vehicleDetails.EngineCapacityCc || 'N/A'}</span>
+                            </div>
+                            <div class="item">
+                                Fuel
+                                <span> ${vehicleDetails.FuelType || 'N/A'}</span>
+                            </div>
+                        </div>
+                    </div>
                 `;
 
                     serviceContinueButton.style.display = 'inline-block'; // Show the continue button
+                    const brandImage = getBrandImage(vehicleDetails.Make);     
+                    document.getElementById('brandImageContainer').appendChild(brandImage);
+                        function getBrandImage(make) {
+                                // console.log(make);
+                            const makeSlug = make.toLowerCase() + ".webp";
+                            const localUrl = window.carImageConfig.localPath + "/" + makeSlug;
+                            const cdnUrl = window.carImageConfig.cdnBase + makeSlug;
+                            const fallback = window.carImageConfig.defaultImage;
+
+                            const img = document.createElement('img');
+                            img.className = "default-img";
+                            img.alt = "Brand Logo";
+                            // img.width = "auto";
+                            img.height = 50;
+                            img.src = cdnUrl;
+
+                            img.onerror = function () {
+                                this.onerror = null;
+                                this.src = localUrl;
+                                this.onerror = function () {
+                                    this.src = fallback;
+                                };
+                            };
+
+                            return img;
+                        }
 
                     // Add functionality to the continue button
                     serviceContinueButton.onclick = async function () {
@@ -1276,7 +1324,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 });
-
+ 
     function getCarServiceModel() {
         const make = document.getElementById('car_make').value;
 

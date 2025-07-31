@@ -20,7 +20,8 @@ class NoTestCustomer implements Rule
      *
      * @var array
      */
-    protected $keywords = ['test', 'dummy', 'example', 'noemail', 'fake','checking', 'testing', 'abc', 'xyz','123', 'test123'];
+    // protected $keywords = ['test', 'dummy', 'example', 'noemail', 'fake','checking', 'testing', 'abc', 'xyz','123', 'test123'];
+    protected $keywords = [];
     /**
      * Determine if the validation rule passes.
      *

@@ -100,6 +100,7 @@
                         </li>
                     </ul>
                 </li>
+                 @if ($role_id == 1)
                 <li class="nav-item nav-dropdown">
                         <a class="nav-link nav-dropdown-toggle" href="javascript:void(0);"><i class="fa fa-line-chart"
                                 aria-hidden="true"></i>
@@ -120,6 +121,7 @@
                             </li>
                         </ul>
                     </li>
+                    @endif
 
                   <li class="nav-item nav-dropdown">
                         <a class="nav-link nav-dropdown-toggle" href="javascript:void(0);"><i class="fa fa-money"

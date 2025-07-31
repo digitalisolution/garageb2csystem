@@ -1,5 +1,5 @@
-<div class="modal right slide" id="quoteEnquiryModal" tabindex="-1" role="dialog" aria-labelledby="quoteModalLabel"
-    aria-hidden="true">
+<div class="modal fade right" id="quoteEnquiryModal" tabindex="-1" role="dialog">
+
     <div class="modal-dialog modal-xl" role="document">
         <div class="modal-content">
             <form id="quoteEnquiryForm" method="POST" action="{{ route('service.enquiry.submit') }}">

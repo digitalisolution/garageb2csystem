@@ -31,76 +31,31 @@
 <button class="toggle-slide-right">Slide Quote Right</button>-->
 
 
-<style type="text/css">
-.mask {display: none;position: fixed;top: 0;left: 0;z-index: 100;width: 100%;height: 100%;background: rgba(0, 0, 0, 0.8);}
-.quote_slide {position: fixed;z-index: 1000;background-color: #fff;overflow: hidden;-webkit-transition: all 0.3s;-moz-transition: all 0.3s;-ms-transition: all 0.3s;-o-transition: all 0.3s;transition: all 0.3s;padding:30px;}
-.slide-menu-right {right: -70%;top: 0;width: 70%;height: 100%;}
-.toggle-slide-right {color: #fff;background: black;border: 1px solid grey;border-radius: 5px;display: block;margin: 20px auto;padding: 10px;top: 0;}
-button.close-menu{color: #fff;background: black;border-radius: 5px;}
-body.smr-open .slide-menu-right {right: 0}
-</style>
-<script type="text/javascript">
-changePickupStoreMenu();
 
-function changePickupStoreMenu(){
- 
-    var body = $('body'),
-        mask = $('<div class="mask"></div>'),
-        toggleSlideRight = document.querySelector( ".toggle-slide-right" ),
-        slideMenuRight = document.querySelector( ".slide-menu-right" ),
-        activeNav = '';
-    ;
-    $('body').append(mask);
- 
-    /* slide menu right */
-    toggleSlideRight.addEventListener( "click", function(){
-        $('body').addClass("smr-open");
-        $('.mask').fadeIn();
-        activeNav = "smr-open";
-    } );
- 
-    /* hide active menu if close menu button is clicked */
-    $(document).on('click', ".close-menu", function(el,i){
-        $('body').removeClass(activeNav);
-        activeNav = "";
-        $('.mask').fadeOut();
-    });
- 
+<style type="text/css">
+/* Slide-in modal from right */
+.modal.right .modal-dialog {
+    position: fixed;
+    right: 0;
+    margin: 0;
+    top: 0;
+    height: 100%;
+    transform: translateX(100%);
+    transition: transform 0.4s ease-in-out;
+    max-width: 60%;
+    overflow: auto;
+    width: 100%;
 }
-</script>
 
-<style type="text/css">
-.modal{transition: width 10s;}
-    .modal.right .modal-dialog {
-        position: fixed;
-        margin: auto;
-        height: 100%;
-        right:0;
-        
-        
-    }
+.modal.right .modal-content {
+    border: none;
+    border-radius: 0;
+}
 
-    .modal.right .modal-content {
-        height: 100%;
-        overflow-y: auto;
-    }
-    
-    .modal.right .modal-body {
-        padding: 15px 15px 80px;
-    }
+.modal.right.show .modal-dialog {
+    transform: translateX(0);
+}
 
-
-
-        
-/*Right*/
-    .modal.right.fade .modal-dialog {
-        right: -720px;
-        -webkit-transition: opacity 0.3s linear, right 0.3s ease-out;
-           -moz-transition: opacity 0.3s linear, right 0.3s ease-out;
-             -o-transition: opacity 0.3s linear, right 0.3s ease-out;
-                transition: opacity 0.3s linear, right 0.3s ease-out;
-    }
-  
 </style>    
 <div class="pt-70 pb-70">
         <div class="container">

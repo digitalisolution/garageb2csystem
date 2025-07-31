@@ -74,7 +74,7 @@ class ServiceViewController extends Controller
         $rules = [
             'name' => 'required|string|max:255',
             'email' => 'required|email',
-            'otp_code' => 'required|string|max:6',
+            // 'otp_code' => 'required|string|max:6',
             'subject' => ['required', new NotSpamContent()],
             'message' => ['required', new NotSpamContent()],
         ];
@@ -104,9 +104,9 @@ class ServiceViewController extends Controller
             }
         }
 
-        if (!$this->otpService->verify($request->email, $request->otp_code)) {
-        return back()->withErrors(['otp_code' => 'Invalid or expired OTP'])->withInput();
-        }
+        // if (!$this->otpService->verify($request->email, $request->otp_code)) {
+        // return back()->withErrors(['otp_code' => 'Invalid or expired OTP'])->withInput();
+        // }
 
         // Retrieve garage details
         $garage = GarageDetails::first();

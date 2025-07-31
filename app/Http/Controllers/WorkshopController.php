@@ -562,7 +562,8 @@ if ($request->has('vehicle_reg_number') && $request->vehicle_reg_number != null)
             
             $items = WorkshopTyre::where('workshop_id',$workshop->id)->where('ref_type', 'workshop')->where('supplier', 'ownstock')->get();
             // Insert or update stock history records for each item
-                foreach ($items as $item) {
+            foreach ($items as $item) {
+                $tyreProduct = TyresProduct::find($item->product_id);
                     DB::table('stock_history')->updateOrInsert(
                         [
                             'ean' => $item->product_ean,
@@ -574,8 +575,10 @@ if ($request->has('vehicle_reg_number') && $request->vehicle_reg_number != null)
                             'product_type' => $item->product_type,
                             'supplier' => $item->supplier,
                             'qty' => $item->quantity,
+                            'available_qty' => $tyreProduct->tyre_quantity,
                             'cost_price' => $item->margin_rate,
                             'product_id' => $item->product_id,
+                            'user_id' => auth()->id(),
                             'reason' => 'Invoice Created',
                             'stock_type' => 'Decrease',
                             'stock_date' => now()->format('Y-m-d'),

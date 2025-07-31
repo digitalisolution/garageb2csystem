@@ -5,7 +5,7 @@ use DB;
 use Illuminate\Http\Request;
 use App\Models\TyresProduct;
 use App\Models\tyre_brands;
-use App\Models\Supplier; // Assuming you have a Supplier model
+use App\Models\Supplier;
 use App\Models\OrderTypes;
 use Illuminate\Support\Facades\Log;
 
@@ -332,10 +332,12 @@ class TyresController extends Controller
                     'ean' => $request->tyre_ean,
                     'supplier' => $supplierName,
                     'qty' => $request->tyre_quantity,
+                    'available_qty' => $quantity,
                     'cost_price' => $request->tyre_price,
                     'stock_type' => $request->stock_type,
                     'reason' => $request->reason,
                     'other_reason' => $request->other_reason,
+                    'user_id' => auth()->id(),
                     'ref_id' => $request->ref_id,
                     'ref_type' => $request->ref_type ?? '',
                     'stock_date' => now()->format('Y-m-d'),

@@ -149,7 +149,7 @@
 
                 @if ($tyre->tyre_supplier_name === 'ownstock' && $tyre->instock === 1)
                 <div class="available-now">Available Now</div>
-                @elseif(isset($leadtime))
+                @elseif(isset($leadtime) && !empty($leadtime))
                 <div class="leadtime">{{$leadtime}}</div>
                 @elseif(isset($leadTimes[$tyre->product_id]))
                 <div class="leadtime">{{ $leadTimes[$tyre->product_id]['label'] }}</div>

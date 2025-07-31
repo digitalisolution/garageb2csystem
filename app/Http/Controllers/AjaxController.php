@@ -908,9 +908,14 @@ public function getStockHistory(Request $request)
         $perPage = 10;
 
         $stockHistory = DB::table('stock_history')
+         ->leftJoin('users', 'stock_history.user_id', '=', 'users.id')
         ->where('ean', $ean)
         // ->orderBy('id', 'desc')
         ->orderBy('created_at', 'desc')
+        ->select(
+                'stock_history.*',
+                'users.name as user_name'
+            )
         ->paginate($perPage, ['*'], 'page', $page);
         return response()->json($stockHistory);
     } catch (\Exception $e) {
