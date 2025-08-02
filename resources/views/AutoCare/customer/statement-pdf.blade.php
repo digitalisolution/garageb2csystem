@@ -106,6 +106,7 @@ $defaultLogoPath = public_path("frontend/themes/theme/img/logo/logo.png");
 						<th>Type</th>
 						<th>Amount</th>
 						<th style="text-align:right;">Paid Amount</th>
+						<th class="text-right">Discount Amount</th>
 						<th style="text-align:right;">Balance Amount</th>
 					</tr>
 				</thead>
@@ -119,12 +120,13 @@ $defaultLogoPath = public_path("frontend/themes/theme/img/logo/logo.png");
 							<td>{{ $transaction['type'] }}</td>
 							<td>£{{ number_format($transaction['amount'], 2) }}</td>
 							<td style="text-align:right;">£{{ number_format($transaction['paid_price'], 2) }}</td>
+							<td class="text-right">£{{ number_format($transaction['discountPrice'], 2) }}</td>
 							<td style="text-align:right;">£{{ number_format($transaction['balance_price'], 2) }}</td>
 						</tr>
 					@endforeach
 
 					<tr>
-						<td colspan="5" style="text-align:right;"><strong>Balance Due</strong></td>
+						<td colspan="6" style="text-align:right;"><strong>Balance Due</strong></td>
 						<td style="text-align:right;"><strong>£{{ number_format($balanceDue, 2) }}</strong></td>
 					</tr>
 				</tbody>

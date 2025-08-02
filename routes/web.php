@@ -505,6 +505,8 @@ Route::middleware('auth:web')->group(function () {
     Route::post('/AutoCare/workshop/search-invoice', 'WorkshopController@viewSearchInvoice');
     Route::get('/AutoCare/workshop/payment_history/{id}', 'WorkshopController@viewpaymenthistory');
     Route::get('/AutoCare/payment-record', 'PaymentRecordController@index');
+    Route::get('AutoCare/workshop/{id}/activity-log', 'WorkshopController@getActivityLog')->name('workshop.activity-log');
+
     // Wokshop :stop
     // In routes/web.php
     Route::get('/AutoCare/tyres/search', [TyresController::class, 'search'])->name('AutoCare.tyres.search');

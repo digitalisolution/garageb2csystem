@@ -273,10 +273,10 @@ if (isset($workshop->due_out)) {
                         </td>
         
                         <!-- Mileage -->
-                        <td>
-                            {{ $WorkshopVehicle->isNotEmpty() ? '--' : ($getIndivisualWorkshopDetail['vehicle_mileage'] ?? '--') }}
+                        <td align="center">
+                            {{ $workshop->mileage ?? '--' }}
                         </td>
-        
+
                         <!-- MOT Expiry Date -->
                         <td>
                             {{ $WorkshopVehicle->isNotEmpty() && $WorkshopVehicle[0]->vehicle_mot_expiry_date

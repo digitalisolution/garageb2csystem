@@ -69,6 +69,12 @@
         </div>
     </div>
 
+    <div class="pt-70 pb-70 service_page_bank">
+        <div class="container">
+            {!! $service->content !!}
+        </div>
+    </div>
+
 @endsection
 <style type="text/css">
 /* Slide-in modal from right */

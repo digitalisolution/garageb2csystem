@@ -203,12 +203,12 @@
                                     {{-- <th style="white-space: nowrap">Brand</th> --}}
                                     {{-- <th style="white-space: nowrap">Model </th> --}}
                                     <!-- <th width="30%">VIN</th>
-                                            <th width="30%">Reg Number</th>
-                                            <th width="30%">Odometer Reading</th>
-                                            <th width="30%">Color</th>
-                                            <th width="30%">Fuel Type</th>
-                                            <th width="30%">Engine Number</th>
-                                            <th width="30%">Key Number</th> -->
+                                                    <th width="30%">Reg Number</th>
+                                                    <th width="30%">Odometer Reading</th>
+                                                    <th width="30%">Color</th>
+                                                    <th width="30%">Fuel Type</th>
+                                                    <th width="30%">Engine Number</th>
+                                                    <th width="30%">Key Number</th> -->
                                     {{-- <th style="white-space: nowrap">Due In</th> --}}
                                     {{-- <th style="white-space: nowrap">due Out</th> --}}
                                     {{-- <th style="white-space: nowrap">Advance Received</th> --}}
@@ -353,12 +353,12 @@
                                                             </a>
                                                         </li>
                                                     @else
-                                                        <li>
-                                                            <a data-toggle="modal" id="{{ $value->id }}" data-target="#myModal1"
-                                                                class="dropdown-item btn btn-success openPayentModel btn-sm">
-                                                                <i class="fa fa-undo" aria-hidden="true"></i> Refund
-                                                            </a>
-                                                        </li>
+                                                        <!-- <li>
+                                                                                    <a data-toggle="modal" id="{{ $value->id }}" data-target="#myModal1"
+                                                                                        class="dropdown-item btn btn-success openPayentModel btn-sm">
+                                                                                        <i class="fa fa-undo" aria-hidden="true"></i> Refund
+                                                                                    </a>
+                                                                                </li> -->
                                                         <li>
                                                             <a href="{{ url('/') }}/AutoCare/sale/edit/{{ $value->id }}"
                                                                 class="dropdown-item btn btn-success btn-sm">
@@ -366,6 +366,14 @@
                                                             </a>
                                                         </li>
                                                     @endif
+                                                    <li>
+                                                        <a href="#"
+                                                            class="dropdown-item btn btn-success btn-sm open-activity-log-modal"
+                                                            data-id="{{ $value->id }}">
+                                                            <i class="fa fa-eye" aria-hidden="true"></i> Activity Log
+                                                        </a>
+                                                    </li>
+
 
                                                     <li>
                                                         <form action="{{ url('/AutoCare/workshop/trash/' . $value->id) }}"
@@ -592,7 +600,23 @@
         </div>
         <!-- Modal for payment :end -->
 
+        <!-- Modal for Activity Log :start -->
+        <!-- Modal (outside the loop) -->
+        <div class="modal fade" id="activityModal" tabindex="-1" aria-labelledby="activityModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header align-items-center">
+                        <h5 class="modal-title" id="activityModalLabel">Workshop Activity Log</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="activity-log-content">
+                        <p>Loading...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
+        <!-- Modal for Activity Log :end -->
 
         <!-- Modal for discount : start-->
         <div class="modal fade" id="workshopDiscount" role="dialog">
@@ -890,17 +914,17 @@
 
                         response.forEach(log => {
                             const row = `
-                                        <tr>
-                                            <td>£${log.debit_amount}</td>
-                                            <td>${log.payment_date}</td>
-                                         <td>${log.payment_type_label}</td>
-                                            <td>${log.comments || '-'}</td>
-                                            <td>
-                                                <button class="btn btn-sm btn-primary editPaymentLog" data-id="${log.id}">Edit</button>
-                                                <button class="btn btn-sm btn-danger deletePaymentLog" data-id="${log.id}">Delete</button>
-                                            </td>
-                                        </tr>
-                                    `;
+                                                <tr>
+                                                    <td>£${log.debit_amount}</td>
+                                                    <td>${log.payment_date}</td>
+                                                 <td>${log.payment_type_label}</td>
+                                                    <td>${log.comments || '-'}</td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-primary editPaymentLog" data-id="${log.id}">Edit</button>
+                                                        <button class="btn btn-sm btn-danger deletePaymentLog" data-id="${log.id}">Delete</button>
+                                                    </td>
+                                                </tr>
+                                            `;
                             paymentLogsTable.append(row);
                         });
                     },
@@ -1003,13 +1027,13 @@
                         workshop_Product = JSON.parse(data);
                         for (index = 0; index < workshop_Product.length; ++index) {
                             $('#productDetail').append("<tr>\
-                                    <td>" + workshop_Product[index]['workshop_id'] + "</td>\
-                                    <td>" + workshop_Product[index]['workshop_id'] + "</td>\
-                                    <td>" + workshop_Product[index]['product_name'] + "</td>\
-                                    <td>" + workshop_Product[index]['product_quantity'] + "</td>\
-                                    <td>" + workshop_Product[index]['UnitExitPrice'] + "</td>\
-                                    <td><a data-toggle=\"modal\" id=\"" + workshop_Product[index]['WorkshopProId'] + "\" data-target=\"#myModal\"  class=\"btn btn-success openPayentModelForProduct btn-sm\"><i class=\"fa fa-undo\" aria-hidden=\"true\"></i></a> </th>\
-                                    </tr>");
+                                            <td>" + workshop_Product[index]['workshop_id'] + "</td>\
+                                            <td>" + workshop_Product[index]['workshop_id'] + "</td>\
+                                            <td>" + workshop_Product[index]['product_name'] + "</td>\
+                                            <td>" + workshop_Product[index]['product_quantity'] + "</td>\
+                                            <td>" + workshop_Product[index]['UnitExitPrice'] + "</td>\
+                                            <td><a data-toggle=\"modal\" id=\"" + workshop_Product[index]['WorkshopProId'] + "\" data-target=\"#myModal\"  class=\"btn btn-success openPayentModelForProduct btn-sm\"><i class=\"fa fa-undo\" aria-hidden=\"true\"></i></a> </th>\
+                                            </tr>");
 
                             //  thisSelf.parent().parent().find('[name^=model_number]').append(
 
@@ -1099,6 +1123,19 @@
                 });
 
 
+            });
+        });
+    </script>
+    <script>
+        $(document).on('click', '.open-activity-log-modal', function (e) {
+            e.preventDefault();
+            let workshopId = $(this).data('id');
+            $('#activity-log-content').html('<p>Loading...</p>');
+            $('#activityModal').modal('show');
+            $.get(`AutoCare/workshop/${workshopId}/activity-log`, function (response) {
+                $('#activity-log-content').html(response);
+            }).fail(function () {
+                $('#activity-log-content').html('<p class="text-danger">Failed to load activity logs.</p>');
             });
         });
     </script>

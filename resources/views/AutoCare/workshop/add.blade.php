@@ -510,14 +510,14 @@
                         </div>
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label class="control-label" for="vehicle_mileage">Mileage:&emsp;</label>
-                                {{ Form::text('vehicle_mileage',isset($workshopVehicleData) && $workshopVehicleData->isNotEmpty() ? $workshopVehicleData->first()->vehicle_mileage : '', [
+                                <label class="control-label" for="mileage">Mileage:&emsp;</label>
+                                {{ Form::text('mileage',isset($mileage) && $mileage ? $mileage : '', [
         'class' => 'form-control ',
-        'id' => 'vehicle_mileage',
+        'id' => 'mileage',
         'placeholder' => 'Mileage Reading'
     ]) }}
                                 <div class="invalid-feedback">
-                                    {{ $errors->has('vehicle_mileage') ? $errors->first('vehicle_mileage', ':message') : '' }}
+                                    {{ $errors->has('mileage') ? $errors->first('mileage', ':message') : '' }}
                                 </div>
                             </div>
                         </div>

@@ -336,22 +336,18 @@ class CustomerController extends Controller
 
         if ($request->filled('from') && $request->filled('to')) {
             try {
-                $from = Carbon::createFromFormat('d-m-Y', $request->input('from'))->startOfDay()->toDateString();
-                $to = Carbon::createFromFormat('d-m-Y', $request->input('to'))->endOfDay()->toDateString();
-                // Log::info("Filtering invoices from: $from to $to");
-
-                // Apply date filtering
-                $query->whereBetween('created_at', [$from, $to]);
-
-                // Debugging: Check SQL query
-                // Log::info("SQL Query after filtering: " . $query->toSql(), $query->getBindings());
-
+                $from = Carbon::createFromFormat('d-m-Y', $request->input('from'))->startOfDay();
+                $to = Carbon::createFromFormat('d-m-Y', $request->input('to'))->endOfDay();
             } catch (\Exception $e) {
                 // Log::error("Invalid dat/e format: " . $e->getMessage());
                 return response()->json(['error' => 'Invalid date format. Please use DD-MM-YYYY.'], 400);
             }
+        }else{
+                 $from = Carbon::now()->startOfMonth();
+                 $to = Carbon::now()->endOfMonth();
         }
-
+        
+        $query->whereBetween('created_at', [$from, $to]);
         $invoices = $query->get();
         // Log::info("Filtered invoices count: " . $invoices->count());
 
@@ -367,6 +363,7 @@ class CustomerController extends Controller
                     'type' => 'Invoice',
                     'amount' => $invoice->grandTotal,
                     'paid_price' => $invoice->paid_price,
+                    'discountPrice' => $invoice->discount_price,
                     'balance_price' => $invoice->balance_price
                 ]);
             }
@@ -375,7 +372,8 @@ class CustomerController extends Controller
         }
 
         $totalInvoiced = $invoices->sum('grandTotal');
-        $totalPaid = $invoices->sum('paid_price');
+        $discountPrice = $invoices->sum('discount_price');
+        $totalPaid = $invoices->sum('paid_price')+ $discountPrice;
         $balanceDue = $totalInvoiced - $totalPaid;
 
         if ($request->ajax()) {
@@ -383,6 +381,7 @@ class CustomerController extends Controller
                 'totalInvoiced' => $totalInvoiced,
                 'totalPaid' => $totalPaid,
                 'balanceDue' => $balanceDue,
+                'discountPrice' => $discountPrice,
                 'transactionsHtml' => $transactions
             ]);
         }
@@ -392,6 +391,7 @@ class CustomerController extends Controller
             'totalInvoiced',
             'totalPaid',
             'balanceDue',
+            'discountPrice',
             'transactions'
         ));
     }
@@ -672,6 +672,7 @@ class CustomerController extends Controller
                 'type' => 'Invoice',
                 'amount' => $invoice->grandTotal,
                 'paid_price' => $invoice->paid_price,
+                'discountPrice' => $invoice->discount_price,
                 'balance_price' => $invoice->balance_price
             ]);
         }

@@ -46,7 +46,8 @@
         "app/Helpers/EmailHelper.php",
         "app/Helpers/GarageHelper.php",
         "app/Helpers/SiteConfig.php",
-        "app/Helpers/ImageVersionHelper.php"
+        "app/Helpers/ImageVersionHelper.php",
+        "app/Helpers/ActivityLogger.php"
     ]
     },
     "autoload-dev": {
