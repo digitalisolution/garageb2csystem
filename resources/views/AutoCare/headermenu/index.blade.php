@@ -4,6 +4,26 @@
     <div class="container-fluid">
         <div class="bg-white p-3">
             <h5>Pages Management</h5>
+             @if ($errors->any())
+                <div class="alert alert-danger">
+                    @foreach ($errors->all() as $error)
+                        <div>{{ $error }}</div>
+                    @endforeach
+                </div>
+            @endif
+            @if(session('success'))
+                <div class="alert alert-success alert-dismissible fade show m-3" role="alert">
+                    {{ session('success') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="alert alert-danger alert-dismissible fade show m-3" role="alert">
+                    {{ session('error') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
             <a href="{{ route('headermenu.create') }}" class="btn btn-primary mb-3">Add New Page</a>
 
             <table id="datable_1" class="table table-bordered">

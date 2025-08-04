@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\HeaderMenu;
+use App\Models\CarService;
+use App\Models\tyre_brands;
+use App\Models\Page;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -33,6 +36,7 @@ class HeaderMenuController extends Controller
 
     public function store(Request $request)
     {
+        try{
         $request->validate([
             'title' => 'required|string|max:255',
             'slug' =>  'nullable|string|max:255',
@@ -40,19 +44,29 @@ class HeaderMenuController extends Controller
             'sort' => 'nullable|integer',
         ]);
 
-        $data = $request->all();
+        $data = $request->validated();
         HeaderMenu::create($data);
         return redirect()->route('headermenu.index')->with('success', 'Page created successfully!');
+         } catch (\Throwable $e) {
+            \Log::error("Error store Headermenu: " . $e->getMessage());
+            return redirect()->back()->withInput()->with('error',  $e->getMessage());
+        }
     }
 
     public function edit(HeaderMenu $page)
     {
+        try{
         $parentPages = HeaderMenu::whereNull('parent_id')->where('id', '!=', $page->id)->pluck('title', 'id');
         return view('AutoCare.headermenu.create', compact('page', 'parentPages'));
+         } catch (\Throwable $e) {
+            \Log::error("Error edit Headermenu: " . $e->getMessage());
+            return redirect()->back()->withInput()->with('error',  $e->getMessage());
+        }
     }
 
    public function update(Request $request, HeaderMenu $page)
 {
+    try{
     // Validation rules
     $validated = $request->validate([
         'title' => 'required|string|max:255',
@@ -62,19 +76,23 @@ class HeaderMenuController extends Controller
     ]);
 
     // Update the model
-    $page->update($request->except(['_token', '_method']));
+   $page->update($validated);
 
     return redirect()->route('headermenu.index')->with('success', 'Page updated successfully!');
+     } catch (\Throwable $e) {
+            \Log::error("Error updating Headermenu: " . $e->getMessage());
+            return redirect()->back()->withInput()->with('error',  $e->getMessage());
+        }
 }
   public function getSlugs($type)
 {
     if ($type === 'services') {
-        $slugs = \App\Models\CarService::pluck('slug', 'service_id');
+        $slugs = CarService::pluck('slug', 'service_id');
     } elseif ($type === 'pages') {
-        $slugs = \App\Models\Page::pluck('slug', 'id');
+        $slugs = Page::pluck('slug', 'id');
     } elseif ($type === 'brands') {
         // Get brand slugs and prefix them with 'brand/'
-        $brands = \App\Models\tyre_brands::pluck('slug', 'brand_id');
+        $brands = tyre_brands::pluck('slug', 'brand_id');
         $slugs = $brands->map(function ($slug) {
             return 'brand/' . $slug;
         });
@@ -87,7 +105,12 @@ class HeaderMenuController extends Controller
 
     public function destroy(HeaderMenu $page)
     {
+        try{
         $page->delete();
         return redirect()->route('headermenu.index')->with('success', 'Page deleted successfully!');
+         } catch (\Throwable $e) {
+            \Log::error("Error deleting Headermenu: " . $e->getMessage());
+            return redirect()->back()->withInput()->with('error',  $e->getMessage());
+        }
     }
 }

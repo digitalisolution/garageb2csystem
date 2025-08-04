@@ -40,11 +40,11 @@ class SlugController extends Controller
         $page = Page::where('slug', $slug)->where('status', 1)->orderBy('sort', 'asc')->first();
         if ($page) {
             // Fetch additional data if needed
-            $subPages = Page::where('parent_id', $page->id)
+            /*$subPages = Page::where('parent_id', $page->id)
                 ->where('include_headermenu', 1)
                 ->where('status', 1)
                 ->orderBy('sort', 'asc')
-                ->get();
+                ->get();*/
             $page->content = ImageVersionHelper::addVersionToImages($page->content);
             $metaTitle = $page->meta_title ?? $page->title;
             $metaDescription = $page->meta_description ?? 'Default description for the page.';
@@ -52,7 +52,7 @@ class SlugController extends Controller
             $google_tag_manager = MetaSettings::where('name', 'google_tag_manager')->value('content') ?? '';
             $tag_manager = MetaSettings::where('name', 'tag_manager')->value('content') ?? '';
             $analytics = MetaSettings::where('name', 'analytics')->value('content') ?? '';
-            return view('pages.show', compact('page', 'subPages', 'metaTitle', 'metaDescription', 'metaKeywords', 'google_tag_manager', 'tag_manager', 'analytics'));
+            return view('pages.show', compact('page', 'metaTitle', 'metaDescription', 'metaKeywords', 'google_tag_manager', 'tag_manager', 'analytics'));
         }
 
         // If neither is found, return a 404 response

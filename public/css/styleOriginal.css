@@ -9565,3 +9565,4 @@ table.dataTable thead th, table.dataTable thead td{padding:10px 10px !important;
 .app-header.navbar .dropdown-item{white-space:inherit;}
 .notification-item .mark-as-read-btn i{color:darkturquoise;}
 .notification-item .Unpaid, .notification-item .Paid, .notification-item .Partially{padding:2px 5px;}
+.alert{overflow-wrap: anywhere;}

@@ -9,16 +9,12 @@
             $bannerPath = 'frontend/' . str_replace('.', '-', $domain) . '/img/banner/content-pages/';
             $fallbackPath = 'frontend/themes/default/img/banner/content-pages/';
 
-            $bannerimagePath = $page->page_banner_path ?? 'sample-page-image.png';
+            $bannerimagePath = $page->page_banner_path ?? $page->slug.'.jpg';
             $bannerImageUrl = asset($bannerPath . $bannerimagePath);
             $fallbackImageUrl = asset($fallbackPath . $bannerimagePath);
         @endphp
 <div class="breadcrumb-area brand_breadcrumb">
     <img src="{{ $bannerImageUrl }}" onerror="this.onerror=null;this.src='{{ $fallbackImageUrl }}';" alt="{{ $page->title }}" class="img-bank">
-
-    <!-- <img src="{{ $page->page_banner_path ? versioned_asset('frontend/themes/default/img/banner/content-pages/' . $page->page_banner_path) : versioned_asset('frontend/themes/default/img/banner/content-pages/common_image.jpg') }}"
-        alt="{{ $page->page_banner_path ?? 'Default Banner' }}" class="img-bank"> -->
-
     <div class="brand_name">
         <h1>{{ $page->title }}</h1>
     </div>
@@ -68,20 +64,9 @@
 
 <div class="pt-70 pb-70 content_pages">
     <div class="container">
-
         <div class="page-content">
             {!! Blade::render($page->content, ['garage_name' => $garage->garage_name]) !!}
-
         </div>
-
-        @if ($subPages->count())
-            <h2>Related Pages</h2>
-            <ul>
-                @foreach ($subPages as $subPage)
-                    <li><a href="{{ url($subPage->slug) }}">{{ $subPage->title }}</a></li>
-                @endforeach
-            </ul>
-        @endif
     </div>
 </div>
 @endsection

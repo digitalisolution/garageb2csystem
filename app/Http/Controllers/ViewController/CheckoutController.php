@@ -525,8 +525,8 @@ class CheckoutController extends Controller
             'country' => 'nullable|string|max:100',
             'company_name' => 'nullable|string|max:100',
             'postcode' => 'nullable|string|max:10|regex:/^[A-Za-z0-9\s]{3,10}$/',
-            'new_reg_number' => 'nullable|string|min:6|max:10|regex:/^[A-Za-z0-9\-]+$/',
-            'reg_number' => 'nullable|string|min:6|max:10|regex:/^[A-Za-z0-9\-]+$/',
+            'new_reg_number' => 'nullable|string|min:5|max:10|regex:/^[A-Za-z0-9\-]+$/',
+            'reg_number' => 'nullable|string|min:5|max:10|regex:/^[A-Za-z0-9\-]+$/',
             'reg_number.required_without' => 'new_reg_number',
             'new_reg_number.required_without' => 'reg_number',
 

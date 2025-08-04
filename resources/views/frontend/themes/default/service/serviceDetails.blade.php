@@ -9,7 +9,9 @@
             $bannerPath = 'frontend/' . str_replace('.', '-', $domain) . '/img/service-banners/';
             $fallbackPath = 'frontend/themes/default/img/service-banners/';
 
-            $bannerimagePath = $service->service_banner_path ?? 'sample-banner-image.png';
+            //$bannerimagePath = $service->service_banner_path ?? 'sample-banner-image.png';
+            $bannerimagePath = $service->service_banner_path ?? $service->slug.'.jpg';
+
             $bannerImageUrl = asset($bannerPath . $bannerimagePath);
             $fallbackImageUrl = asset($fallbackPath . $bannerimagePath);
         @endphp

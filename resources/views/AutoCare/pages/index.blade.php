@@ -9,7 +9,7 @@
     <table id="datable" class="table table-bordered">
         <thead class="thead-dark">
             <tr>
-                <th>Sort Order</th>
+                <th>id</th>
                 <th>Title</th>
                 <th>Slug</th>
                 <th class="text-center">Status</th>
@@ -19,7 +19,7 @@
         <tbody>
             @foreach ($pages as $page)
                 <tr>
-                    <td>{{ $page->sort }}</td>
+                    <td>{{ $page->id }}</td>
                     <td>{{ $page->title }}</td>
                     <td>{{ $page->slug }}</td>
                     <td class="text-center">
@@ -37,31 +37,7 @@
                         </form>
                     </td>
                 </tr>
-                <!-- Display Child Pages -->
-                @if ($page->children)
-                    @foreach ($page->children as $child)
-                        <tr>
-                            <td>{{ $child->sort }}</td>
-                            <td>&mdash; {{ $child->title }}</td>
-                            <td>{{ $child->slug }}</td>
-                            <td class="text-center">
-                                <span class="badge {{ $child->status ? 'bg-success' : 'bg-danger' }}">
-                                    {{ $child->status ? 'Active' : 'Inactive' }}
-                                </span>
-                            </td>
-                            <td class="text-center">
-                                <a href="{{ route('pages.edit', $child->id) }}" class="btn btn-warning btn-sm">Edit</a>
-                                <form action="{{ route('pages.destroy', $child->id) }}" method="POST"
-                                    style="display: inline-block;">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-danger btn-sm"
-                                        onclick="return confirm('Are you sure you want to delete this page?')">Delete</button>
-                                </form>
-                            </td>
-                        </tr>
-                    @endforeach
-                @endif
+               
             @endforeach
         </tbody>
     </table>

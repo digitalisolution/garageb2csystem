@@ -13,7 +13,10 @@ class PageController extends Controller
 {
     public function index()
     {
-        $pages = Page::whereNull('parent_id')
+
+        $pages = page::orderBy('sort', 'asc')->get();
+        return view('AutoCare.pages.index', compact('pages'));
+        /*$pages = Page::whereNull('parent_id')
             ->with([
                 'children' => function ($query) {
                     $query->orderBy('sort', 'asc');
@@ -22,14 +25,16 @@ class PageController extends Controller
             ->orderBy('sort', 'asc')
             ->get();
 
-        return view('AutoCare.pages.index', compact('pages'));
+        return view('AutoCare.pages.index', compact('pages'));*/
     }
 
 
     public function create()
     {
-        $parentPages = Page::whereNull('parent_id')->pluck('title', 'id');
-        return view('AutoCare.pages.create', compact('parentPages'));
+        //$parentPages = Page::whereNull('parent_id')->pluck('title', 'id');
+        //return view('AutoCare.pages.create', compact('parentPages'));
+        return view('AutoCare.pages.create');
+
     }
 
     public function store(Request $request)
@@ -65,8 +70,9 @@ class PageController extends Controller
 
     public function edit(Page $page)
     {
-        $parentPages = Page::whereNull('parent_id')->where('id', '!=', $page->id)->pluck('title', 'id');
-        return view('AutoCare.pages.create', compact('page', 'parentPages'));
+        //$parentPages = Page::whereNull('parent_id')->where('id', '!=', $page->id)->pluck('title', 'id');
+        //return view('AutoCare.pages.create', compact('page', 'parentPages'));
+        return view('AutoCare.pages.create', compact('page'));
     }
 
     public function update(Request $request, Page $page)
