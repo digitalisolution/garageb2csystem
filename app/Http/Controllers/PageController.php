@@ -13,26 +13,13 @@ class PageController extends Controller
 {
     public function index()
     {
-
         $pages = page::orderBy('sort', 'asc')->get();
         return view('AutoCare.pages.index', compact('pages'));
-        /*$pages = Page::whereNull('parent_id')
-            ->with([
-                'children' => function ($query) {
-                    $query->orderBy('sort', 'asc');
-                }
-            ])
-            ->orderBy('sort', 'asc')
-            ->get();
-
-        return view('AutoCare.pages.index', compact('pages'));*/
     }
 
 
     public function create()
     {
-        //$parentPages = Page::whereNull('parent_id')->pluck('title', 'id');
-        //return view('AutoCare.pages.create', compact('parentPages'));
         return view('AutoCare.pages.create');
 
     }
@@ -40,15 +27,21 @@ class PageController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'title' => 'required|string|max:255',
-            'slug' => 'required|string|unique:pages,slug',
-            'page_banner_path' => 'nullable|image|mimes:jpeg,webp,png,jpg,gif|max:2048',
-
-            'sort' => 'nullable|integer',
+        'title' => 'required|string|max:255',
+        'slug' => 'required|string|max:255|unique:pages,slug|regex:/^[a-zA-Z0-9#\/-]+$/',
+        'tyre_search_form' => 'required|in:0,1',
+        'exclude_sitemap' => 'required|in:0,1',
+        'content' => 'nullable|string',
+        'page_banner_path' => 'nullable|image|mimes:jpeg,webp,png,jpg,gif|max:2048',
+        'sort' => 'nullable|integer',
+        'status' => 'required|in:0,1',
+        'meta_title' => 'nullable|string|max:150',
+        'meta_keywords' => 'nullable|string|max:255',
+        'meta_description' => 'nullable|string|max:5000', // Optional long length
         ]);
 
         $data = $request->all();
-
+        try{
         if ($request->hasFile('page_banner_path')) {
             $banner = $request->file('page_banner_path');
             $bannerName = $banner->getClientOriginalName();
@@ -66,12 +59,14 @@ class PageController extends Controller
 
         Page::create($data);
         return redirect()->route('pages.index')->with('success', 'Page created successfully!');
+         } catch (\Throwable $e) {
+            \Log::error("Error creating page: " . $e->getMessage());
+            return redirect()->back()->withInput()->with('error',  $e->getMessage());
+        }
     }
 
     public function edit(Page $page)
     {
-        //$parentPages = Page::whereNull('parent_id')->where('id', '!=', $page->id)->pluck('title', 'id');
-        //return view('AutoCare.pages.create', compact('page', 'parentPages'));
         return view('AutoCare.pages.create', compact('page'));
     }
 
@@ -86,11 +81,19 @@ class PageController extends Controller
                 Rule::unique('pages', 'slug')->ignore($page->id),
                 'regex:/^[a-zA-Z0-9#\/-]+$/',
             ],
-            'page_banner_path' => 'nullable|image|mimes:jpeg,webp,png,jpg,gif|max:2048',
-            'sort' => 'nullable|integer',
+        'tyre_search_form' => 'required|in:0,1',
+        'exclude_sitemap' => 'required|in:0,1',
+        'content' => 'nullable|string',
+        'page_banner_path' => 'nullable|image|mimes:jpeg,webp,png,jpg,gif|max:2048',
+        'sort' => 'nullable|integer',
+        'status' => 'required|in:0,1',
+        'meta_title' => 'nullable|string|max:150',
+        'meta_keywords' => 'nullable|string|max:255',
+        'meta_description' => 'nullable|string|max:5000',
         ]);
 
         $data = $request->except(['_token', '_method', 'page_banner_path']);
+        try{
 
         if ($request->hasFile('page_banner_path')) {
             $banner = $request->file('page_banner_path');
@@ -109,13 +112,22 @@ class PageController extends Controller
         $page->update($data);
 
         return redirect()->route('pages.index')->with('success', 'Page updated successfully!');
+         } catch (\Throwable $e) {
+            \Log::error("Error updating page: " . $e->getMessage());
+            return redirect()->back()->withInput()->with('error',  $e->getMessage());
+        }
 
     }
 
 
     public function destroy(Page $page)
     {
+        try{
         $page->delete();
         return redirect()->route('pages.index')->with('success', 'Page deleted successfully!');
+         } catch (\Throwable $e) {
+            \Log::error("Error deleting page: " . $e->getMessage());
+            return redirect()->back()->withInput()->with('error',  $e->getMessage());
+        }
     }
 }

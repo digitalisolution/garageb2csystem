@@ -11,7 +11,7 @@ class Page extends Model
     use HasFactory;
 
     // Specify the fillable field
-    protected $fillable = ['title', 'slug', 'content', 'tyre_search_form', 'include_headermenu', 'page_banner_path', 'parent_id','exclude_sitemap', 'status', 'meta_title', 'meta_description', 'sort'];
+    protected $fillable = ['title', 'slug', 'content', 'tyre_search_form', 'include_headermenu', 'page_banner_path', 'parent_id','exclude_sitemap', 'status', 'meta_title','meta_keywords', 'meta_description', 'sort'];
      protected $guarded = ['id', 'created_at', 'updated_at']; // slug must NOT be here
     // Relationship for subpages
     public function children()

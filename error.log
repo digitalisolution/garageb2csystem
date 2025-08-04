@@ -291,3 +291,16 @@
 [Sun Aug 03 18:39:07.508099 2025] [autoindex:error] [pid 1983046] [client 172.70.162.129:25014] AH01276: Cannot serve directory /var/www/demositegarage/public/uploads/: No matching DirectoryIndex (index.html,index.cgi,index.pl,index.php,index.xhtml,index.htm) found, and server-generated directory index forbidden by Options directive, referer: binance.com
 [Mon Aug 04 00:00:03.452433 2025] [ssl:warn] [pid 1706994] AH01909: digitalideasltd.in:443:0 server certificate does NOT include an ID which matches the server name
 [Mon Aug 04 00:00:03.454367 2025] [ssl:warn] [pid 1706994] AH01909: digitalideasltd.co.uk:443:0 server certificate does NOT include an ID which matches the server name
+[Mon Aug 04 08:47:31.967596 2025] [ssl:warn] [pid 1706994] AH01909: digitalideasltd.in:443:0 server certificate does NOT include an ID which matches the server name
+[Mon Aug 04 08:47:31.969203 2025] [ssl:warn] [pid 1706994] AH01909: digitalideasltd.co.uk:443:0 server certificate does NOT include an ID which matches the server name
+[Mon Aug 04 08:47:36.333503 2025] [ssl:warn] [pid 1706994] AH01909: digitalideasltd.in:443:0 server certificate does NOT include an ID which matches the server name
+[Mon Aug 04 08:47:36.335186 2025] [ssl:warn] [pid 1706994] AH01909: digitalideasltd.co.uk:443:0 server certificate does NOT include an ID which matches the server name
+[Mon Aug 04 08:47:37.684896 2025] [ssl:warn] [pid 1706994] AH01909: digitalideasltd.in:443:0 server certificate does NOT include an ID which matches the server name
+[Mon Aug 04 08:47:37.686536 2025] [ssl:warn] [pid 1706994] AH01909: digitalideasltd.co.uk:443:0 server certificate does NOT include an ID which matches the server name
+[Mon Aug 04 08:47:42.016152 2025] [ssl:warn] [pid 1706994] AH01909: digitalideasltd.in:443:0 server certificate does NOT include an ID which matches the server name
+[Mon Aug 04 08:47:42.017825 2025] [ssl:warn] [pid 1706994] AH01909: digitalideasltd.co.uk:443:0 server certificate does NOT include an ID which matches the server name
+[Mon Aug 04 08:47:44.053425 2025] [ssl:warn] [pid 1706994] AH01909: digitalideasltd.in:443:0 server certificate does NOT include an ID which matches the server name
+[Mon Aug 04 08:47:44.055054 2025] [ssl:warn] [pid 1706994] AH01909: digitalideasltd.co.uk:443:0 server certificate does NOT include an ID which matches the server name
+[Mon Aug 04 08:47:48.423339 2025] [ssl:warn] [pid 1706994] AH01909: digitalideasltd.in:443:0 server certificate does NOT include an ID which matches the server name
+[Mon Aug 04 08:47:48.424997 2025] [ssl:warn] [pid 1706994] AH01909: digitalideasltd.co.uk:443:0 server certificate does NOT include an ID which matches the server name
+[Mon Aug 04 11:08:19.149727 2025] [autoindex:error] [pid 2025023] [client 162.158.216.90:23706] AH01276: Cannot serve directory /var/www/demositegarage/public/uploads/: No matching DirectoryIndex (index.html,index.cgi,index.pl,index.php,index.xhtml,index.htm) found, and server-generated directory index forbidden by Options directive, referer: binance.com

@@ -20,12 +20,17 @@ class MetaSettingsController extends Controller {
 
     public function store(Request $request) {
         $validated = $request->validate([
-            'name' => 'required|string',
+            'name' => 'required|string|max:255',
             'content' => 'required|string',
             'status' => 'required|boolean',
         ]);
+        try{
         MetaSettings::create($validated);
         return redirect()->route('AutoCare.meta-settings.index');
+        } catch (\Throwable $e) {
+            \Log::error("Error storing Meta setting: " . $e->getMessage());
+            return redirect()->back()->withInput()->with('error',  $e->getMessage());
+        }
     }
 
     public function edit($setting_id) {
@@ -39,12 +44,17 @@ class MetaSettingsController extends Controller {
             return redirect()->route('AutoCare.meta-settings.index')->with('error', 'Template not found');
         }
         $validated = $request->validate([
-            'name' => 'required|string',
+            'name' => 'required|string|max:255',
             'content' => 'required|string',
             'status' => 'required|boolean',
         ]);
+        try{
         $metasettings->update($validated);
         return redirect()->route('AutoCare.meta-settings.index')->with('success', 'Template updated successfully');
+        } catch (\Throwable $e) {
+            \Log::error("Error updating Meta setting: " . $e->getMessage());
+            return redirect()->back()->withInput()->with('error',  $e->getMessage());
+        }
     }
 
     public function destroy($setting_id) {
@@ -52,7 +62,12 @@ class MetaSettingsController extends Controller {
         if (!$metasettings) {
             return redirect()->route('AutoCare.meta-settings.index')->with('error', 'Template not found');
         }
+        try{
         $metasettings->delete();
         return redirect()->route('AutoCare.meta-settings.index')->with('success', 'Template deleted successfully');
+        } catch (\Throwable $e) {
+            \Log::error("Error deleting Meta setting: " . $e->getMessage());
+            return redirect()->back()->withInput()->with('error',  $e->getMessage());
+        }
     }
 } ?>
