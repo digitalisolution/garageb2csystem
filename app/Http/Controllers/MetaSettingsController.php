@@ -19,12 +19,12 @@ class MetaSettingsController extends Controller {
     }
 
     public function store(Request $request) {
+        try{
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'content' => 'required|string',
             'status' => 'required|boolean',
         ]);
-        try{
         MetaSettings::create($validated);
         return redirect()->route('AutoCare.meta-settings.index');
         } catch (\Throwable $e) {

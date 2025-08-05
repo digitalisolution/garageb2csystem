@@ -21,10 +21,11 @@ class VehicleDetailController extends Controller
     }
 
     // Store a newly created vehicle in the database
-    public function store(Request $request)
-    {
+public function store(Request $request)
+{
+    try {
         $validatedData = $request->validate([
-            'vehicle_reg_number' => 'required|string|max:20|unique:vehicle_details',
+            'vehicle_reg_number' => 'required|string|max:20',
             'vehicle_category' => 'required|string|max:255',
             'vehicle_make' => 'required|string|max:255',
             'vehicle_model' => 'required|string|max:255',
@@ -46,10 +47,24 @@ class VehicleDetailController extends Controller
             'vehicle_mot_expiry_date' => 'nullable|date',
         ]);
 
-        VehicleDetail::create($validatedData);
+        // Check if vehicle already exists
+        $existingVehicle = VehicleDetail::where('vehicle_reg_number', $validatedData['vehicle_reg_number'])->first();
 
-        return redirect()->route('AutoCare.vehicles.index')->with('success', 'Vehicle added successfully!');
+        if ($existingVehicle) {
+            $existingVehicle->update($validatedData);
+            $message = 'Vehicle updated successfully!';
+        } else {
+            VehicleDetail::create($validatedData);
+            $message = 'Vehicle added successfully!';
+        }
+
+        return redirect()->route('AutoCare.vehicles.index')->with('success', $message);
+    } catch (\Throwable $e) {
+        \Log::error("Error storing/updating Vehicle: " . $e->getMessage());
+        return redirect()->back()->withInput()->with('error', $e->getMessage());
     }
+}
+
 
     // Display the specified vehicle
     public function show(VehicleDetail $vehicle)
@@ -67,6 +82,7 @@ class VehicleDetailController extends Controller
     public function update(Request $request, VehicleDetail $vehicle)
     {
         // dd($request);
+        try{
         $validatedData = $request->validate([
             'vehicle_reg_number' => 'required|string|max:20|unique:vehicle_details,vehicle_reg_number,' . $vehicle->id,
             'vehicle_category' => 'required|string|max:255',
@@ -93,13 +109,22 @@ class VehicleDetailController extends Controller
         $vehicle->update($validatedData);
 
         return redirect()->route('AutoCare.vehicles.index')->with('success', 'Vehicle updated successfully!');
+        } catch (\Throwable $e) {
+            \Log::error("Error Updating Vehicle: " . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', $e->getMessage());
+        }
     }
 
     // Remove the specified vehicle from the database
     public function destroy(VehicleDetail $vehicle)
     {
-        $vehicle->delete();
+        try{
+        $vehicle->forceDelete();
 
         return redirect()->route('AutoCare.vehicles.index')->with('success', 'Vehicle deleted successfully!');
+        } catch (\Throwable $e) {
+            \Log::error("Error Deleting Vehicle: " . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', $e->getMessage());
+        }
     }
 }

@@ -2,16 +2,27 @@
 namespace App\Http\Controllers\ViewController;
 
 use Illuminate\Support\Str; 
-use App\Http\Controllers\Controller; // Import the base Controller class
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Blog;
 use App\Models\BlogCategory;
 
 class BlogController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $blogs = Blog::where('status', 1)->orderBy('date_added', 'desc')->paginate(4);
+        $query = Blog::where('status', 1);
+
+        // 🔍 If search query exists
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', '%' . $search . '%')
+                  ->orWhere('description', 'like', '%' . $search . '%');
+            });
+        }
+
+        $blogs = $query->orderBy('date_added', 'desc')->paginate(4);
 
         $recentBlogs = Blog::where('status', 1)->orderBy('date_added', 'desc')->take(4)->get();
 
@@ -69,33 +80,38 @@ class BlogController extends Controller
 
         return view('blogs.index', compact('blogs', 'recentBlogs', 'categories', 'metaTitle','metaDescription'));
     }
-    /*public function search(Request $request)
-    {
-        $query = $request->input('q');
 
-        $blogs = Blog::where('status', 1)
-            ->where(function ($q1) use ($query) {
-                $q1->where('title', 'like', '%' . $query . '%')
-                   ->orWhere('description', 'like', '%' . $query . '%');
-            })
-            ->orderBy('date_added', 'desc')
-            ->paginate(6);
+    // 🔍 Search Functionality
+    public function search(Request $request)
+{
+    $query = $request->input('search'); // form field name must match
 
-        $recentBlogs = Blog::where('status', 1)->orderBy('date_added', 'desc')->take(5)->get();
+    $blogs = Blog::where('status', 1)
+        ->where(function ($q1) use ($query) {
+            $q1->where('title', 'like', '%' . $query . '%')
+               ->orWhere('description', 'like', '%' . $query . '%');
+        })
+        ->orderBy('date_added', 'desc')
+        ->paginate(6);
 
-        $categories = BlogCategory::all()->map(function ($cat) {
-            $cat->blogs_count = Blog::where('status', 1)
-                ->whereRaw("FIND_IN_SET(?, categories)", [$cat->category_id])
-                ->count();
-            return $cat;
-        });
-       $metaTitle = 'Search: ' . $query;
+    $recentBlogs = Blog::where('status', 1)->orderBy('date_added', 'desc')->take(5)->get();
+
+    $categories = BlogCategory::all()->map(function ($cat) {
+        $cat->blogs_count = Blog::where('status', 1)
+            ->whereRaw("FIND_IN_SET(?, category_id)", [$cat->category_id])
+            ->count();
+        return $cat;
+    });
+
+    $metaTitle = 'Search: ' . $query;
     $metaDescription = 'Search results for "' . $query . '"';
 
-    return view('blogs.index', compact('blogs', 'recentBlogs', 'categories', 'metaTitle', 'metaDescription'))->with('search', $query);
+    return view('blogs.index', compact('blogs', 'recentBlogs', 'categories', 'metaTitle', 'metaDescription'))
+        ->with('search', $query);
+}
 
-    }
 
+    // 🔄 Autocomplete API
     public function autocomplete(Request $request)
     {
         $search = $request->get('term');
@@ -106,7 +122,5 @@ class BlogController extends Controller
             ->get(['title', 'slug']);
 
         return response()->json($results);
-    }*/
-
+    }
 }
-

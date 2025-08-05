@@ -26,7 +26,8 @@ class PageController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        try{
+        $validated = $request->validate([
         'title' => 'required|string|max:255',
         'slug' => 'required|string|max:255|unique:pages,slug|regex:/^[a-zA-Z0-9#\/-]+$/',
         'tyre_search_form' => 'required|in:0,1',
@@ -40,8 +41,6 @@ class PageController extends Controller
         'meta_description' => 'nullable|string|max:5000', // Optional long length
         ]);
 
-        $data = $request->all();
-        try{
         if ($request->hasFile('page_banner_path')) {
             $banner = $request->file('page_banner_path');
             $bannerName = $banner->getClientOriginalName();
@@ -54,10 +53,10 @@ class PageController extends Controller
             }
             
             $banner->move($destinationimgPath, $bannerName);
-            $data['page_banner_path'] = $bannerName;
+            $validated['page_banner_path'] = $bannerName;
         }
 
-        Page::create($data);
+        Page::create($validated);
         return redirect()->route('pages.index')->with('success', 'Page created successfully!');
          } catch (\Throwable $e) {
             \Log::error("Error creating page: " . $e->getMessage());
@@ -73,7 +72,7 @@ class PageController extends Controller
     public function update(Request $request, Page $page)
     {
         // Validation rules
-        $request->validate([
+       $validated = $request->validate([
             'title' => 'required|string|max:255',
             'slug' => [
                 'required',
@@ -91,8 +90,8 @@ class PageController extends Controller
         'meta_keywords' => 'nullable|string|max:255',
         'meta_description' => 'nullable|string|max:5000',
         ]);
-
-        $data = $request->except(['_token', '_method', 'page_banner_path']);
+        
+        $data = collect($validated)->except(['page_banner_path'])->toArray();
         try{
 
         if ($request->hasFile('page_banner_path')) {

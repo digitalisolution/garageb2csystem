@@ -3,6 +3,7 @@
 @section('meta_keywords', $metaKeywords)
 @section('meta_description', $metaDescription)
 @section('content')
+
 <div class="breadcrumb-area brand_breadcrumb">
     <img src="https://www.digitalideasltd.in/frontend/themes/default/img/banner/content-pages/common_image.jpg" alt="Default Banner" class="img-bank">
     <div class="brand_name">
@@ -18,8 +19,17 @@
                         <div class="col-lg-9">
                             <div class="blog-details-wrapper ml-20">
                                 <div class="blog-details-top">
+                                    @php
+                                        $domain = str_replace(['http://', 'https://'], '', request()->getHost());
+                                        $bannerPath = 'frontend/' . str_replace('.', '-', $domain) . '/img/blogs/images/';
+                                        $fallbackPath = 'frontend/themes/default/img/blogs/images/';
+
+                                        $bannerimagePath = $blog->image ?? $blog->slug.'.jpg';
+                                        $bannerImageUrl = asset($bannerPath . $bannerimagePath);
+                                        $fallbackImageUrl = asset($fallbackPath . $bannerimagePath);
+                                    @endphp
                                     <div class="blog-details-img">
-                                        <img alt="{{ $blog->title }}" src="{{ asset($blog->image) }}">
+                                        <img src="{{ $bannerImageUrl }}" onerror="this.onerror=null;this.src='{{ $fallbackImageUrl }}';" alt="{{ $blog->title }}" class="img-bank">
                                     </div>
                                     <div class="blog-details-content">
                                         <div class="blog-meta-2">
@@ -32,10 +42,10 @@
                                         <p>{!! $blog->description !!}</p>
                                     </div>
                                 </div>
-                                <div class="next-previous-post">
+                                <!-- <div class="next-previous-post">
                                     <a href="#"> <i class="fa fa-angle-left"></i> prev post</a>
                                     <a href="#">next post <i class="fa fa-angle-right"></i></a>
-                                </div>
+                                </div> -->
                             </div>
                         </div>
                         <div class="col-lg-3">
@@ -47,18 +57,4 @@
         </div>
     </div>
 </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @endsection

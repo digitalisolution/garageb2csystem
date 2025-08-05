@@ -1,28 +1,45 @@
 @extends('samples')
 
 @section('content')
-<div class="container-fluid">
-<div class="bg-white p-3">
-    <h5>Edit Blog Category</h5>
-<form action="{{ route('AutoCare.blogs.blog_categories.update', $category->category_id) }}" method="POST">
-    @csrf
-    @method('PUT')
-    <div class="row">
-    <div class="col-lg-5 col-md-6 col-12">
-        <label>Title</label>
-        <input type="text" name="title" class="form-control" value="{{ $category->title }}" required>
-    </div>
+    <div class="container-fluid">
+        <div class="bg-white p-3">
+            <h5>Edit Blog Category</h5>
+            @if ($errors->any())
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
 
-    <div class="col-lg-5 col-md-6 col-12">
-        <label>Slug</label>
-        <input type="text" name="slug" class="form-control" value="{{ $category->slug }}">
+            @if (session('error'))
+                <div class="alert alert-danger">{{ session('error') }}</div>
+            @endif
+
+            @if (session('success'))
+                <div class="alert alert-success">{{ session('success') }}</div>
+            @endif
+            <form action="{{ route('AutoCare.blogs.blog_categories.update', $category->category_id) }}" method="POST">
+                @csrf
+                @method('PUT')
+                <div class="row">
+                    <div class="col-lg-5 col-md-6 col-12">
+                        <label>Title</label>
+                        <input type="text" name="title" class="form-control" value="{{ $category->title }}" required>
+                    </div>
+
+                    <div class="col-lg-5 col-md-6 col-12">
+                        <label>Slug</label>
+                        <input type="text" name="slug" class="form-control" value="{{ $category->slug }}">
+                    </div>
+                    <div class="col-lg-2 col-md-6 col-12">
+                        <label>&nbsp;</label>
+                        <button type="submit" class="btn btn-primary btn-block btn-sm">Update</button>
+                    </div>
+                </div>
+            </form>
+        </div>
     </div>
-    <div class="col-lg-2 col-md-6 col-12">
-        <label>&nbsp;</label>
-    <button type="submit" class="btn btn-primary btn-block btn-sm">Update</button>
-</div>
-    </div>
-</form>
-</div>
-</div>
 @endsection

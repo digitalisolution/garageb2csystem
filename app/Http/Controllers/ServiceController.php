@@ -37,7 +37,7 @@ class ServiceController extends Controller
     public function store(Request $request)
     {
         try {
-            $request->validate([
+           $validated = $request->validate([
                 'name' => 'required|string|max:100',
                 'service_lead_time' => 'nullable|integer|max:50',
                 'content' => 'nullable|string',
@@ -46,7 +46,8 @@ class ServiceController extends Controller
                 'inner_image' => 'nullable|image|mimes:jpeg,png,webp,jpg,gif|max:2048', // Validate image
                 'service_banner_path' => 'nullable|image|mimes:jpeg,webp,png,jpg,gif|max:2048',
                 'display_status' => 'required|integer',
-                'status' => 'required|integer',
+                'status' => 'required|boolean',
+                'tax_class_id' => 'required|integer',
                 'sort_order' => 'nullable|integer',
                 'price_type' => 'required|string|in:fixed-price,call-now,quote-now,free',
                 'cost_price' => 'required|numeric|min:0',
@@ -57,7 +58,6 @@ class ServiceController extends Controller
                 'exclude_sitemap' => 'nullable|integer',
             ]);
 
-            $data = $request->validated();
             $domain = str_replace(['http://', 'https://'], '', request()->getHost());
             if ($request->hasFile('image')) {
                 $image = $request->file('image');
@@ -70,7 +70,7 @@ class ServiceController extends Controller
                 }
 
                 $image->move($destinationimgPath, $imageName);
-                $data['image'] = $imageName;
+                $validated['image'] = $imageName;
             }
 
 
@@ -85,7 +85,7 @@ class ServiceController extends Controller
                 }
 
                 $innerImage->move($destinationinnerPath, $innerImageName);
-                $data['inner_image'] = $innerImageName; // <--- Save only the image name
+                $validated['inner_image'] = $innerImageName; // <--- Save only the image name
             }
 
             if ($request->hasFile('service_banner_path')) {
@@ -99,11 +99,11 @@ class ServiceController extends Controller
                 }
 
                 $bannerImage->move($destinationbannerPath, $bannerImageName);
-                $data['service_banner_path'] = $bannerImageName; // <--- Save only the image name
+                $validated['service_banner_path'] = $bannerImageName; // <--- Save only the image name
             }
 
             // Create the CarService record
-            CarService::create($data);
+            CarService::create($validated);
 
             return redirect()->route('services.index')->with('success', 'Service created successfully!');
         } catch (\Throwable $e) {
@@ -124,7 +124,7 @@ class ServiceController extends Controller
             'name' => 'required|string|max:100',
             'service_lead_time' => 'nullable|integer|max:100',
             'content' => 'nullable|string',
-            'slug' => 'nullable|string|max:25555|unique:car_services,slug,' . $service->service_id . ',service_id',
+            'slug' => 'nullable|string|max:255|unique:car_services,slug,' . $service->service_id . ',service_id',
             'image' => 'nullable|image|mimes:jpeg,png,webp,jpg,gif|max:2048',
             'inner_image' => 'nullable|image|mimes:jpeg,png,webp,jpg,gif|max:2048',
             'service_banner_path' => 'nullable|image|mimes:jpeg,webp,png,jpg,gif|max:2048',

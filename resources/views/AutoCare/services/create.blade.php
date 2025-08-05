@@ -43,7 +43,7 @@
                     <div class="col-lg-3 col-md-6 col-12 form-group">
                         <label for="slug">Slug</label>
                         <input type="text" name="slug" id="slug" class="form-control"
-                            value="{{ $service->slug ?? old('slug') }}">
+                            value="{{ $service->slug ?? old('slug') }}" required>
                     </div>
 
                     <!-- Service Lead Time Field -->

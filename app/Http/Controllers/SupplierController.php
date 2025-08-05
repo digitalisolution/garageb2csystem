@@ -25,77 +25,67 @@ class SupplierController extends Controller
     }
     public function save(Request $request, $id = null)
     {
-        $viewData['pageTitle'] = 'Supplier Detail';
-        $viewData['option1'] = 'Add Supplier';
-        $viewData['optionValue1'] = "AutoCare/supplier/add";
-        $viewData['option2'] = 'Add Product Detail';
-        $viewData['optionValue2'] = "AutoCare/product/add";
-        $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
-         $viewData['fullyFittedItems'] = DeliveryTime::where('supplier', $id)
-        ->where('delivery_type', 'fully_fitted')
-        ->get()
-        ->toArray();
+        try {
+            $viewData['pageTitle'] = 'Supplier Detail';
+            $viewData['option1'] = 'Add Supplier';
+            $viewData['optionValue1'] = "AutoCare/supplier/add";
+            $viewData['option2'] = 'Add Product Detail';
+            $viewData['optionValue2'] = "AutoCare/product/add";
+            $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
 
-        $viewData['mobileFittedItems'] = DeliveryTime::where('supplier', $id)
-        ->where('delivery_type', 'mobile_fitted')
-        ->get()
-        ->toArray();
+            if ($id) {
+                $supplier = Supplier::findOrFail($id);
+                $viewData['fullyFittedItems'] = DeliveryTime::where('supplier', $id)->where('delivery_type', 'fully_fitted')->get()->toArray();
+                $viewData['mobileFittedItems'] = DeliveryTime::where('supplier', $id)->where('delivery_type', 'mobile_fitted')->get()->toArray();
 
-        // Fill data for update if id is provided
-        if (isset($id) && $id != null) {
-            $getFormAutoFillup = Supplier::whereId($id)->first()->toArray();
+                $getFormAutoFillup = $supplier->toArray();
+                $getFormAutoFillup['api_order_details'] = json_decode($getFormAutoFillup['api_order_details'] ?? '[]', true);
+                $viewData['item_type'] = in_array($getFormAutoFillup['api_order_details']['item_type'] ?? null, ['tyres', 'all']) ? $getFormAutoFillup['api_order_details']['item_type'] : null;
 
-            // Decode JSON for api_order_details if exists
-            if (isset($getFormAutoFillup['api_order_details']) && !empty($getFormAutoFillup['api_order_details'])) {
-                $getFormAutoFillup['api_order_details'] = json_decode($getFormAutoFillup['api_order_details'], true);
+                return view('AutoCare.supplier.add', $viewData)->with($getFormAutoFillup);
+            }
+
+            if ($request->isMethod('get')) {
+                return view('AutoCare.supplier.add', $viewData);
+            }
+
+            // Validate incoming data
+            $validated = $request->validate([
+                'name' => 'required|string|max:100',
+                'email' => 'nullable|email|max:100',
+                'phone' => 'nullable|string|max:20',
+                'status' => 'required|boolean',
+                'api_name' => 'nullable|string|max:100',
+                'api_token' => 'nullable|string|max:255',
+                'api_url' => 'nullable|url|max:255',
+                'api_order_details.item_type' => 'nullable|in:tyres,all',
+                // Add other required validations based on your schema...
+            ]);
+
+            $supplierData = $request->except('_token', 'id');
+            $supplierData['api_order_details'] = json_encode($request->input('api_order_details', []));
+
+            if ($request->filled('id')) {
+                $supplier = Supplier::findOrFail($request->id);
+                $supplier->update($supplierData);
+                $request->session()->flash('message.level', 'success');
+                $request->session()->flash('message.content', 'Supplier updated successfully!');
+                return redirect('/AutoCare/supplier/add/' . $request->id);
             } else {
-                $getFormAutoFillup['api_order_details'] = []; // Set as empty if not available
+                $supplier = Supplier::create($supplierData);
+                $request->session()->flash('message.level', 'success');
+                $request->session()->flash('message.content', 'Supplier saved successfully!');
+                return redirect('/AutoCare/supplier/add');
             }
-            
-            $item_type = $getFormAutoFillup['api_order_details']['item_type'] ?? null;
-            $viewData['item_type'] = in_array($item_type, ['tyres', 'all']) ? $item_type : null;
 
-            return view('AutoCare.supplier.add', $viewData)->with($getFormAutoFillup);
-        } else if ((!isset($id) && $id == null) && !$request->isMethod('post')) {
-            return view('AutoCare.supplier.add', $viewData);
-        } else {
-            // Handle save or update
-            if ($request->isMethod('post')) {
-                // Prepare data excluding CSRF token
-                $supplierManame = $request->except('_token'); // Exclude CSRF token
-
-                // Get api_order_details from the request
-                $api_order_details = $request->input('api_order_details', []); // Extract api_order_details as an array
-
-                // Now assign the api_order_details array
-                $supplierManame['api_order_details'] = json_encode($api_order_details); // Encode to JSON
-                // dd($supplierManame);
-                // Save or update the supplier
-                if (isset($request->id) && $request->id != null) {
-                    // Update existing supplier
-                    $supplier = Supplier::find($request->id);
-                    if ($supplier) {
-                        $supplier->fill($supplierManame);  // Fill the updated values
-                        $supplier->save();
-
-                        $request->session()->flash('message.level', 'success');
-                        $request->session()->flash('message.content', 'Supplier updated successfully!');
-                    }
-
-                    return redirect('/AutoCare/supplier/add/' . $request->id);
-                } else {
-                    // Save new supplier
-                    $supplierManame = new Supplier($supplierManame);
-                    if ($supplierManame->save()) {
-                        $request->session()->flash('message.level', 'success');
-                        $request->session()->flash('message.content', 'Supplier Saved Successfully!');
-                    }
-
-                    return redirect('/AutoCare/supplier/add'); // Redirect after saving
-                }
-            }
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()->withErrors($e->validator)->withInput();
+        } catch (\Exception $e) {
+            \Log::error('Supplier Save Error: ' . $e->getMessage());
+            return redirect()->back()->with('error', $e->getMessage())->withInput();
         }
     }
+
     public function view(Request $request)
     {
         if ($request->isMethod('post')) {
@@ -204,130 +194,7 @@ class SupplierController extends Controller
         return redirect()->back()->withErrors(['mode' => 'Please select a valid import method.']);
     }
 
-    // public function importOwnstockTyres(Request $request)
-    // {
-    //     // Validate the file input
-    //     $validator = Validator::make($request->all(), [
-    //         'file_upload' => 'required|file|mimes:csv,txt|max:22048',
-    //         'supplier_name' => 'required_if:upload-tab,active|string',
-    //     ]);
 
-    //     if ($validator->fails()) {
-    //         return redirect()->back()->withErrors($validator)->withInput();
-    //     }
-
-    //     // Read the CSV file and parse data
-    //     $file = $request->file('file_upload');
-    //     $data = array_map('str_getcsv', file($file->getRealPath()));
-    //     $header = array_shift($data);
-    //     $rows = $data;
-
-    //     // Get supplier_id from the request or session (assuming it's in the request)
-    //     $supplierId = $request->input('supplier_id', 1); // Default to 50 if not provided
-    //     $supplierName = $request->input('supplier_name', 'ownstock'); // Default to 50 if not provided
-
-    //     // Step 1: Delete existing tyres for the supplier and tyre_supplier_name 'ownstock'
-
-    //     if ($request->has('delete_existing') && $request->delete_existing == 1) {
-    //         // Delete existing tyres for the supplier and tyre_supplier_name 'ownstock'
-    //         TyresProduct::where('tyre_supplier_name', $supplierName)->where('supplier_id', $supplierId)->delete();
-    //         // Reset AUTO_INCREMENT for the table
-    //         $tableName = (new TyresProduct)->getTable();
-    //         $connection = (new TyresProduct)->getConnectionName() ?? config('database.default');
-
-    //         if (TyresProduct::count() === 0) {
-    //            DB::connection($connection)->statement("ALTER TABLE {$tableName} AUTO_INCREMENT = 1");
-    //         }
-    //     }
-
-    //     $insertData = [];
-    //     $batchSize = 500; // Number of rows to insert per batch
-
-    //     foreach ($rows as $row) {
-    //         $row = array_combine($header, $row);
-
-    //         // Fetch the brand name from the CSV
-    //         $brandName = $row['BRAND'] ?? null;
-
-    //         // If brand name exists, fetch the corresponding manufacturer_id from the tyre_brand table
-    //         $manufacturerId = null;
-    //         if ($brandName) {
-    //             // Try to find the brand in the tyre_brand table
-    //             $brand = tyre_brands::where('name', '=', $brandName)->first();
-
-    //             if ($brand) {
-    //                 // Brand found, use the existing manufacturer_id
-    //                 $manufacturerId = $brand->manufacturer_id;
-    //             } else {
-    //                 // Brand not found, create a new brand entry
-    //                 $newBrand = tyre_brands::insertGetId([
-    //                     'name' => $brandName,
-    //                     'slug' => Str::slug($brandName),
-    //                     'promoted' => 0,
-    //                     'image' => Str::slug($brandName) . '.jpg',
-    //                     'sort_order' => 1,
-    //                     'status' => 1,
-    //                     'product_type' => 'tyre',
-    //                     'created_at' => now(),
-    //                     'updated_at' => now(),
-    //                 ]);
-
-    //                 // After inserting, get the manufacturer_id for the new brand
-    //                 $manufacturerId = $newBrand;
-    //             }
-    //         }
-
-    //         // Prepare the data to insert into tyres_product table
-    //         $insertData[] = [
-    //             'tyre_sku' => $row['SKU'] ?? null,
-    //             'tyre_ean' => $row['EAN'] ?? null,
-    //             'tyre_quantity' => ($row['STOCKBAL'] ?? 0) >= 1 ? $row['STOCKBAL'] : 0,
-    //             'tyre_price' => $row['COST_PRICE'] ?? 0,
-    //             'tyre_brand_id' => $manufacturerId,
-    //             'tyre_season' => $row['SEASON'] ?? null,
-    //             'tyre_width' => $row['SECTION'] ?? null,
-    //             'tyre_profile' => $row['PROFILE'] ?? null,
-    //             'tyre_diameter' => $row['RIM'] ?? null,
-    //             'tyre_speed' => $row['SPEED'] ?? null,
-    //             'status' => ($row['STOCKBAL'] ?? 0) >= 1 ? 1 : 0,
-    //             'tyre_fullyfitted_price' => ($row['PRICE_FULLYFITTED'] ?? 0) + 20,
-    //             'trade_costprice' => $row['PRICE_FULLYFITTED'],
-    //             'tyre_brand_name' => $brandName,
-    //             'tyre_model' => $row['PATTERN'] ?? null,
-    //             'tyre_description' =>$row['SEASON'] . 'Tyre ' . $row['PATTERN'] . ' ' . ($row['SECTION'] ?? '') . '/' . ($row['PROFILE'] ?? '') . 'R' . ($row['RIM'] ?? '') . ' ' . $row['LOAD_INDEX'] . $row['SPEED'],
-    //             'tyre_loadindex' => $row['LOAD_INDEX'] ?? null,
-    //             'created_at' => now(),
-    //             'updated_at' => now(),
-    //             'tyre_noisedb' => $row['NOISE'] ?? $normalized_row['noisedb'] ?? '',
-    //             'tyre_fuel' => $row['FUEL'] ?? null,
-    //             'tyre_wetgrip' => $row['WET'] ?? '',
-    //             'tyre_runflat' => ($row['RFT'] === 'Yes' || $row['RFT'] === 'RFT') ? 1 : 0,
-    //             'tyre_extraload' => ($row['XL'] === 'XL') ? 1 : 0,
-    //             'vehicle_type' => strtolower(trim(str_replace('Passenger', '', $row['VEHICLE_TYPE'] ?? ''))),
-    //             'tyre_weight' => $row['WEIGHT'] ?? $row['WEIGHT_KG'] ?? null,
-    //             'product_type' => 'tyre',
-    //             'tax_class_id' => 9,
-    //             'instock' => 1,
-    //             'date_available' => now(),
-    //             'tyre_image' => $row['IMAGE'] ?? null,
-    //             'supplier_id' => $supplierId,  // Add supplier_id here
-    //             'tyre_supplier_name' => $supplierName, // Add supplier_name here
-    //         ];
-
-    //         // Insert in batches
-    //         if (count($insertData) >= $batchSize) {
-    //             TyresProduct::insert($insertData);
-    //             $insertData = []; // Reset the batch
-    //         }
-    //     }
-
-    //     // Insert remaining data if any
-    //     if (!empty($insertData)) {
-    //         TyresProduct::insert($insertData);
-    //     }
-
-    //     return redirect()->back()->with('message.level', 'success')->with('message.content', 'Tyres imported successfully!');
-    // }
 
     public function importOwnstockTyres(Request $request)
     {

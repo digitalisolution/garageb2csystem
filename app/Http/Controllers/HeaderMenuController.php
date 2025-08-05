@@ -37,15 +37,14 @@ class HeaderMenuController extends Controller
     public function store(Request $request)
     {
         try{
-        $request->validate([
+        $validated = $request->validate([
             'title' => 'required|string|max:255',
             'slug' =>  'nullable|string|max:255',
             'parent_type' =>  'nullable|string|max:255',
             'sort' => 'nullable|integer',
         ]);
 
-        $data = $request->validated();
-        HeaderMenu::create($data);
+        HeaderMenu::create($validated);
         return redirect()->route('headermenu.index')->with('success', 'Page created successfully!');
          } catch (\Throwable $e) {
             \Log::error("Error store Headermenu: " . $e->getMessage());

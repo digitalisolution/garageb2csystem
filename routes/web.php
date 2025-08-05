@@ -388,6 +388,7 @@ Route::middleware('auth:web')->group(function () {
         Route::delete('/{category_id}', [BlogCategoryController::class, 'destroy'])->name('destroy');
     });
 
+
     // Route::get('AutoCare/garage_details/', [GarageDetailsController::class, 'index'])->name('AutoCare.garage_details.index');
     Route::prefix('AutoCare')->group(function () {
         Route::get('/pages', [PageController::class, 'index'])->name('pages.index');
@@ -806,6 +807,9 @@ Route::get('brand', [App\Http\Controllers\ViewController\BrandController::class,
 Route::get('blogs', [App\Http\Controllers\ViewController\BlogController::class, 'index'])->name('blogs.index');
 Route::get('blogs/{slug}', [App\Http\Controllers\ViewController\BlogController::class, 'show'])->name('blogs.show');
 Route::get('/blogs/category/{slug}', [App\Http\Controllers\ViewController\BlogController::class, 'category'])->name('blogs.category');
+
+Route::get('/blogs/search', [App\Http\Controllers\ViewController\BlogController::class, 'search'])->name('blogs.search');
+Route::get('/blogs/autocomplete', [App\Http\Controllers\ViewController\BlogController::class, 'autocomplete'])->name('blogs.autocomplete');
 
 Route::post('/contact-submit', [ServiceViewController::class, 'submitContactForm'])->name('contact.submit');
 Route::get('/contact-submit', function () {

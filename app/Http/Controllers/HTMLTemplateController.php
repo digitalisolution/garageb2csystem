@@ -23,21 +23,22 @@ class HTMLTemplateController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:100',
-            'content' => 'required|string',
-            'template_type' => 'required|string|max:100',
-            'status' => 'required|boolean|max:1',
-            'sort_order' => 'required|integer|min:1',
-        ]);
-        try{
-        // Store the validated data in the database
-        HTMLTemplate::create($validated);
+        try {
+            $validated = $request->validate([
+                'title' => 'required|string|max:100',
+                'content' => 'required|string',
+                'template_type' => 'required|string|max:100',
+                'status' => 'required|boolean|max:1',
+                'sort_order' => 'required|integer|min:1',
+            ]);
 
-        return redirect()->route('AutoCare.html-templates.index');
+            // Store the validated data in the database
+            HTMLTemplate::create($validated);
+
+            return redirect()->route('AutoCare.html-templates.index');
         } catch (\Throwable $e) {
             \Log::error("Error creating Html Template: " . $e->getMessage());
-            return redirect()->back()->withInput()->with('error',  $e->getMessage());
+            return redirect()->back()->withInput()->with('error', $e->getMessage());
         }
     }
 
@@ -53,31 +54,32 @@ class HTMLTemplateController extends Controller
     // Update the template information
     public function update(Request $request, $id)
     {
-        // Retrieve the template by ID
-        $htmlTemplate = HTMLTemplate::find($id);
+        try {
+            // Retrieve the template by ID
+            $htmlTemplate = HTMLTemplate::find($id);
 
-        if (!$htmlTemplate) {
-            return redirect()->route('AutoCare.html-templates.index')->with('error', 'Template not found');
-        }
+            if (!$htmlTemplate) {
+                return redirect()->route('AutoCare.html-templates.index')->with('error', 'Template not found');
+            }
 
-        // Validate the incoming request
-        $validated = $request->validate([
-            'title' => 'required|string|max:100',
-            'content' => 'required|string',
-            'template_type' => 'required|string|max:100',
-            'status' => 'required|boolean|max:1',
-            'sort_order' => 'required|integer|min:1',
-        ]);
+            // Validate the incoming request
+            $validated = $request->validate([
+                'title' => 'required|string|max:100',
+                'content' => 'required|string',
+                'template_type' => 'required|string|max:100',
+                'status' => 'required|boolean|max:1',
+                'sort_order' => 'required|integer|min:1',
+            ]);
 
-        try{
-        // Update the template
-        $htmlTemplate->update($validated);
 
-        // Redirect to index with success message
-        return redirect()->route('AutoCare.html-templates.index')->with('success', 'Template updated successfully');
+            // Update the template
+            $htmlTemplate->update($validated);
+
+            // Redirect to index with success message
+            return redirect()->route('AutoCare.html-templates.index')->with('success', 'Template updated successfully');
         } catch (\Throwable $e) {
             \Log::error("Error updating Html Template: " . $e->getMessage());
-            return redirect()->back()->withInput()->with('error',  $e->getMessage());
+            return redirect()->back()->withInput()->with('error', $e->getMessage());
         }
     }
 
@@ -85,22 +87,22 @@ class HTMLTemplateController extends Controller
     // Delete the selected template
     public function destroy($id)
     {
-        try{
-        // Retrieve the template by ID
-        $htmlTemplate = HTMLTemplate::find($id);
+        try {
+            // Retrieve the template by ID
+            $htmlTemplate = HTMLTemplate::find($id);
 
-        if (!$htmlTemplate) {
-            return redirect()->route('AutoCare.html-templates.index')->with('error', 'Template not found');
-        }
+            if (!$htmlTemplate) {
+                return redirect()->route('AutoCare.html-templates.index')->with('error', 'Template not found');
+            }
 
-        // Delete the template
-        $htmlTemplate->delete();
+            // Delete the template
+            $htmlTemplate->delete();
 
-        // Redirect to index with success message
-        return redirect()->route('AutoCare.html-templates.index')->with('success', 'Template deleted successfully');
+            // Redirect to index with success message
+            return redirect()->route('AutoCare.html-templates.index')->with('success', 'Template deleted successfully');
         } catch (\Throwable $e) {
             \Log::error("Error deleting Html Template: " . $e->getMessage());
-            return redirect()->back()->withInput()->with('error',  $e->getMessage());
+            return redirect()->back()->withInput()->with('error', $e->getMessage());
         }
     }
 

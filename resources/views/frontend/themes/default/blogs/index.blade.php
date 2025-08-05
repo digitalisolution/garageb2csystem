@@ -23,8 +23,19 @@
                                     @foreach($blogs as $blog)
                                     <div class="col-lg-6 col-md-6 col-sm-12">
                                         <div class="blog-wrap-2 mb-30">
+                                        @php
+                                            $domain = str_replace(['http://', 'https://'], '', request()->getHost());
+                                            $bannerPath = 'frontend/' . str_replace('.', '-', $domain) . '/img/blogs/images/';
+                                            $fallbackPath = 'frontend/themes/default/img/blogs/images/';
+
+                                            $bannerimagePath = $blog->image ?? $blog->slug.'.jpg';
+                                            $bannerImageUrl = asset($bannerPath . $bannerimagePath);
+                                            $fallbackImageUrl = asset($fallbackPath . $bannerimagePath);
+                                        @endphp
                                         <div class="blog-img-2">
-                                            <a href="{{ route('blogs.show', $blog->slug) }}"><img src="{{ asset($blog->image) }}" alt="{{ $blog->title }}"></a>
+                                            <a href="{{ route('blogs.show', $blog->slug) }}">
+                                                <img src="{{ $bannerImageUrl }}" onerror="this.onerror=null;this.src='{{ $fallbackImageUrl }}';" alt="{{ $blog->title }}" class="img-bank">
+                                            </a>
                                         </div>
                                         <div class="blog-content-2">
                                                 <div class="blog-meta-2">

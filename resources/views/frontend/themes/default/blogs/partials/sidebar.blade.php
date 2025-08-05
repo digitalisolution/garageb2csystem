@@ -2,12 +2,19 @@
     <div class="sidebar-widget">
         <h4 class="pro-sidebar-title">Search </h4>
         <div class="pro-sidebar-search mb-55 mt-25">
-            <form class="pro-sidebar-search-form" action="#">
+            <!-- <form class="pro-sidebar-search-form" action="#">
                 <input type="text" placeholder="Search here..." fdprocessedid="u68xc9o">
                 <button fdprocessedid="dmm8o">
                     <i class="pe-7s-search"></i>
                 </button>
-            </form>
+            </form> -->
+            <form action="{{ route('blogs.search') }}" method="GET">
+    <input type="text" name="search" placeholder="Search..." value="{{ request('search') }}">
+    <button type="submit">Search</button>
+</form>
+
+
+
         </div>
     </div>
     <div class="sidebar-widget">
@@ -15,8 +22,19 @@
         <div class="sidebar-project-wrap mt-30">
         @foreach($recentBlogs as $recent)
         <div class="single-sidebar-blog">
+            @php
+                $domain = str_replace(['http://', 'https://'], '', request()->getHost());
+                $bannerPath = 'frontend/' . str_replace('.', '-', $domain) . '/img/blogs/images/';
+                $fallbackPath = 'frontend/themes/default/img/blogs/images/';
+
+                $bannerimagePath = $recent->image ?? $recent->slug.'.jpg';
+                $bannerImageUrl = asset($bannerPath . $bannerimagePath);
+                $fallbackImageUrl = asset($fallbackPath . $bannerimagePath);
+            @endphp
             <div class="sidebar-blog-img">
-                <a href="{{ route('blogs.show', $recent->slug) }}"><img src="{{ asset($recent->image) }}" alt="{{ $recent->title }}"></a>
+                <a href="{{ route('blogs.show', $recent->slug) }}">
+                    <img src="{{ $bannerImageUrl }}" onerror="this.onerror=null;this.src='{{ $fallbackImageUrl }}';" alt="{{ $recent->title }}" class="img-bank">
+                </a>
             </div>
             <div class="sidebar-blog-content">
                 <h4><a href="{{ route('blogs.show', $recent->slug) }}">{{ $recent->title }}</a></h4>

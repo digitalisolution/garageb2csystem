@@ -4,15 +4,24 @@
         <div class="container-fluid">
             <div class="bg-white p-3">
                 <h5>{{ isset($tyre) ? 'Edit' : 'Add' }} Tyre Product</h5>
-                @if ($errors->any())
-                    <div class="alert alert-danger">
-                        <ul>
-                            @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
+                    @if ($errors->any())
+                        <div class="alert alert-danger">
+                            <ul class="mb-0">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
+                    @if (session('error'))
+                        <div class="alert alert-danger">{{ session('error') }}</div>
+                    @endif
+
+                    @if (session('success'))
+                        <div class="alert alert-success">{{ session('success') }}</div>
+                    @endif
+
                 <form action="{{ isset($tyre) 
                     ? route('AutoCare.tyres.update', ['product_id' => $tyre->product_id]) . '?' . http_build_query($queryParams ?? [])
                     : route('AutoCare.tyres.store') }}" 
@@ -25,7 +34,7 @@
                         <div class="form-group col-lg-3 col-md-6 col-12">
                             <label for="ean">EAN:</label>
                             <input type="text" name="tyre_ean" id="ean" class="form-control"
-                                value="{{ isset($tyre) ? $tyre->tyre_ean : old('tyre_ean') }}">
+                                value="{{ isset($tyre) ? $tyre->tyre_ean : old('tyre_ean') }}" required>
                         </div>
 
                         <div class="form-group col-lg-3 col-md-6 col-12">
@@ -49,7 +58,7 @@
 
                         <div class="form-group col-lg-3 col-md-6 col-12">
                             <label for="brand_id">Select Brand:</label>
-                            <select name="tyre_brand_id" id="brand" class="form-control">
+                            <select name="tyre_brand_id" id="brand" class="form-control" required>
                                 <option value="">Select Brand</option>
                                 @foreach ($brands as $brand)
                                                     <option value="{{ $brand->brand_id }}" {{ isset($tyre) && $tyre->tyre_brand_id ==

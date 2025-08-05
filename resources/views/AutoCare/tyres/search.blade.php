@@ -10,178 +10,199 @@
                 <a href="{{ route('AutoCare.tyres.edit', ['product_id' => 'new']) }}" class="btn btn-primary">Add Tyre</a>
                 <!-- Add Ownstock Button -->
                 @if(get_option('add_ownstock_inventry'))
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ownstockModal">
-                    Add Ownstock
-                </button>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ownstockModal">
+                        Add Ownstock
+                    </button>
                 @endif
             </div>
+            @if ($errors->any())
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            @if (session('error'))
+                <div class="alert alert-danger">{{ session('error') }}</div>
+            @endif
+
+            @if (session('success'))
+                <div class="alert alert-success">{{ session('success') }}</div>
+            @endif
 
             <!-- Search Form -->
             <form action="{{ route('AutoCare.tyres.search') }}" method="GET">
-    <div class="row align-items-center">
-         <!-- Width Field -->
-         <div class="col-md-2">
-            <div class="form-group">
-                <label for="width">Width</label>
-                <input type="text" name="width" id="width" class="form-control" value="{{ $filters['width'] ?? '' }}">
-            </div>
-        </div>
+                <div class="row align-items-center">
+                    <!-- Width Field -->
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label for="width">Width</label>
+                            <input type="text" name="width" id="width" class="form-control"
+                                value="{{ $filters['width'] ?? '' }}">
+                        </div>
+                    </div>
 
-        <!-- Profile Field -->
-        <div class="col-md-2">
-            <div class="form-group">
-                <label for="profile">Profile</label>
-                <input type="text" name="profile" id="profile" class="form-control" value="{{ $filters['profile'] ?? '' }}">
-            </div>
-        </div>
+                    <!-- Profile Field -->
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label for="profile">Profile</label>
+                            <input type="text" name="profile" id="profile" class="form-control"
+                                value="{{ $filters['profile'] ?? '' }}">
+                        </div>
+                    </div>
 
-        <!-- Diameter Field -->
-        <div class="col-md-2">
-            <div class="form-group">
-                <label for="diameter">Rim Size</label>
-                <input type="text" name="diameter" id="diameter" class="form-control" value="{{ $filters['diameter'] ?? '' }}">
-            </div>
-        </div>
+                    <!-- Diameter Field -->
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label for="diameter">Rim Size</label>
+                            <input type="text" name="diameter" id="diameter" class="form-control"
+                                value="{{ $filters['diameter'] ?? '' }}">
+                        </div>
+                    </div>
 
-          <!-- Brand Name Field -->
-          <div class="col-md-2">
-            <div class="form-group">
-                <label for="tyre_brand_name">Brand Name</label>
-                <select name="tyre_brand_name" id="tyre_brand_name" class="form-control">
-                    <option value="">Select Brand</option>
-                    @foreach ($brands as $brand)
-                        <option value="{{ $brand->brand_id }}" {{ isset($filters['tyre_brand_name']) && $filters['tyre_brand_name'] == $brand->brand_id ? 'selected' : '' }}>
-                            {{ $brand->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-        
-        <!-- EAN Field -->
-        <div class="col-md-2">
-            <div class="form-group">
-                <label for="ean">EAN</label>
-                <input type="text" name="tyre_ean" id="ean" class="form-control" value="{{ $filters['tyre_ean'] ?? '' }}">
-            </div>
-        </div>
+                    <!-- Brand Name Field -->
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label for="tyre_brand_name">Brand Name</label>
+                            <select name="tyre_brand_name" id="tyre_brand_name" class="form-control">
+                                <option value="">Select Brand</option>
+                                @foreach ($brands as $brand)
+                                    <option value="{{ $brand->brand_id }}" {{ isset($filters['tyre_brand_name']) && $filters['tyre_brand_name'] == $brand->brand_id ? 'selected' : '' }}>
+                                        {{ $brand->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
 
-        <!-- SKU Field -->
-        <div class="col-md-2">
-            <div class="form-group">
-                <label for="sku">SKU</label>
-                <input type="text" name="tyre_sku" id="sku" class="form-control" value="{{ $filters['tyre_sku'] ?? '' }}">
-            </div>
-        </div>
+                    <!-- EAN Field -->
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label for="ean">EAN</label>
+                            <input type="text" name="tyre_ean" id="ean" class="form-control"
+                                value="{{ $filters['tyre_ean'] ?? '' }}">
+                        </div>
+                    </div>
 
-        <!-- Tyre Source Field -->
-        <div class="col-md-2">
-            <div class="form-group">
-                <label for="tyre_supplier_name">Tyre Supplier</label>
-                <select name="tyre_supplier_name" id="tyre_supplier_name" class="form-control">
-                    <option value="">Select Source</option>
-                    @foreach ($suppliers as $supplier)
-                        <option value="{{ $supplier }}" {{ isset($filters['tyre_supplier_name']) && $filters['tyre_supplier_name'] == $supplier ? 'selected' : '' }}>
-                            {{ $supplier }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-        <!-- Tyre Type Field -->
-        <div class="col-md-2">
-            <div class="form-group">
-                <label for="tyre_season">Tyre Type</label>
-                <select name="tyre_season" id="tyre_season" class="form-control">
-                    <option value="">Select Type</option>
-                    @foreach ($tyreTypes as $type)
-                        <option value="{{ $type }}" {{ isset($filters['tyre_season']) && $filters['tyre_season'] == $type ? 'selected' : '' }}>
-                            {{ $type }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
+                    <!-- SKU Field -->
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label for="sku">SKU</label>
+                            <input type="text" name="tyre_sku" id="sku" class="form-control"
+                                value="{{ $filters['tyre_sku'] ?? '' }}">
+                        </div>
+                    </div>
 
-        <!-- Season Type Field -->
-        <div class="col-md-2">
-            <div class="form-group">
-                <label for="season_type">Season Type</label>
-                <select name="season_type" id="season_type" class="form-control">
-                    <option value="">Select Season</option>
-                    @foreach ($seasonTypes as $season)
-                        <option value="{{ $season }}" {{ isset($filters['season_type']) && $filters['season_type'] == $season ? 'selected' : '' }}>
-                            {{ $season }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
+                    <!-- Tyre Source Field -->
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label for="tyre_supplier_name">Tyre Supplier</label>
+                            <select name="tyre_supplier_name" id="tyre_supplier_name" class="form-control">
+                                <option value="">Select Source</option>
+                                @foreach ($suppliers as $supplier)
+                                    <option value="{{ $supplier }}" {{ isset($filters['tyre_supplier_name']) && $filters['tyre_supplier_name'] == $supplier ? 'selected' : '' }}>
+                                        {{ $supplier }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <!-- Tyre Type Field -->
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label for="tyre_season">Tyre Type</label>
+                            <select name="tyre_season" id="tyre_season" class="form-control">
+                                <option value="">Select Type</option>
+                                @foreach ($tyreTypes as $type)
+                                    <option value="{{ $type }}" {{ isset($filters['tyre_season']) && $filters['tyre_season'] == $type ? 'selected' : '' }}>
+                                        {{ $type }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
 
-        <!-- Vehicle Type Field -->
-        <div class="col-md-2">
-            <div class="form-group">
-                <label for="vehicle_type">Vehicle Type</label>
-                <select name="vehicle_type" id="vehicle_type" class="form-control">
-                    <option value="">Select Vehicle</option>
-                    @foreach ($vehicleTypes as $vehicle)
-                        <option value="{{ $vehicle }}" {{ isset($filters['vehicle_type']) && $filters['vehicle_type'] == $vehicle ? 'selected' : '' }}>
-                            {{ $vehicle }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
+                    <!-- Season Type Field -->
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label for="season_type">Season Type</label>
+                            <select name="season_type" id="season_type" class="form-control">
+                                <option value="">Select Season</option>
+                                @foreach ($seasonTypes as $season)
+                                    <option value="{{ $season }}" {{ isset($filters['season_type']) && $filters['season_type'] == $season ? 'selected' : '' }}>
+                                        {{ $season }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
 
-        <!-- RFT (Run-Flat) Checkbox -->
-        <div class="col-md-2">
-            <div class="form-group d-flex gap-2 mt-3">
-                <input type="checkbox" name="rft" id="rft" {{ isset($filters['rft']) ? 'checked' : '' }}>
-                <label for="rft">Run-Flat Tyres</label>
-            </div>
-        </div>
+                    <!-- Vehicle Type Field -->
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label for="vehicle_type">Vehicle Type</label>
+                            <select name="vehicle_type" id="vehicle_type" class="form-control">
+                                <option value="">Select Vehicle</option>
+                                @foreach ($vehicleTypes as $vehicle)
+                                    <option value="{{ $vehicle }}" {{ isset($filters['vehicle_type']) && $filters['vehicle_type'] == $vehicle ? 'selected' : '' }}>
+                                        {{ $vehicle }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
 
-        <!-- Stock Status Field -->
-        <div class="col-md-2">
-            <div class="form-group">
-                <label for="stock_status">Stock Status</label>
-                <select name="stock_status" id="stock_status" class="form-control">
-                    <option value="instock" {{ isset($filters['stock_status']) && $filters['stock_status'] == 'instock' ? 'selected' : '' }}>Instock</option>
-                    <option value="available" {{ isset($filters['stock_status']) && $filters['stock_status'] == 'available' ? 'selected' : '' }}>Available</option>
-                    <option value="all" {{ isset($filters['stock_status']) && $filters['stock_status'] == 'all' ? 'selected' : '' }}>All Tyres</option>
-                </select>
-            </div>
-        </div>
+                    <!-- RFT (Run-Flat) Checkbox -->
+                    <div class="col-md-2">
+                        <div class="form-group d-flex gap-2 mt-3">
+                            <input type="checkbox" name="rft" id="rft" {{ isset($filters['rft']) ? 'checked' : '' }}>
+                            <label for="rft">Run-Flat Tyres</label>
+                        </div>
+                    </div>
 
-        <!-- Submit Button -->
-        <div class="col-md-12 text-right">
-            <button type="submit" class="btn btn-primary">Search</button>
-        </div>
-    </div>
-</form>
+                    <!-- Stock Status Field -->
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label for="stock_status">Stock Status</label>
+                            <select name="stock_status" id="stock_status" class="form-control">
+                                <option value="instock" {{ isset($filters['stock_status']) && $filters['stock_status'] == 'instock' ? 'selected' : '' }}>Instock</option>
+                                <option value="available" {{ isset($filters['stock_status']) && $filters['stock_status'] == 'available' ? 'selected' : '' }}>Available</option>
+                                <option value="all" {{ isset($filters['stock_status']) && $filters['stock_status'] == 'all' ? 'selected' : '' }}>All Tyres</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="col-md-12 text-right">
+                        <button type="submit" class="btn btn-primary">Search</button>
+                    </div>
+                </div>
+            </form>
             @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show m-3" role="alert">
-                {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-        
-        @if(session('error'))
-            <div class="alert alert-danger alert-dismissible fade show m-3" role="alert">
-                {{ session('error') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-                 
+                <div class="alert alert-success alert-dismissible fade show m-3" role="alert">
+                    {{ session('success') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="alert alert-danger alert-dismissible fade show m-3" role="alert">
+                    {{ session('error') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
+
             <div class="table-responsive">
                 @if (!empty($filters['tyre_supplier_name']) && strtolower($filters['tyre_supplier_name']) === 'ownstock')
-                @if(isset($totalQty) && isset($totalCost))
-                
-                <div class="alert alert-primary font-weight-bold">
-                    Total OWNSTOCK Quantity: <span class="text-success">{{ $totalQty }}</span><br>
-                    Total OWNSTOCK Cost Price: <span class="text-success">£{{ number_format($totalCost, 2) }}</span>
-                </div>
-                @endif
+                    @if(isset($totalQty) && isset($totalCost))
+                        <div class="alert alert-primary font-weight-bold">
+                            Total OWNSTOCK Quantity: <span class="text-success">{{ $totalQty }}</span><br>
+                            Total OWNSTOCK Cost Price: <span class="text-success">£{{ number_format($totalCost, 2) }}</span>
+                        </div>
+                    @endif
                 @endif
                 <!-- Tyres Table -->
                 <table class="table table-bordered table-hover mt-4">
@@ -301,19 +322,36 @@
                                     <i class="fa fa-caret-down"></i>
                                 </a>
                             </th>
-                            <th>Actions</th>
+                            <!-- <th>Actions</th> -->
                         </tr>
                     </thead>
                     <tbody>
                         @forelse ($tyres as $tyre)
                             <tr>
-                                <td><a href="javascript:void(0);" class="ean-link" data-ean="{{ $tyre->tyre_ean }}">{{ $tyre->tyre_ean }}</a></td>
+                                <td align="center" class="no-wrap">
+                                    <a href="javascript:void(0);" class="ean-link"
+                                        data-ean="{{ $tyre->tyre_ean }}">{{ $tyre->tyre_ean }}</a>
+                                        <div class="d-flex justify-content-between">
+                                    <!-- Edit Button -->
+                                    <a href="{{ route('AutoCare.tyres.edit', ['product_id' => $tyre->product_id]) . '?' . http_build_query(request()->query()) }}"
+                                        class="btn btn-sm btn-warning m-2">Edit</a>
+                                    <!-- Delete Button -->
+                                    <form action="{{ route('AutoCare.tyres.delete', $tyre->product_id) }}" method="POST"
+                                        style="display:inline;"
+                                        onsubmit="return confirm('Are you sure you want to delete this tyre?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-danger m-2">Delete</button>
+                                    </form>
+                                    </div>
+
+                                </td>
                                 <td>{{ $tyre->tyre_description }}</td>
                                 <td align="center">{{ $tyre->tyre_brand_name }}</td>
                                 <!-- Replace with the actual brand name if available -->
-                                <td align="center" ><span class="{{ $tyre->tyre_fuel }}">{{ $tyre->tyre_fuel }}</span></td>
-                                <td align="center" ><span class="{{ $tyre->tyre_wetgrip }}">{{ $tyre->tyre_wetgrip }}</span></td>
-                                <td align="center" ><span class="db">{{ $tyre->tyre_noisedb }}</span></td>
+                                <td align="center"><span class="{{ $tyre->tyre_fuel }}">{{ $tyre->tyre_fuel }}</span></td>
+                                <td align="center"><span class="{{ $tyre->tyre_wetgrip }}">{{ $tyre->tyre_wetgrip }}</span></td>
+                                <td align="center"><span class="db">{{ $tyre->tyre_noisedb }}</span></td>
                                 <td align="center">{{ $tyre->vehicle_type }}</td>
                                 <td align="center">
                                     <span
@@ -326,9 +364,9 @@
                                 <td align="center">£{{ number_format($tyre->tyre_fullyfitted_price, 2) }}</td>
                                 <td align="center" class="trade_costprice">
                                     @if($tyre->tax_class_id == 9)
-                                    £{{ number_format($tyre->tyre_fullyfitted_price * 1.20, 2) }}
+                                        £{{ number_format($tyre->tyre_fullyfitted_price * 1.20, 2) }}
                                     @else
-                                    £{{ number_format($tyre->tyre_fullyfitted_price, 2) }}
+                                        £{{ number_format($tyre->tyre_fullyfitted_price, 2) }}
                                     @endif
                                 </td>
 
@@ -337,21 +375,20 @@
                                 </td>
                                 <!-- <td>{{ $tyre->instock == 1 ? 'Yes' : 'No' }}</td> -->
                                 <td align="center"><span
-                                        class="{{$tyre->tyre_supplier_name }}">{{ strtoupper($tyre->tyre_supplier_name) }}</span></td>
+                                        class="{{$tyre->tyre_supplier_name }}">{{ strtoupper($tyre->tyre_supplier_name) }}</span>
+                                </td>
                                 <td align="center" class="no-wrap"><span
                                         class="{{ $tyre->lead_time }}">{{ $tyre->lead_time }}</span></td>
-                                <td align="center" class="no-wrap">
-                                    <!-- Edit Button -->
+                                <!-- <td align="center" class="no-wrap">
                                     <a href="{{ route('AutoCare.tyres.edit', ['product_id' => $tyre->product_id]) . '?' . http_build_query(request()->query()) }}"
-                                     class="btn btn-sm btn-warning">Edit</a>
-                                    <!-- Delete Button -->
+                                        class="btn btn-sm btn-warning">Edit</a>
                                     <form action="{{ route('AutoCare.tyres.delete', $tyre->product_id) }}" method="POST"
                                         style="display:inline;">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-danger">Delete</button>
                                     </form>
-                                </td>
+                                </td> -->
 
 
                             </tr>

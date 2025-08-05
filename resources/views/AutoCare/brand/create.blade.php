@@ -4,6 +4,23 @@
 <div class="container-fluid">
     <div class="bg-white p-3">
     <h5>{{ isset($brand) ? 'Edit Brand' : 'Add Brand' }}</h5>
+     @if ($errors->any())
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            @if (session('error'))
+                <div class="alert alert-danger">{{ session('error') }}</div>
+            @endif
+
+            @if (session('success'))
+                <div class="alert alert-success">{{ session('success') }}</div>
+            @endif
 
     <form action="{{ isset($brand) ? route('brand.update', $brand->brand_id) : route('brand.store') }}"
         method="POST" enctype="multipart/form-data">
@@ -26,12 +43,16 @@
 
         <div class="col-lg-3 col-md-6 col-12 form-group">
             <label for="budget_type">Budget Type</label>
-            <input type="text" name="budget_type" id="budget_type" class="form-control" value="{{ $brand->budget_type ?? old('budget_type') }}">
+            <select name="budget_type" id="budget_type" class="form-control" required>
+                <option value="budget" {{ isset($brand) && $brand->budget_type == 'budget' ? 'selected' : '' }}>Budget</option>
+                <option value="mid-range" {{ isset($brand) && $brand->budget_type == 'mid-range' ? 'selected' : '' }}>Mid-Range</option>
+                 <option value="premium" {{ isset($brand) && $brand->budget_type == 'premium' ? 'selected' : '' }}>Premium</option>
+            </select>
         </div>
 
         <div class="col-lg-3 col-md-6 col-12 form-group">
             <label for="product_type">Product Type</label>
-            <input type="text" name="product_type" id="product_type" class="form-control" value="{{ $brand->product_type ?? old('product_type') }}" required>
+            <input type="text" name="product_type" id="product_type" class="form-control" value="{{ $brand->product_type ?? 'Tyre' ?? old('product_type') }}" required>
         </div>
 
         <div class="col-lg-12 col-md-12 col-12 form-group">
@@ -97,12 +118,15 @@
                 value="{{ $brand->promoted_text ?? old('promoted_text') }}">
         </div>
 
+
         <div class="col-lg-3 col-md-6 col-12 form-group">
             <label for="promoted">Promoted</label>
-            <input type="number" name="promoted" id="promoted" class="form-control"
-                value="{{ $brand->promoted ?? old('promoted') }}" required>
+            <select name="promoted" id="promoted" class="form-control" required>
+                <option value="1" {{ isset($brand) && $brand->promoted == 1 ? 'selected' : '' }}>Active</option>
+                <option value="0" {{ isset($brand) && $brand->promoted == 0 ? 'selected' : '' }}>Inactive
+                </option>
+            </select>
         </div>
-        
 
         <div class="col-lg-3 col-md-6 col-12 form-group">
             <label for="sort_order">Sort Order</label>
@@ -110,7 +134,7 @@
                 value="{{ $brand->sort_order ?? old('sort_order') }}">
         </div>
 
-         <div class="col-lg-3 col-md-6 col-12 form-group">
+        <div class="col-lg-3 col-md-6 col-12 form-group">
             <label for="status">Status</label>
             <select name="status" id="status" class="form-control" required>
                 <option value="1" {{ isset($brand) && $brand->status == 1 ? 'selected' : '' }}>Active</option>

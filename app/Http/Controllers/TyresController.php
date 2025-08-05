@@ -119,7 +119,7 @@ class TyresController extends Controller
 
         // Clone query to calculate totals from ALL matching OWNSTOCK tyres with quantity > 0
             $ownstockTotals = (clone $query)
-            ->where('tyres_product.tyre_supplier_name', 'OWNSTOCK')
+            ->where('tyres_product.tyre_supplier_name', 'ownstock')
             ->where('tyres_product.tyre_quantity', '>', 0)
             ->get();
            /* $ownstockTotals = \App\Models\TyresProduct::from("$tyresTable as tyres_product")
@@ -135,8 +135,9 @@ class TyresController extends Controller
         $totalQty = $ownstockTotals->sum('tyre_quantity');
         $totalCost = $ownstockTotals->sum(function ($item) {
                 //\Log::info("{$item->tyre_description} | Qty: {$item->tyre_quantity} | Cost: {$item->tyre_price}");
-            return $item->tyre_price;
+            return $item->tyre_quantity * $item->tyre_price;
         });
+
 
     $filters = $request->all();
 

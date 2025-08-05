@@ -7,6 +7,24 @@
             <div class="short__item">
                 <div class="bg-light p-2 text-center rounded mb-4 border">
                     <h5 class="m-0"><strong>{{ isset($vehicle) ? 'Edit Vehicle' : 'Add Vehicle' }}</strong></h5>
+                    @if ($errors->any())
+                        <div class="alert alert-danger">
+                            <ul class="mb-0">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
+                    @if (session('error'))
+                        <div class="alert alert-danger">{{ session('error') }}</div>
+                    @endif
+
+                    @if (session('success'))
+                        <div class="alert alert-success">{{ session('success') }}</div>
+                    @endif
+
                 </div>
                 <form action="{{ isset($vehicle)
         ? route('AutoCare.vehicles.update', ['id' => $vehicle->id])
@@ -18,7 +36,8 @@
                     <div class="edit_vehicle_plate mb-4">
                         <div class="plate_wrap">
                             <img src="frontend/themes/default/img/icon-img/reg_icon.png" alt="uk icon" height="48">
-                            <input class="vehicle_plate" type="text" placeholder="Vehicle Reg" id="vehicle_reg_number" name="vrm">
+                            <input class="vehicle_plate" type="text" placeholder="Vehicle Reg" id="vehicle_reg_number"
+                                name="vrm">
                         </div>
                         <button type="button" id="lookupButton" class="btn btn-primary px-4">Get Vehicle
                             Details</button>
@@ -117,7 +136,8 @@
                         <div class="col-lg-3 col-md-3 col-12">
                             <div class="form-group">
                                 <label>Engine Number</label>
-                                <input type="text" name="vehicle_engine_number" id="vehicle_engine_number" class="form-control"
+                                <input type="text" name="vehicle_engine_number" id="vehicle_engine_number"
+                                    class="form-control"
                                     value="{{ old('vehicle_engine_number', $vehicle->vehicle_engine_number ?? '') }}">
                                 @error('vehicle_engine_number')
                                     <div class="text-danger">{{ $message }}</div>
@@ -157,7 +177,8 @@
                         <div class="col-lg-3 col-md-3 col-12">
                             <div class="form-group">
                                 <label>Front Tyre Size <small>(205/55R16 91W)</small></label>
-                                <input type="text" name="vehicle_front_tyre_size" id="vehicle_front_tyre_size" class="form-control"
+                                <input type="text" name="vehicle_front_tyre_size" id="vehicle_front_tyre_size"
+                                    class="form-control"
                                     value="{{ old('vehicle_front_tyre_size', $vehicle->vehicle_front_tyre_size ?? '') }}">
                                 @error('vehicle_front_tyre_size')
                                     <div class="text-danger">{{ $message }}</div>
@@ -167,7 +188,8 @@
                         <div class="col-lg-3 col-md-3 col-12">
                             <div class="form-group">
                                 <label>Rear Tyre Size <small>(205/55R16 91W)</small></label>
-                                <input type="text" name="vehicle_rear_tyre_size" id="vehicle_rear_tyre_size" class="form-control"
+                                <input type="text" name="vehicle_rear_tyre_size" id="vehicle_rear_tyre_size"
+                                    class="form-control"
                                     value="{{ old('vehicle_rear_tyre_size', $vehicle->vehicle_rear_tyre_size ?? '') }}">
                                 @error('vehicle_rear_tyre_size')
                                     <div class="text-danger">{{ $message }}</div>
@@ -187,7 +209,8 @@
                         <div class="col-lg-3 col-md-3 col-12">
                             <div class="form-group">
                                 <label>First Registered</label>
-                                <input type="date" name="vehicle_first_registered" id="vehicle_first_registered" class="form-control"
+                                <input type="date" name="vehicle_first_registered" id="vehicle_first_registered"
+                                    class="form-control"
                                     value="{{ old('vehicle_first_registered', isset($vehicle->vehicle_first_registered) ? \Carbon\Carbon::parse($vehicle->vehicle_first_registered)->format('Y-m-d') : '') }}">
 
                                 @error('vehicle_first_registered')
@@ -208,18 +231,20 @@
                         <div class="col-lg-3 col-md-3 col-12">
                             <div class="form-group">
                                 <label>Torque Settings</label>
-                                <input type="text" name="vehicle_torque_settings" id="vehicle_torque_settings" class="form-control"
+                                <input type="text" name="vehicle_torque_settings" id="vehicle_torque_settings"
+                                    class="form-control"
                                     value="{{ old('vehicle_torque_settings', $vehicle->vehicle_torque_settings ?? '') }}">
                                 @error('vehicle_torque_settings')
                                     <div class="text-danger">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
-                        
+
                         <div class="col-lg-3 col-md-3 col-12">
                             <div class="form-group">
                                 <label>MOT Expiry Date</label>
-                                <input type="date" name="vehicle_mot_expiry_date" id="vehicle_mot_expiry_date" class="form-control"
+                                <input type="date" name="vehicle_mot_expiry_date" id="vehicle_mot_expiry_date"
+                                    class="form-control"
                                     value="{{ old('vehicle_mot_expiry_date', $vehicle->vehicle_mot_expiry_date ?? '') }}">
                                 @error('vehicle_mot_expiry_date')
                                     <div class="text-danger">{{ $message }}</div>
@@ -239,78 +264,78 @@
 @endsection
 
 @section('scripts')
-   <script>
-       document.getElementById('lookupButton').addEventListener('click', async function () {
-    const lookupButton = document.getElementById('lookupButton');
-    const vrm = document.getElementById('vehicle_reg_number').value.trim();
-    lookupButton.disabled = true;
-    lookupButton.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Fetching...';
+    <script>
+        document.getElementById('lookupButton').addEventListener('click', async function () {
+            const lookupButton = document.getElementById('lookupButton');
+            const vrm = document.getElementById('vehicle_reg_number').value.trim();
+            lookupButton.disabled = true;
+            lookupButton.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Fetching...';
 
-    if (!vrm) {
-        alert('Please enter a valid VRM.');
-        lookupButton.disabled = false;
-        lookupButton.innerHTML = 'Lookup';
-        return;
-    }
+            if (!vrm) {
+                alert('Please enter a valid VRM.');
+                lookupButton.disabled = false;
+                lookupButton.innerHTML = 'Lookup';
+                return;
+            }
 
-    try {
-        const response = await fetch(`${window.location.origin}/vehicle-mot-data?vrm=${vrm}`, {
-            headers: {
-                'X-Request-Token': '{{ env("API_REQUEST_TOKEN") }}',
-                'Content-Type': 'application/json'
+            try {
+                const response = await fetch(`${window.location.origin}/vehicle-mot-data?vrm=${vrm}`, {
+                    headers: {
+                        'X-Request-Token': '{{ env("API_REQUEST_TOKEN") }}',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.status === 429) {
+                    alert('Too many requests! Please wait a moment before trying again.');
+                    return;
+                }
+
+                const result = await response.json();
+                console.log('API Response:', result); // Debugging: Log the API response
+
+                lookupButton.innerHTML = 'Lookup';
+
+                if (response.ok && result.success && result.data) {
+                    const vehicleDetails = result.data.VehicleDetails?.VehicleIdentification || {};
+                    const color = result.data.VehicleDetails?.VehicleHistory || {};
+                    const SmmtDetails = result.data.SmmtDetails?.TechnicalDetails || {};
+                    const Performance = result.data.SmmtDetails?.Performance || {};
+                    const tyreDetails = result.data.TyreDetails?.TyreDetailsList?.[0] || {};
+                    const motHistory = result.data.MotHistoryDetails || {};
+                    const RapidVehicleDetails = result.data.RapidVehicleDetails?.VehicleClass || {};
+                    // Populate vehicle details fields
+                    document.getElementById('vehicle_category').value = RapidVehicleDetails || '';
+                    document.getElementById('vrm').value = vehicleDetails.Vrm || '';
+                    document.getElementById('vehicle_make').value = vehicleDetails.DvlaMake || '';
+                    document.getElementById('vehicle_model').value = vehicleDetails.DvlaModel || '';
+                    document.getElementById('vehicle_year').value = vehicleDetails.YearOfManufacture || '';
+                    document.getElementById('vehicle_cc').value = SmmtDetails.EngineCapacityCc || '';
+                    document.getElementById('vehicle_fuel_type').value = SmmtDetails.FuelType || '';
+                    document.getElementById('vehicle_body_type').value = SmmtDetails.BodyStyle || '';
+                    document.getElementById('vehicle_bhp').value = Performance.PowerBhp || '';
+                    document.getElementById('vehicle_engine_number').value = vehicleDetails.EngineNumber || '';
+                    document.getElementById('vehicle_engine_size').value = SmmtDetails.EngineCapacityCc || '';
+                    document.getElementById('vehicle_engine_code').value = SmmtDetails.EngineDescription || '';
+                    document.getElementById('vehicle_vin').value = vehicleDetails.VinLast5 || '';
+                    document.getElementById('vehicle_front_tyre_size').value = tyreDetails.Front?.Tyre?.SizeDescription || '';
+                    document.getElementById('vehicle_rear_tyre_size').value = tyreDetails.Rear?.Tyre?.SizeDescription || '';
+                    document.getElementById('vehicle_colour').value = color?.ColourDetails?.CurrentColour || '';
+                    document.getElementById('vehicle_first_registered').value = vehicleDetails.DateFirstRegisteredInUk.split("T")[0] || '';
+                    document.getElementById('vehicle_chassis_no').value = vehicleDetails.Vin || '';
+                    document.getElementById('vehicle_torque_settings').value = Performance.TorqueNm || '';
+                    document.getElementById('vehicle_mot_expiry_date').value = motHistory.MotDueDate.split("T")[0] || '';
+                } else {
+                    alert(result.error || 'Unable to fetch VRM details.');
+                }
+            } catch (error) {
+                console.error('Fetch Error:', error.message);
+                alert('An error occurred while fetching VRM details.');
+                lookupButton.innerHTML = 'Lookup';
+            } finally {
+                lookupButton.disabled = false;
             }
         });
-
-        if (response.status === 429) {
-            alert('Too many requests! Please wait a moment before trying again.');
-            return;
-        }
-
-        const result = await response.json();
-        console.log('API Response:', result); // Debugging: Log the API response
-
-        lookupButton.innerHTML = 'Lookup';
-
-        if (response.ok && result.success && result.data) {
-            const vehicleDetails = result.data.VehicleDetails?.VehicleIdentification || {};
-            const color = result.data.VehicleDetails?.VehicleHistory || {};
-            const SmmtDetails = result.data.SmmtDetails?.TechnicalDetails || {};
-            const Performance = result.data.SmmtDetails?.Performance || {};
-            const tyreDetails = result.data.TyreDetails?.TyreDetailsList?.[0] || {};
-            const motHistory = result.data.MotHistoryDetails || {};
-            const RapidVehicleDetails = result.data.RapidVehicleDetails?.VehicleClass || {};
-            // Populate vehicle details fields
-            document.getElementById('vehicle_category').value = RapidVehicleDetails || '';
-            document.getElementById('vrm').value = vehicleDetails.Vrm || '';
-            document.getElementById('vehicle_make').value = vehicleDetails.DvlaMake || '';
-            document.getElementById('vehicle_model').value = vehicleDetails.DvlaModel || '';
-            document.getElementById('vehicle_year').value = vehicleDetails.YearOfManufacture || '';
-            document.getElementById('vehicle_cc').value = SmmtDetails.EngineCapacityCc || '';
-            document.getElementById('vehicle_fuel_type').value = SmmtDetails.FuelType || '';
-            document.getElementById('vehicle_body_type').value = SmmtDetails.BodyStyle || '';
-            document.getElementById('vehicle_bhp').value = Performance.PowerBhp || '';
-            document.getElementById('vehicle_engine_number').value = vehicleDetails.EngineNumber || '';
-            document.getElementById('vehicle_engine_size').value = SmmtDetails.EngineCapacityCc || '';
-            document.getElementById('vehicle_engine_code').value = SmmtDetails.EngineDescription || '';
-            document.getElementById('vehicle_vin').value = vehicleDetails.VinLast5 || '';
-            document.getElementById('vehicle_front_tyre_size').value = tyreDetails.Front?.Tyre?.SizeDescription || '';
-            document.getElementById('vehicle_rear_tyre_size').value = tyreDetails.Rear?.Tyre?.SizeDescription || '';
-            document.getElementById('vehicle_colour').value = color?.ColourDetails?.CurrentColour || '';
-            document.getElementById('vehicle_first_registered').value = vehicleDetails.DateFirstRegisteredInUk.split("T")[0] || '';
-            document.getElementById('vehicle_chassis_no').value = vehicleDetails.Vin || '';
-            document.getElementById('vehicle_torque_settings').value = Performance.TorqueNm || '';
-            document.getElementById('vehicle_mot_expiry_date').value = motHistory.MotDueDate.split("T")[0] || '';
-        } else {
-            alert(result.error || 'Unable to fetch VRM details.');
-        }
-    } catch (error) {
-        console.error('Fetch Error:', error.message);
-        alert('An error occurred while fetching VRM details.');
-        lookupButton.innerHTML = 'Lookup';
-    } finally {
-        lookupButton.disabled = false;
-    }
-});
 
     </script>
 @endsection
