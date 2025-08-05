@@ -112,6 +112,7 @@
                             {{ Form::text('name', isset($name) ? $name : '', [
         'class' => 'form-control',
         'id' => 'name',
+        'required' => 'required',
         'placeholder' => ' Name'
     ]) }}
                             <div class="invalid-feedback">
@@ -265,7 +266,6 @@
             'pending' => 'Pending',
             'booked' => 'Booked',
             'awaiting' => 'Awaiting',
-            'canceled' => 'Canceled',
             'failed' => 'Failed',
             'completed' => 'Completed'
         ], isset($status) ? $status : 'pending', [
@@ -545,7 +545,6 @@
             'pending' => 'Pending',
             'booked' => 'Booked',
             'awaiting' => 'Awaiting',
-            'canceled' => 'Canceled',
             'failed' => 'Failed',
             'completed' => 'Completed'
         ], isset($status) ? $status : 'pending', [
@@ -874,13 +873,13 @@
             @if (!isset($id))
             @endif
             <div class="col-md-12 text-center mt-3 mb-3">
-    <button type="submit" class="btn btn-sm btn-primary" name="save_only"> 
+    <button type="submit" class="btn btn-sm btn-primary" name="save_only" id="saveOnlyBtn">
         <i class="fa fa-dot-circle-o"></i> {{ isset($id) ? 'Update' : 'Add' }}
     </button>
-    <button type="submit" class="btn btn-sm btn-success" name="save_and_sync_invoice"> 
+    <button type="submit" class="btn btn-sm btn-success" name="save_and_sync_invoice" id="saveAndSyncBtn">
         <i class="fa fa-file-invoice"></i> {{ isset($id) ? 'Update & Sync Invoice' : 'Add & Sync Invoice' }}
     </button>
-    <button type="reset" class="btn btn-sm btn-danger" name="reset"> 
+    <button type="reset" class="btn btn-sm btn-danger" name="reset">
         <i class="fa fa-ban"></i> Reset
     </button>
 </div>
@@ -1123,6 +1122,41 @@
                 font-size: 15px;
             }
         </style>
+        <script>
+    $(document).ready(function () {
+        const formSelector = 'form[action="{{ url('AutoCare/workshop/add') }}"]'; // Or however you identify the form uniquely
+
+       $(formSelector).on('submit', function (e) {
+    const clickedButton = document.activeElement;
+
+    if (clickedButton && (clickedButton.id === 'saveOnlyBtn' || clickedButton.id === 'saveAndSyncBtn' || clickedButton.name === 'save_only' || clickedButton.name === 'save_and_sync_invoice')) {
+        // Store name/value in a hidden input before disabling the button
+        const buttonName = $(clickedButton).attr('name');
+        const buttonValue = $(clickedButton).val();
+
+        // Remove any existing hidden input for safety
+        $(this).find('input[name="' + buttonName + '"]').remove();
+
+        // Create and append hidden input
+        $('<input>').attr({
+            type: 'hidden',
+            name: buttonName,
+            value: buttonValue
+        }).appendTo(this);
+
+        // Now safe to disable buttons
+        $(clickedButton).prop('disabled', true);
+        const originalHtml = $(clickedButton).html();
+        $(clickedButton).html('<i class="fa fa-spinner fa-spin"></i> Processing...');
+        $(clickedButton).data('original-html', originalHtml);
+
+        const otherButtonSelector = clickedButton.id === 'saveOnlyBtn' ? '#saveAndSyncBtn' : '#saveOnlyBtn';
+        $(otherButtonSelector).prop('disabled', true);
+    }
+});
+
+    });
+</script>
         <script>
             $(document).ready(function () {
                 // Function to validate stock availability and update max attribute

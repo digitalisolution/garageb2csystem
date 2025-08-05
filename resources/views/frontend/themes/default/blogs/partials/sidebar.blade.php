@@ -2,16 +2,16 @@
     <div class="sidebar-widget">
         <h4 class="pro-sidebar-title">Search </h4>
         <div class="pro-sidebar-search mb-55 mt-25">
-            <!-- <form class="pro-sidebar-search-form" action="#">
+            <form class="pro-sidebar-search-form" action="#">
                 <input type="text" placeholder="Search here..." fdprocessedid="u68xc9o">
                 <button fdprocessedid="dmm8o">
                     <i class="pe-7s-search"></i>
                 </button>
-            </form> -->
-            <form action="{{ route('blogs.search') }}" method="GET">
-    <input type="text" name="search" placeholder="Search..." value="{{ request('search') }}">
-    <button type="submit">Search</button>
-</form>
+            </form>
+            <!-- <form action="{{ route('blogs.search') }}" method="GET">
+                    <input type="text" name="search" placeholder="Search..." value="{{ request('search') }}">
+                    <button type="submit">Search</button>
+                </form> -->
 
 
 

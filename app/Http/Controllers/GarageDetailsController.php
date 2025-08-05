@@ -24,6 +24,42 @@ class GarageDetailsController extends Controller
         try {
             $validated = $this->validateGarage($request);
 
+            // Prepare path
+            $domain = str_replace(['http://', 'https://'], '', request()->getHost());
+            $basePath = 'frontend/' . str_replace('.', '-', $domain) . '/img/logo/';
+            $destinationPath = public_path($basePath);
+
+            if (!file_exists($destinationPath)) {
+                mkdir($destinationPath, 0755, true);
+            }
+
+            // Logo
+            if ($request->hasFile('logo')) {
+                $logo = $request->file('logo');
+                $extension = $logo->getClientOriginalExtension();
+                $logoName = 'logo.' . $extension;
+                $logo->move($destinationPath, $logoName);
+                $validated['logo'] = $logoName;
+            }
+
+            // Banner
+            if ($request->hasFile('banner')) {
+                $banner = $request->file('banner');
+                $extension = $banner->getClientOriginalExtension();
+                $bannerName = 'home-banner.' . $extension;
+                $banner->move($destinationPath, $bannerName);
+                $validated['banner'] = $bannerName;
+            }
+
+            // Favicon
+            if ($request->hasFile('favicon')) {
+                $favicon = $request->file('favicon');
+                $extension = $favicon->getClientOriginalExtension();
+                $faviconName = 'favicon.' . $extension;
+                $favicon->move($destinationPath, $faviconName);
+                $validated['favicon'] = $faviconName;
+            }
+
             GarageDetails::create($validated);
 
             return redirect()->route('AutoCare.garage_details.index')
@@ -54,6 +90,42 @@ class GarageDetailsController extends Controller
             $validated = $this->validateGarage($request);
 
             $garage = GarageDetails::findOrFail($id);
+
+            // Prepare path
+            $domain = str_replace(['http://', 'https://'], '', request()->getHost());
+            $basePath = 'frontend/' . str_replace('.', '-', $domain) . '/img/logo/';
+            $destinationPath = public_path($basePath);
+
+            if (!file_exists($destinationPath)) {
+                mkdir($destinationPath, 0755, true);
+            }
+
+            // Logo
+            if ($request->hasFile('logo')) {
+                $logo = $request->file('logo');
+                $extension = $logo->getClientOriginalExtension();
+                $logoName = 'logo.' . $extension;
+                $logo->move($destinationPath, $logoName);
+                $validated['logo'] = $logoName;
+            }
+
+            // Banner
+            if ($request->hasFile('banner')) {
+                $banner = $request->file('banner');
+                $extension = $banner->getClientOriginalExtension();
+                $bannerName = 'home-banner.' . $extension;
+                $banner->move($destinationPath, $bannerName);
+                $validated['banner'] = $bannerName;
+            }
+
+            // Favicon
+            if ($request->hasFile('favicon')) {
+                $favicon = $request->file('favicon');
+                $extension = $favicon->getClientOriginalExtension();
+                $faviconName = 'favicon.' . $extension;
+                $favicon->move($destinationPath, $faviconName);
+                $validated['favicon'] = $faviconName;
+            }
             $garage->update($validated);
 
             return redirect()->route('AutoCare.garage_details.index')
@@ -89,7 +161,7 @@ class GarageDetailsController extends Controller
             'garage_name' => 'required|string|max:255',
             'company_number' => 'nullable|string|max:50',
             'vat_number' => 'nullable|string|max:50',
-            'eori_number' => 'nullable|string|max:50',
+            'eori_number' => 'nullable|string|max:20',
             'phone' => 'nullable|string|max:150',
             'mobile' => 'required|string|max:150',
             'email' => 'required|email|max:255',
@@ -98,6 +170,9 @@ class GarageDetailsController extends Controller
             'zone' => 'nullable|string|max:100',
             'country' => 'nullable|string|max:100',
             'description' => 'nullable|string|max:500',
+            'logo' => 'nullable|image|mimes:png,jpg,jpeg,webp|max:2048',
+            'banner' => 'nullable|image|mimes:png,jpg,jpeg,webp|max:4096',
+            'favicon' => 'nullable|image|mimes:png,ico|max:512',
             'garage_opening_time' => 'nullable|string|max:500',
             'social_facebook' => 'nullable|string|max:500',
             'social_instagram' => 'nullable|string|max:500',

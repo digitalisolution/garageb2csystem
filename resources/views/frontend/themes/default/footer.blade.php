@@ -5,8 +5,36 @@
             <div class="col-lg-12 ms-auto me-auto">
                 <div class="row align-items-center">
                     <div class="col-lg-5 col-md-6">
-                        <a href="{{ $garage->google_reviews_link }}"><img src="frontend/themes/default/img/google-reviews.png"
-                                alt="google reviews" class="img-adjust"></a>
+                        @if (!is_null($garage->google_reviews_stars) && !is_null($garage->google_reviews_count))
+                        <a href="{{ $garage->google_reviews_link }}" target="_blank" class="google-review-widget">
+                            <img src="frontend/themes/default/img/icon-google-review.png" alt="icon google review">
+                            <span>
+                                {{ $garage->google_reviews_stars }}
+                                @php
+                                    $fullStars = floor($garage->google_reviews_stars); // Full stars
+                                    $halfStar = ($garage->google_reviews_stars - $fullStars) >= 0.5; // Half star check
+                                @endphp
+
+                                {{-- Full stars --}}
+                                @for ($i = 1; $i <= $fullStars; $i++)
+                                    <i class="fa fa-star"></i>
+                                @endfor
+
+                                {{-- Half star --}}
+                                @if ($halfStar)
+                                    <i class="fa fa-star-half-o"></i>
+                                @endif
+
+                                {{-- Empty stars --}}
+                                @for ($i = ($fullStars + $halfStar + 1); $i <= 5; $i++)
+                                    <i class="fa fa-star-o"></i>
+                                @endfor
+
+                                {{ $garage->google_reviews_count }}+ reviews
+                            </span>
+                            <h3>Google Reviews</h3>
+                        </a>
+                        @endif
                     </div>
                     <div class="col-lg-7 col-md-6">
                         <!-- <h3 class="mb-4">Get in Touch</h3> -->

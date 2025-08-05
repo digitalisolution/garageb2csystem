@@ -30,15 +30,6 @@
                         </div>
                     @endforeach
                 </div>
-
-
-                <!-- <select class="vehicle_type form-control" id="fitting_type" name="fitting_type">
-                        @foreach ($fittingTypes as $type)
-                            <option value="{{ strtolower($type->ordertype_name) }}">
-                                {{ strtoupper(str_replace('_', ' ', $type->ordertype_name)) }}
-                            </option>
-                        @endforeach
-                    </select> -->
                 <button type="submit" id="vrm-find-tyres" class="btn btn-theme btn-block">Find Tyres</button>
             </form>
         </div>
@@ -82,14 +73,6 @@
                             </div>
                         @endforeach
                     </div>
-
-                    <!-- <select class="vehicle_type form-control" id="fitting_type" name="fitting_type">
-                        @foreach ($fittingTypes as $type)
-                            <option value="{{ strtolower($type->ordertype_name) }}">
-                                {{ strtoupper(str_replace('_', ' ', $type->ordertype_name)) }}
-                            </option>
-                        @endforeach
-                    </select> -->
                 </div>
                 <button type="submit" class="btn btn-theme btn-block">Find Tyres</button>
             </form>

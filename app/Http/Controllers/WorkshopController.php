@@ -94,16 +94,16 @@ class WorkshopController extends Controller
                     $request->session()->flash('message.content', 'Please add Due in and Due out before saving the workshop.');
                     return redirect()->back()->withInput();
                 }
-                $addressComponents = [
-                    $request->input('shipping_address_street'),
-                    $request->input('shipping_address_city'),
-                    $request->input('shipping_address_postcode'),
-                    $request->input('shipping_address_county'),
-                    $request->input('shipping_address_country'),
-                ];
+                // $addressComponents = [
+                //     $request->input('shipping_address_street'),
+                //     $request->input('shipping_address_city'),
+                //     $request->input('shipping_address_postcode'),
+                //     $request->input('shipping_address_county'),
+                //     $request->input('shipping_address_country'),
+                // ];
 
                 // Filter out empty values and join with commas
-                $fullAddress = implode(", ", array_filter($addressComponents));
+                // $fullAddress = implode(", ", array_filter($addressComponents));
                 $saveAndSyncInvoice = $request->has('save_and_sync_invoice');
                 // Data for updating an existing workshop
                 if ($request->has('id') && $request->id != null) {
@@ -172,11 +172,6 @@ class WorkshopController extends Controller
                     // dd($PartyManage);
                     // Update the workshop record
                     if (Workshop::whereId($request->id)->update($PartyManage)) {
-                        // Clear old related data
-                        // Booking::where('workshop_id', $request->id)->forceDelete();
-                        // WorkshopService::where('workshop_id', $request->id)->forceDelete();
-                        // WorkshopTyre::where('workshop_id', $request->id)->forceDelete();
-                        // Save updated product and service data
                         $this->saveWorkshopData($request, $request->id);
                         if ($saveAndSyncInvoice) {
                             $this->convertToInvoice($request->id);
@@ -968,7 +963,7 @@ class WorkshopController extends Controller
             \Log::error("Error trashing workshop ID: $id", ['error' => $e->getMessage()]);
 
             // Flash error message
-            session()->flash('status', ['danger', 'Operation Failed!']);
+            session()->flash('status', ['danger', 'Operation Failed!'.$e->getMessage()]);
         }
 
         // Prepare view data
@@ -1096,16 +1091,6 @@ class WorkshopController extends Controller
             // Add formatted discount to the workshop object
             $workshop->formatted_discount = $formattedDiscount;
 
-            // $workshop_products_estimateds = DB::table('workshop_products_estimateds')
-            //     ->join('products', 'products.id', '=', 'workshop_products_estimateds.product_id_es')
-            //     ->select('products.product_name', 'workshop_products_estimateds.product_quantity_es', 'workshop_products_estimateds.product_price_es as ProductWorkshopPrice', 'products.hsn as ProductHsn', 'products.unit_price_exit as UnitExitPrice', 'products.gst as ProductGst')
-            //     ->where('workshop_id_es', $getIndivisualWorkshopDetail['workshop_id'])->get();
-
-
-            // $WorkshopProduct = DB::table('workshop_products')
-            //     ->join('products', 'products.id', '=', 'workshop_products.product_id')
-            //     ->select('products.product_name', 'workshop_products.product_quantity', 'workshop_products.product_price as ProductWorkshopPrice', 'products.hsn as ProductHsn', 'products.unit_price_exit as UnitExitPrice', 'products.gst as ProductGst')
-            //     ->where('workshop_id', $getIndivisualWorkshopDetail['workshop_id'])->get();
             $WorkshopTyre = WorkshopTyre::select('workshop_tyres.*', 'workshop_tyres.description', 'workshop_tyres.quantity', 'workshop_tyres.tax_class_id', 'workshop_tyres.fitting_type as orderType', 'workshop_tyres.price as TyreWorkshopPrice', 'workshop_tyres.product_ean as product_ean', 'workshop_tyres.supplier as tyre_source', 'workshop_tyres.price as UnitExitPrice', 'workshop_tyres.tax_class_id as ProductVat')
                 ->where('workshop_id', $workshop['workshop_id'])->where('ref_type', 'workshop')->get();
             $WorkshopService = DB::table('workshop_services')
@@ -1115,15 +1100,12 @@ class WorkshopController extends Controller
                 ->where('vehicle_reg_number', $workshop['vehicle_reg_number'])->get();
             $paymentHistory = DB::table('customer_debit_logs')
                 ->where('workshop_id', $workshop['workshop_id'])->get();
-            // $paymentHistory = $this->paymentHistoryService->getPaymentHistory($id);
-            // $viewData['WorkshopProduct'] = $WorkshopProduct;
             $viewData['WorkshopTyre'] = $WorkshopTyre;
             $viewData['WorkshopService'] = $WorkshopService;
             $viewData['WorkshopVehicle'] = $WorkshopVehicle;
-            $viewData['workshop'] = $workshop; // Pass the workshop object
+            $viewData['workshop'] = $workshop;
             $viewData['workshopId'] = $workshop->id;
             $viewData['paymentHistory'] = $paymentHistory;
-            // $viewData['workshop_products_estimateds'] = $workshop_products_estimateds;
             $viewData['workshopId'] = "";
             // dd($viewData);
             return view('AutoCare.workshop.invoice', $viewData);
@@ -1156,7 +1138,7 @@ class WorkshopController extends Controller
             } elseif ($invoice->discount_type === 'amount') {
                 $formattedDiscount = '';
             } else {
-                $formattedDiscount = ''; // Default if no discount is set
+                $formattedDiscount = '';
             }
 
             // Add formatted discount to the invoice object
@@ -1166,7 +1148,7 @@ class WorkshopController extends Controller
         }
         // Fetch and sanitize garage name for folder path
         $garageName = getGarageDetails()->garage_name;
-        $safeGarageName = Str::slug($garageName, '_'); // Convert to a safe folder name
+        $safeGarageName = Str::slug($garageName, '_');
 
         // Define the PDF path dynamically
         $pdfPath = "invoices/{$safeGarageName}/INV-{$invoice->workshop_id}.pdf";
@@ -1202,9 +1184,7 @@ class WorkshopController extends Controller
     {
         // Fetch the invoice details
         $invoice = Invoice::where('workshop_id', $id)->firstOrFail();
-        $workshopTyreData = WorkshopTyre::where('workshop_id', '=', $id)->where('ref_type', 'workshop')->get();
-        $workshopServiceData = WorkshopService::where('workshop_id', '=', $id)->where('ref_type', 'workshop')->get();
-        $paymentHistory = DB::table('customer_debit_logs')->where('workshop_id', $id)->get();
+
         if ($invoice) {
             // Format discount based on type
             if ($invoice->discount_type === 'percentage' && $invoice->discount_value > 0) {

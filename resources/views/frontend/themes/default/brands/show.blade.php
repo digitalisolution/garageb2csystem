@@ -1,7 +1,4 @@
 @extends('layouts.app')
-@section('meta_title', $metaTitle)
-@section('meta_keywords', $metaKeywords)
-@section('meta_description', $metaDescription)
 @section('content')
     <div class="breadcrumb-area brand_breadcrumb">
         @if (!empty($brand->bannerimage))
@@ -17,10 +14,16 @@
         <div class="brand_name">
             <h1>{{ $brand->name }} Tyres</h1>
         </div>
+        @php
+            $imageName = $brand->image ?? '';
+            $cdnLogoBase = config('cdn.brandlogo_cdn_url');
+            $cdnLogoUrl = $cdnLogoBase . $imageName;
+            $localLogoUrl = asset('frontend/themes/default/img/brand-logo/' . $imageName);
+            $defaultLogoUrl = asset('frontend/themes/default/img/brand-logo/no-image.png');
+        @endphp
         <div class="brand_logo">
             @if ($brand->image)
-                <img src="{{ asset('frontend/themes/default/img/brand-logo/' . $brand->image) }}" alt="{{ $brand->name }}"
-                    height="80">
+                <img src="{{ $cdnLogoUrl }}"alt="{{ $brand->name }}" class="default-img" width="auto" height="80" onerror="this.onerror=null;this.src='{{ $defaultLogoUrl }}';">
             @endif
 
         </div>

@@ -1,19 +1,5 @@
 @extends('layouts.app')
-
 @section('content')
-
-<!-- <iframe
-  src="https://www.digitalideasltd.co.uk/plugin/search"
-  width="100%"
-  height="450"
-  frameborder="0"
-  style="border: 1px solid #ddd; border-radius: 6px;"
-  title="Tyre Search Plugin"
-></iframe> -->
-
-
-<!-- <script src="https://gktmotcentre.tyreservepro.co.uk/js/plugin.js?v={{ time() }}"></script> -->
-
 <div class="slider-area">
     <div class="container-fluid">
         <div class="row">
@@ -45,5 +31,4 @@
 </div>
 <x-service-list />
 <x-Html-template-list />
-<!-- <x-html-template-list templateName="Special Offer" /> -->
 @endsection

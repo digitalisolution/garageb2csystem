@@ -33,31 +33,63 @@ class BrandController extends Controller
         return view('brands.index', compact('brands', 'google_tag_manager', 'tag_manager', 'analytics'));
 
     }
-    public function show($slug)
-    {
-        // Retrieve the brand by its slug
-        $brand = tyre_brands::where('slug', $slug)->firstOrFail();
+  public function show($slug)
+{
+    // Retrieve the brand by its slug
+    $brand = tyre_brands::where('slug', $slug)->firstOrFail();
 
-        // Retrieve the garage details
-        $garage = GarageDetails::find(1); // Replace 1 with the appropriate ID or query to get the garage record
-        $garageName = $garage->garage_name ?? 'Garage Solutions';
+    // Retrieve the garage details
+    $garage = GarageDetails::find(1); // Replace 1 with dynamic garage if needed
+    $garageName = $garage->garage_name ?? 'Garage Solutions';
 
-        // Retrieve meta settings by their names
-        $metaTitle = MetaSettings::where('name', 'manu_meta_title')->value('content') ?? 'Default Meta Title';
-        $metaDescription = MetaSettings::where('name', 'manu_meta_description')->value('content') ?? 'Default Meta Description';
-        $metaKeywords = MetaSettings::where('name', 'manu_meta_keywords')->value('content') ?? 'Default Meta Keywords';
-        $google_tag_manager = MetaSettings::where('name', 'google_tag_manager')->value('content') ?? '';
-        $tag_manager = MetaSettings::where('name', 'tag_manager')->value('content') ?? '';
-        $analytics = MetaSettings::where('name', 'analytics')->value('content') ?? '';
+    // Retrieve meta settings by their names
+    $metaTitles = MetaSettings::where('name', 'manu_meta_title')->value('content') ?? 'Default Meta Title';
+    $metaDescriptions = MetaSettings::where('name', 'manu_meta_description')->value('content') ?? 'Default Meta Description';
+    $metaSettingsKeywords = MetaSettings::where('name', 'manu_meta_keywords')->value('content');
+    $google_tag_manager = MetaSettings::where('name', 'google_tag_manager')->value('content') ?? '';
+    $tag_manager = MetaSettings::where('name', 'tag_manager')->value('content') ?? '';
+    $analytics = MetaSettings::where('name', 'analytics')->value('content') ?? '';
 
-        // Replace placeholders in meta tags
-        $metaTitle = str_replace(['$store', '$brand'], [$garageName, $brand->name], $metaTitle);
-        $metaDescription = str_replace(['$store', '$brand'], [$garageName, $brand->name], $metaDescription);
-        $metaKeywords = str_replace(['$store', '$brand'], [$garageName, $brand->name], $metaKeywords);
+    // Replace placeholders in meta tags
+    $metaTitle = str_replace(['$store', '$brand'], [$garageName, $brand->name], $metaTitles);
+    $metaDescription = str_replace(['$store', '$brand'], [$garageName, $brand->name], $metaDescriptions);
 
-        // Return the view with brand and meta data
-        return view('brands.show', compact('brand', 'metaTitle', 'metaDescription', 'metaKeywords', 'google_tag_manager', 'tag_manager', 'analytics'));
+    // Determine metaKeywords priority: brand->meta_keywords > metaSettingsKeywords > brand name
+    if (!empty($brand->meta_title)) {
+        $metaTitle = str_replace(['$store', '$brand'], [$garageName, $brand->name], $brand->meta_title);
+    } elseif (!empty($metaTitles)) {
+        $metaTitle = str_replace(['$store', '$brand'], [$garageName, $brand->name], $metaTitles);
+    } else {
+        $metaTitle = $brand->name;
     }
+
+     if (!empty($brand->meta_description)) {
+        $metaDescription = str_replace(['$store', '$brand'], [$garageName, $brand->name], $brand->meta_description);
+    } elseif (!empty($metaDescriptions)) {
+        $metaDescription = str_replace(['$store', '$brand'], [$garageName, $brand->name], $metaDescriptions);
+    } else {
+        $metaDescription = $brand->name;
+    }
+
+     if (!empty($brand->meta_keywords)) {
+        $metaKeywords = str_replace(['$store', '$brand'], [$garageName, $brand->name], $brand->meta_keywords);
+    } elseif (!empty($metaSettingsKeywords)) {
+        $metaKeywords = str_replace(['$store', '$brand'], [$garageName, $brand->name], $metaSettingsKeywords);
+    } else {
+        $metaKeywords = $brand->name;
+    }
+
+    // Return the view with brand and meta data
+    return view('brands.show', compact(
+        'brand',
+        'metaTitle',
+        'metaDescription',
+        'metaKeywords',
+        'google_tag_manager',
+        'tag_manager',
+        'analytics'
+    ));
+}
 
 }
 

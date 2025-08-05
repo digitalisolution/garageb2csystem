@@ -303,6 +303,17 @@
                                                                 </a>
                                                             </li>
                                                         @endif
+                                                        <li>
+                                                        <form action="{{ url('/AutoCare/workshop/void/' . $value->id) }}"
+                                                            method="POST"
+                                                            onsubmit="return confirm('Are you sure you want to void this workshop?');">
+                                                            @csrf
+                                                            @method('POST')
+                                                            <button type="submit" class="dropdown-item btn text-danger btn-sm">
+                                                                <i class="fa fa-remove"></i> Void Invoice
+                                                            </button>
+                                                        </form>
+                                                    </li>
                                                     @else
                                                         <li>
                                                             <a href="{{ url('/') }}/AutoCare/workshop/addinvoice/{{ $value->id }}"
@@ -374,7 +385,7 @@
                                                         </a>
                                                     </li>
 
-
+                                                    @if ($role_id == 1)    
                                                     <li>
                                                         <form action="{{ url('/AutoCare/workshop/trash/' . $value->id) }}"
                                                             method="POST"
@@ -386,6 +397,7 @@
                                                             </button>
                                                         </form>
                                                     </li>
+                                                    @endif
                                                 </ul>
                                             </div>
                                         </td>

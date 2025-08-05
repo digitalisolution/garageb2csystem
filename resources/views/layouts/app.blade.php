@@ -41,7 +41,7 @@ $favicon = asset("frontend/themes/{$garage->theme}/img/logo/{$garage->favicon}")
 }
 // Default fallback
 if (!$favicon) {
-$favicon = asset("frontend/themes/default/img/favicon.png") . '?v=' . time();
+$favicon = asset("frontend/themes/default/img/logo/favicon.png") . '?v=' . time();
 }
 @endphp
     <link rel="icon" type="image/png" href="{{ $favicon }}">

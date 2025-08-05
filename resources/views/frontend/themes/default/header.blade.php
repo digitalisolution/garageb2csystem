@@ -11,7 +11,7 @@ $domain = str_replace('.', '-', $domain);
 // Set the path for domain-specific logo if it exists
 $domainLogoPath = public_path("frontend/{$domain}/img/logo/{$garage->logo}?v={{ time() }}");
 $themeLogoPath = public_path("frontend/themes/{$garage->theme}/img/logo/{$garage->logo}?v={{ time() }}");
-$defaultLogoPath = public_path("frontend/themes/theme/img/logo/logo.png?v={{ time() }}");
+$defaultLogoPath = public_path("frontend/themes/default/img/logo/logo.png?v={{ time() }}");
 ?>
 
                         @if(!empty($garage->logo))
@@ -29,7 +29,7 @@ $defaultLogoPath = public_path("frontend/themes/theme/img/logo/logo.png?v={{ tim
                         @else
                             <!-- Fallback logo if neither domain-specific nor theme-specific logo exists -->
                             <a href="/">
-                                <img src="{{ asset('frontend/themes/theme/img/logo/logo.png') }}?v={{ time() }}" alt="Logo" loading="lazy">
+                                <img src="{{ asset('frontend/themes/default/img/logo/logo.png') }}?v={{ time() }}" alt="Logo" loading="lazy">
                             </a>
                         @endif
 

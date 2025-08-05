@@ -90,21 +90,49 @@
                         <input value="{{ old('garage_opening_time', $garage->garage_opening_time ?? '') }}"
                             class="form-control" type="text" id="garage_opening_time" name="garage_opening_time">
                     </div>
+                    @php
+                        $domain = str_replace(['http://', 'https://'], '', request()->getHost());
+                        $pathPrefix = 'frontend/' . str_replace('.', '-', $domain) . '/img/logo/';
+                        $fallbackPrefix = 'frontend/themes/default/img/logo/';
+                    @endphp
+
+                    {{-- Logo --}}
                     <div class="col-lg-4 col-md-6 col-12 form-group">
                         <label for="logo">Logo:</label>
-                        <input value="{{ old('logo', $garage->logo ?? '') }}" class="form-control" type="file" id="logo"
-                            name="logo">
+                        <input type="file" name="logo" id="logo" class="form-control" accept="image/*">
+
+                        @php
+                            $logoUrl = asset($pathPrefix . 'logo.png');
+                            $fallbackLogoUrl = asset($fallbackPrefix . 'logo.png');
+                        @endphp
+                        <img src="{{ $logoUrl }}?v={{ time() }}" onerror="this.onerror=null;this.src='{{ $fallbackLogoUrl }}';" 
+                             alt="Logo" style="width:100px;">
                     </div>
+
+                    {{-- Banner --}}
                     <div class="col-lg-4 col-md-6 col-12 form-group">
                         <label for="banner">Banner:</label>
-                        <input value="{{ old('banner', $garage->banner ?? '') }}" class="form-control" type="file"
-                            id="banner" name="banner">
+                        <input type="file" name="banner" id="banner" class="form-control" accept="image/*">
+                        @php
+                            $bannerUrl = asset($pathPrefix . 'home-banner.jpg');
+                            $fallbackBannerUrl = asset($fallbackPrefix . 'home-banner.jpg');
+                        @endphp
+                        <img src="{{ $bannerUrl }}?v={{ time() }}" onerror="this.onerror=null;this.src='{{ $fallbackBannerUrl }}';" 
+                             alt="Banner" style="width:180px;height:75px;">
                     </div>
+
+                    {{-- Favicon --}}
                     <div class="col-lg-4 col-md-6 col-12 form-group">
                         <label for="favicon">Favicon:</label>
-                        <input value="{{ old('favicon', $garage->favicon ?? '') }}" class="form-control" type="file"
-                            id="favicon" name="favicon">
+                        <input type="file" name="favicon" id="favicon" class="form-control" accept="image/*">
+                        @php
+                            $faviconUrl = asset($pathPrefix . 'favicon.png');
+                            $fallbackFaviconUrl = asset($fallbackPrefix . 'favicon.png');
+                        @endphp
+                        <img src="{{ $faviconUrl }}?v={{ time() }}" onerror="this.onerror=null;this.src='{{ $fallbackFaviconUrl }}';" 
+                             alt="Favicon" style="width:32px;">
                     </div>
+
                     <div class="col-lg-4 col-md-6 col-12 form-group">
                         <label for="social_facebook">Facebook:</label>
                         <input value="{{ old('social_facebook', $garage->social_facebook ?? '') }}" class="form-control"

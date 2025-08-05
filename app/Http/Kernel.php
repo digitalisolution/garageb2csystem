@@ -75,7 +75,7 @@ class Kernel extends HttpKernel
         'dashboard' => \App\Http\Middleware\RedirectIfAuthenticatedToDashboard::class,
         'plugin.domain' => \App\Http\Middleware\EnsurePluginDomain::class,
         // 'validate.plugin.client' => \App\Http\Middleware\ValidatePluginClient::class,
-        'throttle.otp' => \App\Http\Middleware\ThrottleOtpRequests::class,
+        // 'throttle.otp' => \App\Http\Middleware\ThrottleOtpRequests::class,
     ];
 
     /**

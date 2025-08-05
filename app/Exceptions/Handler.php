@@ -45,10 +45,8 @@ class Handler extends ExceptionHandler
             return response()->view('errors.410', [], 410);
         }
 
-        if ($exception instanceof \Illuminate\Http\Exceptions\ThrottleRequestsException) {
-        return response()->json([
-            'message' => 'You have exceeded the OTP request limit. Please try again in 24 hours.',
-        ], 429);
+        if (method_exists($exception, 'getStatusCode') && $exception->getStatusCode() == 429) {
+        return response()->view('errors.429-retry', [], 429);
         }
 
         // Handle other types of exceptions or errors

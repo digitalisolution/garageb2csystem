@@ -2,9 +2,9 @@
 * File Name :
 * Type :
 * Description :
-* Author : Ashtosh Kumar Choubey
-* Contact : 9658476170
-* Email : contact@worldgyan.com
+* Author : Digital Ideas
+* Contact : 123456789
+* Email : info@digitalideasltd.co.uk
 * Date : 12/12/2018
 * Modified By :
 * Date of Modification :
