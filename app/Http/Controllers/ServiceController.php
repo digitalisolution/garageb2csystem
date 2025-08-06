@@ -41,22 +41,25 @@ class ServiceController extends Controller
                 'name' => 'required|string|max:100',
                 'service_lead_time' => 'nullable|integer|max:50',
                 'content' => 'nullable|string',
-                'slug' => 'nullable|string|max:255|unique:car_services,slug',
-                'image' => 'nullable|image|mimes:jpeg,png,webp,jpg,gif|max:2048', // Validate image
-                'inner_image' => 'nullable|image|mimes:jpeg,png,webp,jpg,gif|max:2048', // Validate image
-                'service_banner_path' => 'nullable|image|mimes:jpeg,webp,png,jpg,gif|max:2048',
+                'service_features' => 'nullable|string',
+                'service_whats_include' => 'nullable|string',
+                'slug' => 'nullable|string|max:100|unique:car_services,slug',
+                'image' => 'nullable|image|mimes:jpeg,png,webp,jpg,gif|max:2048',
+                'inner_image' => 'nullable|image|mimes:jpeg,png,webp,jpg,gif|max:2048',
+                'service_banner_path' => 'nullable|image|mimes:jpeg,png,webp,jpg,gif|max:2048',
                 'display_status' => 'required|integer',
                 'status' => 'required|boolean',
                 'tax_class_id' => 'required|integer',
                 'sort_order' => 'nullable|integer',
                 'price_type' => 'required|string|in:fixed-price,call-now,quote-now,free',
                 'cost_price' => 'required|numeric|min:0',
-                'meta_title' => 'nullable|string|max:150',
-                'meta_description' => 'nullable|string',
-                'meta_keywords' => 'nullable|string|max:255',
+                'meta_title' => 'nullable|string|max:100',
+                'meta_description' => 'nullable|string|max:255',
+                'meta_keywords' => 'nullable|string|max:100',
                 'robots_noindex_follow' => 'nullable|integer',
                 'exclude_sitemap' => 'nullable|integer',
             ]);
+
 
             $domain = str_replace(['http://', 'https://'], '', request()->getHost());
             if ($request->hasFile('image')) {
@@ -122,23 +125,27 @@ class ServiceController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:100',
-            'service_lead_time' => 'nullable|integer|max:100',
+            'service_lead_time' => 'nullable|integer|max:50',
             'content' => 'nullable|string',
+            'service_features' => 'nullable|string',
+            'service_whats_include' => 'nullable|string',
             'slug' => 'nullable|string|max:255|unique:car_services,slug,' . $service->service_id . ',service_id',
             'image' => 'nullable|image|mimes:jpeg,png,webp,jpg,gif|max:2048',
             'inner_image' => 'nullable|image|mimes:jpeg,png,webp,jpg,gif|max:2048',
-            'service_banner_path' => 'nullable|image|mimes:jpeg,webp,png,jpg,gif|max:2048',
+            'service_banner_path' => 'nullable|image|mimes:jpeg,png,webp,jpg,gif|max:2048',
             'display_status' => 'required|integer',
-            'status' => 'required|integer',
+            'status' => 'required|boolean',
+            'tax_class_id' => 'required|integer',
             'sort_order' => 'nullable|integer',
             'price_type' => 'required|string|in:fixed-price,call-now,quote-now,free',
             'cost_price' => 'required|numeric|min:0',
-            'meta_title' => 'nullable|string|max:150',
-            'meta_description' => 'nullable|string',
-            'meta_keywords' => 'nullable|string|max:255',
+            'meta_title' => 'nullable|string|max:100',
+            'meta_description' => 'nullable|string|max:255',
+            'meta_keywords' => 'nullable|string|max:100',
             'robots_noindex_follow' => 'nullable|integer',
             'exclude_sitemap' => 'nullable|integer',
         ]);
+
 
         $data = collect($validated)->except(['image', 'inner_image', 'service_banner_path'])->toArray();
         try {

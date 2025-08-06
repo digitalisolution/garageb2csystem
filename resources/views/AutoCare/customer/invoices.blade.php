@@ -37,7 +37,7 @@
 							</tr>
 						</thead>
 						<tbody>
-							@forelse ($invoices as $invoice)
+							@foreach ($invoices as $invoice)
 								<tr>
 									<td>INV-{{ $invoice->workshop_id }}</td>
 									<td>{{ \Carbon\Carbon::parse($invoice->created_at)->format('d-m-Y') }}</td>
@@ -60,11 +60,7 @@
 											target="_blank" class="btn btn-info btn-sm text-white"><i class="fa fa-eye"></i></a>
 									</td>
 								</tr>
-							@empty
-								<tr>
-									<td colspan="5">No invoices found.</td>
-								</tr>
-							@endforelse
+							@endforeach
 						</tbody>
 					</table>
 				</div>

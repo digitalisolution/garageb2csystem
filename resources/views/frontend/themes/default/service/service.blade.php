@@ -19,78 +19,49 @@
                 </ul>
             </div>
         </div>
-    </div>
-
-    <!-- <div class="quote_slide slide-menu-right">
-        <div class="d-flex gap-3 align-items-center">
-            <h4 class="m-0">Request an Estimate</h4>
-            <button class="close-menu ml-auto">Close &rarr;</button>
-        </div>
-    </div> 
-
-<button class="toggle-slide-right">Slide Quote Right</button>-->
-
-
-
-<style type="text/css">
-/* Slide-in modal from right */
-.modal.right .modal-dialog {
-    position: fixed;
-    right: 0;
-    margin: 0;
-    top: 0;
-    height: 100%;
-    transform: translateX(100%);
-    transition: transform 0.4s ease-in-out;
-    max-width: 60%;
-    overflow: auto;
-    width: 100%;
-}
-
-.modal.right .modal-content {
-    border: none;
-    border-radius: 0;
-}
-
-.modal.right.show .modal-dialog {
-    transform: translateX(0);
-}
-
-</style>    
-<div class="pt-70 pb-70">
+    </div>   
+<div class="pt-30 pb-30">
         <div class="container">
-            <div class="row">
-                <div class="col-lg-9">
+
+                @if($vehicleData)
+                        <div class="vehicle_details-wrap p-3 rounded mb-4">
+                            <h4 class="text-white">Your Vehicle</h4>
+                            <div class="vehicle_bank" id="vehicleInfo">
+                                
+                                @if(isset($vehicleData['regNumber']) && !empty($vehicleData['regNumber']))
+                                    <div class="service_reg"><span id="vehicleEngine">{{$vehicleData['regNumber']}}</span></div>
+                                @endif
+                                <p class="mb-0"><strong id="vehicleMake">{{$vehicleData['make']}}</strong> </p>
+                                <p class="mb-0"><strong id="vehicleModel">{{$vehicleData['model']}}</strong> </p>
+                                <p class="mb-0"><strong id="vehicleYear">{{$vehicleData['year']}}</strong> </p>
+                                <p class="mb-0"><strong id="vehicleEnginecc">{{$vehicleData['engine']}}</strong></p>
+
+                            </div>
+                        </div>
+                @endif
                     <div class="service_bank">
                         @foreach ($services as $service)
                             <div class="service_card">
-                                @if($service->cost_price > 0 && $service->price_type == 'fixed-price')
-                                    <span class="cost_price"> Cost:
-                                        &pound;{{ $service->tax_class_id == 9 ? number_format($service->cost_price * 1.20, 2) : number_format($service->cost_price, 2) }}
-                                    </span>
-                                @elseif($service->price_type == 'free')
-                                    <span class="cost_price">Free</span>
-                                @endif
+                                
 
-                                <div class="row align-items-center">
                                     @php
                                         $imageName = $service->image;
                                         $innerimageName = $service->inner_image;
 
                                         $customImage = $imageName ? public_path($customImagePath . $imageName) : null;
                                         $defaultImage = $imageName ? public_path($defaultImagePath . $imageName) : null;
-                                        $fallbackNoImage = public_path($defaultImagePath . 'no-image.png');
+                                        $fallbackNoImage = public_path($defaultImagePath . 'no-image.webp');
 
                                         $custominnerImage = $innerimageName ? public_path($custominnerImagePath . $innerimageName) : null;
                                         $defaultinnerImage = $innerimageName ? public_path($defaultinnerImagePath . $innerimageName) : null;
-                                        $fallbackNoinnerImage = public_path($defaultinnerImagePath . 'no-image.png');
+                                        $fallbackNoinnerImage = public_path($defaultinnerImagePath . 'no-image.webp');
 
                                         if ($imageName && file_exists($customImage)) {
                                             $finalImage = versioned_asset($customImagePath . $imageName);
                                         } elseif ($imageName && file_exists($defaultImage)) {
                                             $finalImage = versioned_asset($defaultImagePath . $imageName);
                                         } else {
-                                            $finalImage = versioned_asset($defaultImagePath . 'no-image.png');
+                                            $finalImage = versioned_asset($defaultImagePath . 'no-image.webp');
                                         }
 
                                         if ($innerimageName && file_exists($custominnerImage)) {
@@ -98,24 +69,27 @@
                                         } elseif ($innerimageName && file_exists($defaultinnerImage)) {
                                             $finalinnerImage = versioned_asset($defaultinnerImagePath . $innerimageName);
                                         } else {
-                                            $finalinnerImage = versioned_asset($defaultinnerImagePath . 'no-image.png');
+                                            $finalinnerImage = versioned_asset($defaultinnerImagePath . 'no-image.webp');
                                         }
                                     @endphp
-                                    <div class="col-lg-4 col-md-5 col-12">
                                         @if($service->inner_image)
-                                            <img src="{{ $finalinnerImage }}" alt="{{ $service->name }}" class="img-bank"
-                                                onerror="this.onerror=null; this.src='{{ versioned_asset('frontend/themes/default/img/service/no-image.png') }}';">
+                                            <img src="{{ $finalinnerImage }}" alt="{{ $service->name }}" class="service_image"
+                                                onerror="this.onerror=null; this.src='{{ versioned_asset('frontend/themes/default/img/service/no-image.webp') }}';">
                                         @elseif($service->image)
-                                            <img src="{{ $finalImage }}" alt="{{ $service->name }}" class="img-bank"
-                                                onerror="this.onerror=null; this.src='{{ versioned_asset('frontend/themes/default/img/service/no-image.png') }}';">
+                                            <img src="{{ $finalImage }}" alt="{{ $service->name }}" class="service_image"
+                                                onerror="this.onerror=null; this.src='{{ versioned_asset('frontend/themes/default/img/service/no-image.webp') }}';">
                                         @else
-                                            <img src="{{ versioned_asset('frontend/themes/default/img/service/no-image.png') }}"
-                                                alt="{{ $service->name }}" class="img-bank">
+                                            <img src="{{ versioned_asset('frontend/themes/default/img/service/no-image.webp') }}"
+                                                alt="{{ $service->name }}" class="service_image">
                                         @endif
-                                    </div>
 
-                                    <div class="col-lg-8 col-md-7 col-12">
                                         <h4>{{ $service->name }}</h4>
+                                        @if($service->cost_price > 0 && $service->price_type == 'fixed-price')
+                                            <span class="cost_price"> &pound;{{ $service->tax_class_id == 9 ? number_format($service->cost_price * 1.20, 2) : number_format($service->cost_price, 2) }}
+                                            </span>
+                                        @elseif($service->price_type == 'free')
+                                            <span class="cost_price">Free</span>
+                                        @endif
                                         <p><i class="pe-7s-timer"></i> Work Time</p>
                                         <ul class="tick">
                                             <li>Genuine Spare Parts</li>
@@ -134,7 +108,7 @@
                                                 <a href="tel:{{ $garage->mobile }}" class="btn btn-theme-select">Call Now</a>
                                             @elseif($service->price_type == 'quote-now')
                                                 <a href="javascript:void(0);" class="btn btn-theme-select btn-enquiry-modal"
-                                                    data-id="{{ $service->service_id }}" data-name="{{ $service->name }}">Quote
+                                                    data-id="{{ $service->service_id }}" data-name="{{ $service->name }}" data-bs-target="#staticBackdrop">Quote
                                                     Now</a>
                                                      @include('service/quote-form')
                                             @elseif($service->cost_price = 0 && $service->price_type == 'free')
@@ -145,37 +119,19 @@
                                                 <a href="tel:{{ $garage->mobile }}" class="btn btn-theme-select">Call Now</a>
                                             @endif
                                         </div>
-                                    </div>
 
-                                </div>
                             </div>
                         @endforeach
                     </div>
-                </div>
-                @if($vehicleData)
-                    <div class="col-lg-3">
-                        <div class="vehicle_details-wrap p-4 rounded mb-4">
-                            <h3 class="text-white mb-4">Your Vehicle</h3>
-                            <div class="vehicle_bank" id="vehicleInfo">
-                                <h4 class="text-uppercase"><strong id="vehicleReg"></strong></h4>
-                                @if(isset($vehicleData['regNumber']) && !empty($vehicleData['regNumber']))
-                                    <p class="mb-0"><strong id="vehicleEngine"
-                                            class="text-uppercase badge-dark rounded">{{$vehicleData['regNumber']}}</strong></p>
-                                @endif
-                                <p class="mb-0"><strong id="vehicleMake">{{$vehicleData['make']}}</strong></p>
-                                <p class="mb-0"><strong id="vehicleModel">{{$vehicleData['model']}}</strong></p>
-                                <p class="mb-0"><strong id="vehicleYear">{{$vehicleData['year']}}</strong></p>
-                                <p class="mb-0"><strong id="vehicleEnginecc">{{$vehicleData['engine']}}</strong></p>
-                            </div>
-                        </div>
-                    </div>
-                @endif
-            </div>
         </div>
     </div>
-@endsection
 
 
+<style type="text/css">
+    .modal.right .modal-dialog {position: fixed;right: 0;margin: 0;top: 0;height: 100%;transform: translateX(100%);transition: transform 0.4s ease-in-out;max-width: 60%;overflow: auto;width: 100%;}
+    .modal.right .modal-content {border: none;border-radius: 0;}
+    .modal.right.show .modal-dialog {transform: translateX(0);}
+</style> 
 <!-- SweetAlert2 CDN -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.0/dist/sweetalert2.all.min.js"></script>
 <script>
@@ -279,3 +235,4 @@
         });
     });
 </script>
+@endsection

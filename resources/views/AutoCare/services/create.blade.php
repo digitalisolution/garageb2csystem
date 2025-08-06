@@ -66,9 +66,23 @@
 
                     <!-- Long Description Field -->
                     <div class="col-12 form-group">
-                        <label for="long_description">Content</label>
+                        <label for="long_description">Service Content</label>
                         <textarea name="content" rows="6" id="content"
                             class="form-control">{{ $service->content ?? old('content') }}</textarea>
+                    </div>
+
+                    <!-- Service Features Field -->
+                    <div class="col-6 form-group">
+                        <label for="service_features">Service Features</label>
+                        <textarea name="service_features" rows="2" id="service_features"
+                            class="form-control">{{ $service->service_features ?? old('service_features') }}</textarea>
+                    </div>
+
+                    <!-- Service Whats Include Field -->
+                    <div class="col-6 form-group">
+                        <label for="service_whats_include">Whats Include</label>
+                        <textarea name="service_whats_include" rows="2" id="service_whats_include"
+                            class="form-control">{{ $service->service_whats_include ?? old('service_whats_include') }}</textarea>
                     </div>
 
                     <!-- Image Field -->

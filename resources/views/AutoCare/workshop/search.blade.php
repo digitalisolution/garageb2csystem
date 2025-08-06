@@ -235,7 +235,7 @@
                                         $due_out = isset($value->due_out) ? date('d/m/Y', strtotime($value->due_out)) : '';
                                         $workshop_date = isset($value->workshop_date) ? date('d/m/Y H:i:s', strtotime($value->workshop_date)) : '';
                                     @endphp
-                                    <tr>
+                                   <tr class="{{ ($value->is_void ?? false) || ($value->invoice->is_void ?? false) ? 'table-danger' : '' }}">
                                         <td>{{ $workshop_date }}</td>
                                         <td>{{ $value->id }}</td>
                                         <td>{{ $value->name }}</td>
@@ -303,6 +303,7 @@
                                                                 </a>
                                                             </li>
                                                         @endif
+                                                        @if($value->is_void === 0)
                                                         <li>
                                                         <form action="{{ url('/AutoCare/workshop/void/' . $value->id) }}"
                                                             method="POST"
@@ -314,6 +315,7 @@
                                                             </button>
                                                         </form>
                                                     </li>
+                                                    @endif
                                                     @else
                                                         <li>
                                                             <a href="{{ url('/') }}/AutoCare/workshop/addinvoice/{{ $value->id }}"

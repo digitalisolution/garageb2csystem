@@ -1,5 +1,4 @@
-<div class="modal fade right" id="quoteEnquiryModal" tabindex="-1" role="dialog">
-
+<div class="modal fade right" id="quoteEnquiryModal" tabindex="-1" role="dialog" data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="staticBackdropLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl" role="document">
         <div class="modal-content">
             <form id="quoteEnquiryForm" method="POST" action="{{ route('service.enquiry.submit') }}">
@@ -113,14 +112,15 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-lg-12 col-md-12 col-12">
+                        <div class="col-lg-6 col-md-12 col-12">
                             <x-recaptcha />
+                        </div>
+                        <div class="col-lg-6 col-md-12 col-12 text-right">
+                            <button type="submit" class="btn btn-theme border"><strong>Send Now</strong></button>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-theme border"><strong>Send Now</strong></button>
-                </div>
+
             </form>
         </div>
     </div>
@@ -300,4 +300,5 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 });
+
 </script>

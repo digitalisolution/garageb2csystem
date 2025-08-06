@@ -296,7 +296,7 @@ class CustomerController extends Controller
         $customer = Customer::findOrFail($id);
 
         // Fetch workshops with pagination and eager loading
-        $workshops = Workshop::where('customer_id', $customer->id)
+        $workshops = Workshop::where('customer_id', $customer->id)->where('is_void', false)
             ->with('items')->get();
 
         // Transform only the items (not the entire paginated object)
@@ -309,7 +309,7 @@ class CustomerController extends Controller
     public function invoices(Request $request, $id)
     {
         $customer = Customer::findOrFail($id); // Fetch customer by ID
-        $invoices = Invoice::where('customer_id', $customer->id)
+        $invoices = Invoice::where('customer_id', $customer->id)->where('is_void', false)
             ->with('items')->get(); // Assuming a relationship exists in the Customer model
 
         $viewData['header_link'] = HeaderLink::where("menu_id", '3')
@@ -318,10 +318,10 @@ class CustomerController extends Controller
             ->get();
 
         // Calculate invoice counts for each status
-        $unpaidCount = $customer->invoices()->where('payment_status', 0)->count();
-        $paidCount = $customer->invoices()->where('payment_status', 1)->count();
-        $overdueCount = $customer->invoices()->where('payment_status', 2)->count();
-        $partiallyPaidCount = $customer->invoices()->where('payment_status', 3)->count();
+        $unpaidCount = $customer->invoices()->where('payment_status', 0)->where('is_void', false)->count();
+        $paidCount = $customer->invoices()->where('payment_status', 1)->where('is_void', false)->count();
+        $overdueCount = $customer->invoices()->where('payment_status', 2)->where('is_void', false)->count();
+        $partiallyPaidCount = $customer->invoices()->where('payment_status', 3)->where('is_void', false)->count();
 
         return view('AutoCare.customer.invoices', compact('customer', 'invoices', 'unpaidCount', 'paidCount', 'overdueCount', 'partiallyPaidCount'));
 
@@ -332,7 +332,7 @@ class CustomerController extends Controller
         $customer = Customer::findOrFail($id);
 
         // Fetch invoices within the selected date range
-        $query = Invoice::where('customer_id', $id);
+        $query = Invoice::where('customer_id', $id)->where('is_void', false);
 
         if ($request->filled('from') && $request->filled('to')) {
             try {
@@ -650,7 +650,7 @@ class CustomerController extends Controller
     {
         // Fetch customer and statement data
         $customer = Customer::findOrFail($id);
-        $query = Invoice::where('customer_id', $id)->orderBy('created_at', 'asc');
+        $query = Invoice::where('customer_id', $id)->where('is_void', false)->orderBy('created_at', 'asc');
 
         if (request()->filled('from') && request()->filled('to')) {
             try {

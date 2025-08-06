@@ -781,8 +781,6 @@ class WorkshopController extends Controller
 
     return view('AutoCare.workshop.modal.activity-log', compact('logs'))->render();
 }
-
-
     public function viewSearchInvoice(Request $request)
     {
         $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
@@ -882,6 +880,57 @@ class WorkshopController extends Controller
         // Convert to an array
         $viewData['AdminSaleView'] = json_decode(json_encode($all_view), true);
         return view('AutoCare.workshop.payment_history', $viewData);
+    }
+    public function voidInvoice(Request $request, $invoiceId)
+    {
+        // dd($invoiceId);
+        DB::beginTransaction();
+
+        try {
+            // Void the invoice
+            $workshop = Workshop::findOrFail($invoiceId);
+            $workshop->is_void = true;
+            $workshop->save();
+
+            // Void the related workshop
+            $Invoice = Invoice::where('workshop_id', $invoiceId)->first();
+            if ($Invoice) {
+                $Invoice->is_void = true;
+                $Invoice->save();
+
+                // Void related workshop tyres
+                WorkshopTyre::where('workshop_id', $workshop->id)->where('ref_type', 'workshop')
+                    ->update(['is_void' => true]);
+
+                // Void related workshop services
+                WorkshopService::where('workshop_id', $workshop->id)->where('ref_type', 'workshop')
+                    ->update(['is_void' => true]);
+            }
+
+            DB::commit();
+            ActivityLogger::log(
+                workshopId: $workshop->id,
+                action: 'Void Invoice',
+                description: 'Void Invoice, Invoice ID: ' .$workshop->id,
+                changes: ['changes'=>'Marked workshop and invoice as void',]
+            );
+
+
+        $request->session()->flash('message.level', 'success');
+        $request->session()->flash('message.content', 'Workshop and Invoice voided successfully!');
+        return redirect('/AutoCare/workshop/search');
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+
+        // Log the error
+        \Log::error("Error voiding workshop/invoice: " . $e->getMessage());
+
+        // Error flash and redirect
+        $request->session()->flash('message.level', 'danger');
+        $request->session()->flash('message.content', 'An error occurred while voiding: ' . $e->getMessage());
+        return redirect()->back();
+    }
     }
 
     public function trash(Request $request, $id)
@@ -1179,7 +1228,6 @@ class WorkshopController extends Controller
         return redirect()->back();
     }
 
-
     public function previewInvoicePdf($id)
     {
         // Fetch the invoice details
@@ -1224,7 +1272,6 @@ class WorkshopController extends Controller
             'Content-Disposition' => 'inline; filename="invoice.pdf"',
         ]);
     }
-
 
     public function downloadInvoicePdf($id)
     {

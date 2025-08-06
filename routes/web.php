@@ -500,6 +500,7 @@ Route::middleware('auth:web')->group(function () {
     Route::delete('/AutoCare/workshop/trash/{id}', 'WorkshopController@trash');
     Route::get('/AutoCare/workshop/delete', 'WorkshopController@trashedList');
     Route::get('/AutoCare/workshop/delete/{id}', 'WorkshopController@permanemetDelete');
+    Route::post('/AutoCare/workshop/void/{id}', 'WorkshopController@voidInvoice')->name('workshop.invoice.void');
     Route::get('/AutoCare/workshop/view/{id}', 'WorkshopController@viewIndivisual')->name('workshop.job.view');
     Route::get('/AutoCare/workshop/invoice/{id}', 'WorkshopController@viewInvoice');
     Route::get('/AutoCare/workshop/search-invoice', 'WorkshopController@viewSearchInvoice');
