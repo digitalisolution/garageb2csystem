@@ -51,7 +51,7 @@
 /* tyre label */
 div.tlWrap {width:100%;max-width:280px;height:auto;}
 .fancybox-slide {padding: 44px 15px;}
-.tyreLabelOuter {font-family:"Verdana", "Open Sans", sans-serif;color:#000;line-height:1em;width:100%;max-width:280px;height:auto;min-height:365px;border:1px solid #000;position:relative;margin:0 auto;padding:5px 0 0;box-sizing: border-box;background-color:#fff;background-image:url(../../img/tyrelabel.webp?v=3.0);background-size:280px;background-repeat:no-repeat;background-position:0 0;letter-spacing: -.01em}
+.tyreLabelOuter {font-family:"Verdana", "Open Sans", sans-serif;color:#000;line-height:1em;width:100%;max-width:280px;height:auto;min-height:365px;border:1px solid #000;position:relative;margin:0 auto;padding:5px 0 0;box-sizing: border-box;background-color:#fff;background-image:url(../img/tyrelabel.webp?v=3.0);background-size:280px;background-repeat:no-repeat;background-position:0 0;letter-spacing: -.01em}
 .tyreLabelOuter #tlqrCode {position: absolute;top: 8px;right: 4px;width: 100%;max-width: 45px;height: auto}
 .tyreLabelOuter #tlqrCode img {width: 100%;max-width: 100%;height: auto;border: 0;display: block}    
 .tyreLabelOuter #tyreDetailsWrap {width:100%;height:auto;margin:0 auto;position: relative}
@@ -81,7 +81,7 @@ div.tlWrap {width:100%;max-width:280px;height:auto;}
 #nsiWrap {position: relative;display: flex;flex-direction: row;justify-content: center;height:auto}
 #nsiWrap #tlDate {font-size: 8px;font-weight: 400;position: absolute;transform: rotate(90deg);right: -10px;bottom: 16px;z-index: 2}
 #nsiWrap #tlDate {font-size: 8px;font-weight: 400;position: absolute;transform: rotate(90deg);right: -10px;bottom: 16px;z-index: 2}
-#nsiWrap .nsiItem#noise,#nsiWrap .nsiItem#snow,#nsiWrap .nsiItem#ice {background-image:url(../../img/tyrelabel_nsi.webp);background-size:260px;background-repeat:no-repeat;position: relative}
+#nsiWrap .nsiItem#noise,#nsiWrap .nsiItem#snow,#nsiWrap .nsiItem#ice {background-image:url(../img/tyrelabel_nsi.webp);background-size:260px;background-repeat:no-repeat;position: relative}
 #nsiWrap .nsiItem#noise {width:100px;height:84px;background-position: -11px 0;}
 #nsiWrap .nsiItem#snow {width:66px;height:84px;background-position: 56% 0;}
 #nsiWrap .nsiItem#ice {width:85px;height:84px;background-position: 100% 0;}

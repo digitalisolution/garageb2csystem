@@ -126,7 +126,7 @@
                 <div class="pro-details-quality m-0 mb-3">
                     <div class="cart-plus-minus">
                         <div class="dec qtybutton">-</div>
-                        <input class="cart-plus-minus-box" type="text" name="qtybutton" value="1">
+                        <input class="cart-plus-minus-box" type="text" name="qtybutton" value="1" readonly>
                         <div class="inc qtybutton">+</div>
                     </div>
 
