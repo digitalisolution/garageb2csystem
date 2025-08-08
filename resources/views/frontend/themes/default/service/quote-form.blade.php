@@ -4,72 +4,63 @@
             <form id="quoteEnquiryForm" method="POST" action="{{ route('service.enquiry.submit') }}">
                 @csrf
                 <div class="modal-header">
-                    <h3 class="modal-title" id="quoteModalLabel">Request an Estimate</h3>
+                    <h4 class="modal-title mt-0" id="quoteModalLabel">Request an Estimate</h4>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
 
                 <div class="modal-body">
                     <div class="row">
                         <!-- Left Column (Vehicle Info) -->
-                        <div class="col-md-7">
+                        <div class="col-md-7 col-12">
                             <div class="row">
                                 <div class="col-lg-6 col-md-6 col-12">
                                     <div class="form-group">
-                                        <label>Vehicle Reg.No*</label>
                                         @if(isset($vehicleData['regNumber']) && !empty($vehicleData['regNumber']))
                                             <input type="text" name="vehicle_reg" value="{{$vehicleData['regNumber']}}"
                                                 readonly class="form-control" required>
                                         @else
-                                            <input type="text" name="vehicle_reg" class="form-control" required>
+                                            <input type="text" name="vehicle_reg" class="form-control" placeholder="Vehicle Reg" required>
                                         @endif
                                     </div>
                                 </div>
                                 <div class="col-lg-6 col-md-6 col-12">
                                     <div class="form-group">
-                                        <label>First Name*</label>
-                                        <input type="text" name="first_name" class="form-control" required>
+                                        <input type="text" name="first_name" class="form-control" placeholder="First Name*" required>
                                     </div>
                                 </div>
                                 <div class="col-lg-6 col-md-6 col-12">
                                     <div class="form-group">
-                                        <label>Last Name</label>
-                                        <input type="text" name="last_name" class="form-control">
+                                        <input type="text" name="last_name" class="form-control" placeholder="Last Name">
                                     </div>
                                 </div>
                                 <div class="col-lg-6 col-md-6 col-12">
                                     <div class="form-group">
-                                        <label>E-mail Address*</label>
-                                        <input type="email" name="email" class="form-control" required>
+                                        <input type="email" name="email" class="form-control" placeholder="E-mail Address*" required>
                                     </div>
                                 </div>
                                 <div class="col-lg-6 col-md-6 col-12">
                                     <div class="form-group">
-                                        <label>Phone Number</label>
-                                        <input type="text" name="phone" class="form-control">
+                                        <input type="text" name="phone" placeholder="Phone Number" class="form-control">
                                     </div>
                                 </div>
                                 <div class="col-lg-6 col-md-6 col-12">
                                     <div class="form-group">
-                                        <label>Address*</label>
-                                        <input type="text" name="address" class="form-control" required>
+                                        <input type="text" name="address" class="form-control" placeholder="Address*" required>
                                     </div>
                                 </div>
                                 <div class="col-lg-6 col-md-6 col-12">
                                     <div class="form-group">
-                                        <label>Postcode*</label>
-                                        <input type="text" name="postcode" class="form-control" required>
+                                        <input type="text" name="postcode" class="form-control" placeholder="Postcode*" required>
                                     </div>
                                 </div>
                                 <div class="col-lg-6 col-md-6 col-12">
                                     <div class="form-group">
-                                        <label>City*</label>
-                                        <input type="text" name="city" class="form-control" required>
+                                        <input type="text" name="city" class="form-control" placeholder="City*" required>
                                     </div>
                                 </div>
                                 <div class="col-lg-6 col-md-6 col-12">
                                     <div class="form-group">
-                                        <label for="county">County*</label>
-                                        <select id="county" name="county" class="form-control" required>
+                                        <select id="county" name="county" class="form-control" placeholder="County*" required>
                                             <option value="">Select County</option>
                                             @foreach ($counties as $id => $name)
                                                 <option value="{{ $id }}">{{ $name }}</option>
@@ -79,7 +70,6 @@
                                 </div>
                                 <div class="col-lg-6 col-md-6 col-12">
                                     <div class="form-group">
-                                        <label for="country">Country*</label>
                                         <select id="country" name="country" class="form-control" required>
                                             <option value="">Select Country</option>
                                             @foreach ($countries as $id => $name)
@@ -90,14 +80,13 @@
                                 </div>
                                 <div class="col-lg-12 col-md-12 col-12">
                                     <div class="form-group">
-                                        <label>Message</label>
-                                        <textarea name="message" class="form-control" rows="3"></textarea>
+                                        <textarea name="message" class="form-control" placeholder="Message" rows="5" style="min-height:115px;"></textarea>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <!-- Right Column (Service Checkboxes) -->
-                        <div class="col-md-5">
+                        <div class="col-md-5 col-12">
                             <div class="quote_selected_services">
                                 <h4>Selected Services*</h4>
                                 <div class="quote_service-wrap">
@@ -112,11 +101,11 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-lg-6 col-md-12 col-12">
+                        <div class="col-lg-12 col-md-12 col-12">
                             <x-recaptcha />
                         </div>
-                        <div class="col-lg-6 col-md-12 col-12 text-right">
-                            <button type="submit" class="btn btn-theme border"><strong>Send Now</strong></button>
+                        <div class="col-lg-12 col-md-12 col-12">
+                            <button type="submit" class="btn btn-theme"><strong>Send Now</strong></button>
                         </div>
                     </div>
                 </div>

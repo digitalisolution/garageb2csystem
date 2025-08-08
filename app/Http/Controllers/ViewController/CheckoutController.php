@@ -492,13 +492,6 @@ class CheckoutController extends Controller
                 ]);
             }
 
-            foreach (Session::all() as $key => $value) {
-                if (Str::startsWith($key, 'login_customer_')) {
-                    continue;
-                }
-                Session::forget($key);
-            }
-
             if (isset($validated['payment_method']) && $validated['payment_method'] === 'pay_at_fitting_center') {
                 if ($workshop->status !== 'failed') {
                     $this->processOrder($validated, $workshop, $workshop->id);

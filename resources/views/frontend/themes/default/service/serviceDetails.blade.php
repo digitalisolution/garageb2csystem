@@ -10,13 +10,17 @@
             $fallbackPath = 'frontend/themes/default/img/service-banners/';
 
             //$bannerimagePath = $service->service_banner_path ?? 'sample-banner-image.png';
-            $bannerimagePath = $service->service_banner_path ?? $service->slug.'.jpg';
+            $bannerimagePath = $service->service_banner_path;
 
             $bannerImageUrl = asset($bannerPath . $bannerimagePath);
             $fallbackImageUrl = asset($fallbackPath . $bannerimagePath);
         @endphp
     <div class="breadcrumb-area brand_breadcrumb">
-            <img src="{{ $bannerImageUrl }}" onerror="this.onerror=null;this.src='{{ $fallbackImageUrl }}';" alt="{{ $service->name }}" class="img-bank">
+        @if ($service->service_banner_path)
+        <img src="{{ $bannerImageUrl }}" onerror="this.onerror=null;this.src='{{ $fallbackImageUrl }}';" alt="{{ $service->name }}" class="img-bank">
+        @else
+        <div></div>
+        @endif
 
         <div class="brand_name">
             <h1>{{ $service->name }}</h1>

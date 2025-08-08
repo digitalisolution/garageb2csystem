@@ -19,7 +19,9 @@
   "name": "{{ $garage->garage_name }}",
   "url": "{{ $garage->website_url }}",
   "logo": "{{ asset('frontend/' . $domain . '/img/logo/' . $garage->logo) }}?v={{ time() }}",
+   @if($page->page_banner_path)
   "image": "{{ $bannerImageUrl }}",
+  @endif
   "description": "{{ $page->meta_description }}",
   "address": {
      "@type": "PostalAddress",
@@ -34,13 +36,17 @@
      "longitude": "{{ $garage->longitude }}"
   },
   "hasMap": "{{ $garage->google_map_link }}",
-  "openingHours": "{{ $garage->garage_opening_time }}",
+  "openingHours": "{{ strip_tags($garage->garage_opening_time) }}",
   "telephone": "{{ $garage->phone }}"
 }
 </script>
 @endif
 <div class="breadcrumb-area brand_breadcrumb">
+     @if($page->page_banner_path)
     <img src="{{ $bannerImageUrl }}" onerror="this.onerror=null;this.src='{{ $fallbackImageUrl }}';" alt="{{ $page->title }}" class="img-bank">
+    @else
+    <div></div>
+    @endif
     <div class="brand_name">
         <h1>{{ $page->title }}</h1>
     </div>
