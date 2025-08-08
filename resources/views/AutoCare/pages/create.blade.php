@@ -100,6 +100,15 @@
             </select>
         </div>
 
+        <!-- schema_status Field -->
+        <div class="col-lg-3 col-md-6 col-12 form-group">
+            <label for="schema_status">Schema Status</label>
+            <select name="schema_status" id="schema_status" class="form-control">
+                <option value="0" {{ isset($page) && $page->schema_status == 0 ? 'selected' : '' }}>Inactive</option>
+                <option value="1" {{ isset($page) && $page->schema_status == 1 ? 'selected' : '' }}>Active</option>
+            </select>
+        </div>
+
         <!-- Meta Title Field -->
         <div class="col-lg-3 col-md-6 col-12 form-group">
             <label for="meta_title">Meta Title</label>

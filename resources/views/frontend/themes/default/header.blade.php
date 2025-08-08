@@ -5,14 +5,14 @@
                 <div class="col-xl-5 col-lg-5 col-md-6 col-6">
                     <div class="logo">
                         <?php
-// Get the current domain
-$domain = request()->getHost();
-$domain = str_replace('.', '-', $domain);
-// Set the path for domain-specific logo if it exists
-$domainLogoPath = public_path("frontend/{$domain}/img/logo/{$garage->logo}?v={{ time() }}");
-$themeLogoPath = public_path("frontend/themes/{$garage->theme}/img/logo/{$garage->logo}?v={{ time() }}");
-$defaultLogoPath = public_path("frontend/themes/default/img/logo/logo.png?v={{ time() }}");
-?>
+    // Get the current domain
+    $domain = request()->getHost();
+    $domain = str_replace('.', '-', $domain);
+    // Set the path for domain-specific logo if it exists
+    $domainLogoPath = public_path("frontend/{$domain}/img/logo/{$garage->logo}?v={{ time() }}");
+    $themeLogoPath = public_path("frontend/themes/{$garage->theme}/img/logo/{$garage->logo}?v={{ time() }}");
+    $defaultLogoPath = public_path("frontend/themes/default/img/logo/logo.png?v={{ time() }}");
+    ?>
 
                         @if(!empty($garage->logo))
                             <!-- If domain-specific logo exists, use it -->

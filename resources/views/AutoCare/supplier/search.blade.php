@@ -107,10 +107,9 @@
             <i class="fa fa-edit"></i>
             </a>
             @if($value['supplier_name'] != 'ownstock')
-        <a href="{{ url('/AutoCare/supplier/trash/' . $value['id']) }}" class="btn btn-danger btn-sm"
-        onclick="return confirm('Are you sure you want to delete this user?');">
-        <i class="fa fa-remove"></i>
-        </a>
+        <a href="{{ url('/')}}/AutoCare/supplier/delete/{{ $value['id']}}" class="btn btn-danger btn-sm"
+         onclick="return confirm('Are you sure you want to delete this supplier?');">
+        <i class="fa fa-remove"></i>                 
       @endif
 
           </td>
@@ -136,72 +135,6 @@
   </div>
 
 
-
-  <!-- Modal -->
-  <div class="modal fade" id="myModal" role="dialog">
-    <div class="modal-dialog modal-lg">
-
-      <!-- Modal content-->
-      <div class="modal-content">
-        <div class="modal-header">
-          <h4 class="modal-title text-primary">Supplier Payment</h4>
-          <button type="button" class="close" data-dismiss="modal">&times;</button>
-
-        </div>
-        <div class="modal-body">
-          {{-- <form id="formId" action="{{  url('/') }}/ajax/submitSupplierDetail" method="POST"> --}}
-            {{ csrf_field() }}
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Credit/Debit</th>
-                  <th>Amount</th>
-
-                  <th>Payment Date</th>
-                  <th>Payment Type</th>
-                  <th>Payment Discription</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>
-                    <select name="creditDebit" class="form-control">
-                      <option value="0">Credit</option>
-                      <option value="1">Debit</option>
-                    </select>
-                    <input type="hidden" name="supplierId">
-                  </td>
-                  <td><input type="number" class="form-control" step="any" name="amount"></td>
-                  <td><input type="text" class="form-control" id="payementDate" name="payment_date"></td>
-                  <td>
-                    {{Form::select('payment_type', ['1' => 'By Cash', '2' => 'By Internate Banking', '3' => 'By Cheque'], isset($payment_type) ? $payment_type : '', ['class' => 'form-control form-control '])}}
-                  </td>
-                  <td>
-                    {{Form::textarea('comments', isset($comments) ? $comments : '', ['class' => 'form-control ', 'id' => 'comments', "style" => "height: 40px;"])}}
-                  </td>
-                </tr>
-              </tbody>
-              <tfoot>
-                <tr>
-                  <td></td>
-                  <td></td>
-                  <td><input type="submit" id="payment" class="btn btn-sm btn-success"></td>
-                  <td></td>
-                </tr>
-              </tfoot>
-
-            </table>
-            {{--
-          </form> --}}
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-        </div>
-      </div>
-
-    </div>
-  </div>
-  <!---- Model end --->
 
 </section>
 

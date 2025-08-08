@@ -582,7 +582,7 @@ Route::middleware('auth:web')->group(function () {
     Route::post('/AutoCare/supplier/add', 'SupplierController@save');
     Route::post('/AutoCare/supplier/update', 'SupplierController@save');
     Route::get('/AutoCare/supplier/add/{id}', 'SupplierController@save');
-    Route::get('/AutoCare/supplier/search', 'SupplierController@view');
+    Route::get('/AutoCare/supplier/search', 'SupplierController@view')->name('supplier.manage');
     Route::post('/AutoCare/supplier/search', 'SupplierController@view');
     Route::get('/AutoCare/supplier/trash/{id}', 'SupplierController@trash');
     Route::get('/AutoCare/supplier/delete', 'SupplierController@trashedList');

@@ -9,6 +9,7 @@ use App\Models\Customer;
 use App\Models\WorkshopService;
 use App\Models\CarService;
 use App\Models\WorkshopTyre;
+use Illuminate\Http\Response;
 use Exception;
 use App\Mail\SendMailToCustomer;
 use App\Mail\OrderToGarage;
@@ -38,7 +39,7 @@ use App\Rules\NoTestCustomer;
 
 class CheckoutController extends Controller
 {
-    
+
 
     protected $dojoService;
     protected $emailValidationService;
@@ -53,7 +54,7 @@ class CheckoutController extends Controller
      * @param ApiOrderingService $apiOrderingService
      * @param UpdateOrderQtyService $updateOrderQtyService
      */
-    public function __construct(DojoService $dojoService,EmailValidationService $emailValidationService,ApiOrderingService $apiOrderingService,UpdateOrderQtyService $updateOrderQtyService)
+    public function __construct(DojoService $dojoService, EmailValidationService $emailValidationService, ApiOrderingService $apiOrderingService, UpdateOrderQtyService $updateOrderQtyService)
     {
         $this->dojoService = $dojoService;
         $this->emailValidationService = $emailValidationService;
@@ -170,7 +171,7 @@ class CheckoutController extends Controller
         $VehicleDetails = session('vehicleData', []);
         // dd($VehicleDetails);
         // Pass all data to the view
-        return view('checkout', [
+        $response = response()->view('checkout', [
             'checkoutToken' => $token,
             'cartItems' => $cartItems,
             'total' => $total,
@@ -186,6 +187,10 @@ class CheckoutController extends Controller
             'selectedCountry' => $selectedCountry,
             'vehicleDetails' => $vehicleDetails,
         ]);
+
+        $this->preventPageCaching($response);
+
+        return $response;
     }
     public function refresh()
     {
@@ -246,7 +251,7 @@ class CheckoutController extends Controller
                 'end' => $booking->end ? $booking->end->format('Y-m-d\TH:i:s') : null,
             ];
         })->filter(function ($event) {
-            return $event['start'] && $event['end']; 
+            return $event['start'] && $event['end'];
         });
         $customer = Auth::guard('customer')->user();
         $vehicleDetails = collect();
@@ -277,7 +282,7 @@ class CheckoutController extends Controller
             $VehicleDetails = session('vehicleData', []);
 
             $billingDetails = [
-                'reg_number' => isset($VehicleDetails['regNumber']) ? $VehicleDetails['regNumber'] : null, 
+                'reg_number' => isset($VehicleDetails['regNumber']) ? $VehicleDetails['regNumber'] : null,
                 'postcode' => session('postcode'),
             ];
 
@@ -318,31 +323,31 @@ class CheckoutController extends Controller
 
     //     return response()->json(['exists' => $exists]);
     // }
-       
+
     public function autoSaveCustomer(Request $request)
     {
         // Retrieve customer data from the session
         $customerData = Session::get('customer');
-    
+
         if (!$customerData) {
             return response()->json(['success' => false, 'error' => 'No customer data found in session.'], 400);
         }
-    
+
         try {
             // Validate the email using EmailValidationService
             $validationResult = $this->emailValidationService->validateEmail(
                 $customerData['email'],
                 $customerData['email'] // Use the app's default sender email address
             );
-    
+
             // If the email is invalid, return an error response
             if (!$validationResult['status']) {
                 throw new \Exception($validationResult['message']);
             }
-    
+
             // Check if the email already exists in the database
             $existingCustomer = Customer::where('customer_email', $customerData['email'])->first();
-    
+
             if ($existingCustomer) {
                 // Email exists, check if the user is logged in
                 $loggedInCustomer = Auth::guard('customer')->user();
@@ -359,7 +364,7 @@ class CheckoutController extends Controller
                         'shipping_address_country' => $customerData['country'] ?? $existingCustomer->shipping_address_country,
                         'company_name' => $customerData['company_name'] ?? $existingCustomer->company_name,
                     ]);
-    
+
                     return response()->json(['success' => true, 'customer_id' => $existingCustomer->id], 200);
                 } else {
                     $customerId = $existingCustomer->id;
@@ -367,7 +372,7 @@ class CheckoutController extends Controller
             } else {
                 // Email does not exist, create a new customer record
                 $password = Str::random(10); // Generate a random password for the new customer
-    
+
                 $newCustomer = Customer::create([
                     'customer_name' => $customerData['customer_name'],
                     'customer_last_name' => $customerData['last_name'],
@@ -381,14 +386,14 @@ class CheckoutController extends Controller
                     'company_name' => $customerData['company_name'],
                     'password' => Hash::make($password), // Hash the generated password
                 ]);
-    
+
                 // Send a welcome email with the generated password
                 try {
                     Mail::to($newCustomer->customer_email)->send(new CustomerPasswordMail($password, $newCustomer->customer_email));
                 } catch (\Exception $e) {
                     \Log::error('Failed to send password email:', ['error' => $e->getMessage()]);
                 }
-    
+
                 return response()->json(['success' => true, 'customer_id' => $newCustomer->id], 200);
             }
         } catch (\Exception $e) {
@@ -448,18 +453,18 @@ class CheckoutController extends Controller
         $validated = $validator->validated();
         // Log::info('Request validated:', $validated);
 
-         // Fetch county and country names
-   
+        // Fetch county and country names
 
-    $workshopDefaults = $this->getWorkshopDefaults();
-    $workshopData = $this->prepareWorkshopData($validated, $workshopDefaults);
+
+        $workshopDefaults = $this->getWorkshopDefaults();
+        $workshopData = $this->prepareWorkshopData($validated, $workshopDefaults);
         // dd($workshopData);
         try {
             DB::beginTransaction();
 
             $customerId = $this->handleCustomer($validated);
             // Log::info('Customer saved:', ['id' => $customerId]);
-            
+
             $workshopData['customer_id'] = $customerId;
             $workshop = $this->saveWorkshop($workshopData);
             $workshopId = $workshop['id'];
@@ -486,21 +491,21 @@ class CheckoutController extends Controller
                     'total' => $workshop->grandTotal,
                 ]);
             }
-            
+
             foreach (Session::all() as $key => $value) {
                 if (Str::startsWith($key, 'login_customer_')) {
                     continue;
                 }
                 Session::forget($key);
             }
-            
+
             if (isset($validated['payment_method']) && $validated['payment_method'] === 'pay_at_fitting_center') {
                 if ($workshop->status !== 'failed') {
-                $this->processOrder($validated, $workshop, $workshop->id);
-                $this->updateOrderQtyService->updateStockQty($workshop->id);
+                    $this->processOrder($validated, $workshop, $workshop->id);
+                    $this->updateOrderQtyService->updateStockQty($workshop->id);
                 }
             }
-            
+
             return redirect()->route('checkout.ordersuccess')->with('message', 'Order submitted successfully!');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -554,7 +559,7 @@ class CheckoutController extends Controller
         $bookingDetails = Session::get('bookingDetails', []);
         // Initialize fitting type variable
         $fittingType = null;
-    
+
         // Extract fitting_type from cart items
         foreach ($cartItems as $item) {
             if (isset($item['fitting_type'])) {
@@ -564,20 +569,20 @@ class CheckoutController extends Controller
                 }
             }
         }
-    
+
         // Convert booking start and end times to UTC
         $startUtc = Carbon::createFromFormat('Y-m-d H:i:s', $bookingDetails['start'], $localTimezone)
             ->setTimezone('UTC');
-    
+
         $endUtc = Carbon::createFromFormat('Y-m-d H:i:s', $bookingDetails['end'], $localTimezone)
             ->setTimezone('UTC');
-    
+
         // Get current UK time
         $currentDateTimeUk = now($localTimezone);
-    
+
         // Retrieve vehicle details from session
         $VehicleDetails = Session::get('vehicleData', []);
-    
+
         // Determine the status based on payment method
         $status = 'booked'; // Default status
         if (
@@ -586,19 +591,19 @@ class CheckoutController extends Controller
         ) {
             $status = 'failed'; // Set status to "failed" for other payment methods
         }
-     // Determine which registration number to use
-     $vehicleRegNumber = $validated['new_reg_number'] ?? $validated['reg_number'];
+        // Determine which registration number to use
+        $vehicleRegNumber = $validated['new_reg_number'] ?? $validated['reg_number'];
 
-     // Validate that at least one registration number exists
-     if (!$vehicleRegNumber) {
-         throw new \Exception('Either reg_number or new_reg_number must be provided.');
-     }
-     $countyName = RegionCounty::where('zone_id', $validated['county'])->value('name');
-     $countryName = Countries::where('country_id', $validated['country'])->value('name');
- 
-     // Add county and country names to validated data
-     $validated['county_name'] = $countyName;
-     $validated['country_name'] = $countryName;
+        // Validate that at least one registration number exists
+        if (!$vehicleRegNumber) {
+            throw new \Exception('Either reg_number or new_reg_number must be provided.');
+        }
+        $countyName = RegionCounty::where('zone_id', $validated['county'])->value('name');
+        $countryName = Countries::where('country_id', $validated['country'])->value('name');
+
+        // Add county and country names to validated data
+        $validated['county_name'] = $countyName;
+        $validated['country_name'] = $countryName;
         // Return prepared workshop data
         return array_merge($defaults, [
             'name' => $validated['customer_name'] ?? 'Unnamed Workshop',
@@ -634,7 +639,7 @@ class CheckoutController extends Controller
                 $validated['email'],
                 $validated['email'] // Use the app's default sender email address
             );
-    
+
             // If the email is invalid, return an error response
             if (!$validationResult['status']) {
                 throw new \Exception($validationResult['message']);
@@ -697,27 +702,27 @@ class CheckoutController extends Controller
         return $customerId;
     }
     /**
- * Create a relationship between the customer and the vehicle.
- *
- * @param int $customerId
- * @param string|null $vehicleRegNumber
- * @return void
- */
-private function attachVehicleToCustomer(int $customerId, ?string $vehicleRegNumber): void
-{
-    // dd($vehicleRegNumber);
-    if ($vehicleRegNumber) {
-        // Find or create the vehicle by registration number
-        $vehicle = VehicleDetail::firstOrCreate(
-            ['vehicle_reg_number' => $vehicleRegNumber],
-            ['make' => '', 'model' => '', 'year' => ''] // Default values for new vehicles
-        );
+     * Create a relationship between the customer and the vehicle.
+     *
+     * @param int $customerId
+     * @param string|null $vehicleRegNumber
+     * @return void
+     */
+    private function attachVehicleToCustomer(int $customerId, ?string $vehicleRegNumber): void
+    {
+        // dd($vehicleRegNumber);
+        if ($vehicleRegNumber) {
+            // Find or create the vehicle by registration number
+            $vehicle = VehicleDetail::firstOrCreate(
+                ['vehicle_reg_number' => $vehicleRegNumber],
+                ['make' => '', 'model' => '', 'year' => ''] // Default values for new vehicles
+            );
 
-        // Attach the vehicle to the customer
-        $customer = Customer::find($customerId);
-        $customer->vehicles()->attach($vehicle->id);
+            // Attach the vehicle to the customer
+            $customer = Customer::find($customerId);
+            $customer->vehicles()->attach($vehicle->id);
+        }
     }
-}
     protected function saveWorkshop(array $workshopData)
     {
         // dd($workshopData);
@@ -738,10 +743,10 @@ private function attachVehicleToCustomer(int $customerId, ?string $vehicleRegNum
         if ($shippingType === 'job') {
             $shippingPriceWithoutVAT = $shippingPricePerJob ?? 0;
         } elseif ($shippingType === 'tyre') {
-            $shippingPriceWithoutVAT = $shippingPricePerTyre ?? 0; 
+            $shippingPriceWithoutVAT = $shippingPricePerTyre ?? 0;
         }
 
-        $shippingTaxId = $postcodeData['includes_vat'] ?? 0; 
+        $shippingTaxId = $postcodeData['includes_vat'] ?? 0;
 
 
         foreach ($cartItems as $key => $item) {
@@ -801,18 +806,18 @@ private function attachVehicleToCustomer(int $customerId, ?string $vehicleRegNum
         // Retrieve the booking details from the session
         $slotDetails = Session::get('bookingDetails', []);
         $workshopId = $workshopData->id;
-        $workshopName = $workshopData->name; 
-        
+        $workshopName = $workshopData->name;
+
         $customerName = $workshopName ?: 'Unknown Customer';
-        
+
         $localTimezone = 'Europe/London';
-        
+
         $startUtc = Carbon::createFromFormat('Y-m-d H:i:s', $slotDetails['start'], $localTimezone)
             ->setTimezone('UTC');
-        
+
         $endUtc = Carbon::createFromFormat('Y-m-d H:i:s', $slotDetails['end'], $localTimezone)
             ->setTimezone('UTC');
-        
+
         Booking::create([
             'workshop_id' => $workshopId,
             'title' => $customerName,
@@ -821,8 +826,8 @@ private function attachVehicleToCustomer(int $customerId, ?string $vehicleRegNum
         ]);
     }
 
-    
-    protected function processOrder(array $validated,$workshop, $orderId)
+
+    protected function processOrder(array $validated, $workshop, $orderId)
     {
         if ($validated['payment_method'] === 'pay_at_fitting_center' && $workshop['status'] !== 'failed') {
             // Process API order immediately for "pay_at_fitting_center"
@@ -879,23 +884,56 @@ private function attachVehicleToCustomer(int $customerId, ?string $vehicleRegNum
         }
     }
 
-     public function orderSuccess(Request $request)
+    public function orderSuccess(Request $request)
     {
-        foreach (Session::all() as $key => $value) {
-            if (Str::startsWith($key, 'login_customer_')) {
-                continue;
-            }
-            Session::forget($key);
-        }
-        // Check if a new customer was created during checkout
+        $this->clearCartAndCheckoutSession();
         $isNewCustomer = Session::get('isNewCustomer', false);
-
-        // Clear the session flag after retrieving it
         Session::forget('isNewCustomer');
-
-        // Pass the $isNewCustomer variable to the view
-        return view('ordersuccess', [
+        $response = response()->view('ordersuccess', [
             'isNewCustomer' => $isNewCustomer,
         ]);
+
+        $this->preventPageCaching($response);
+
+        return $response;
+    }
+
+    public function orderFailure(Request $request)
+    {
+        $this->clearCartAndCheckoutSession();
+        $isNewCustomer = Session::get('isNewCustomer', false);
+        Session::forget('isNewCustomer');
+        $response = response()->view('orderfailure', [
+            'isNewCustomer' => $isNewCustomer,
+        ]);
+
+        $this->preventPageCaching($response);
+
+        return $response;
+    }
+
+    private function clearCartAndCheckoutSession()
+    {
+        $keysToClear = [
+            'cart',
+            'cartTotalPrice',
+            'OrderType',
+            'postcode_data',
+            'vehicleData',
+            'bookingDetails',
+            'shippingPricePerJob',
+            'shippingPricePerTyre',
+            'checkout_token',
+        ];
+        foreach ($keysToClear as $key) {
+            Session::forget($key);
+        }
+        session()->regenerateToken();
+    }
+    private function preventPageCaching(Response $response)
+    {
+        $response->headers->set('Cache-Control', 'no-cache, no-store, must-revalidate, private');
+        $response->headers->set('Pragma', 'no-cache');
+        $response->headers->set('Expires', '0');
     }
 }

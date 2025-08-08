@@ -741,6 +741,9 @@ class WorkshopController extends Controller
         if ($request->filled('payment_method')) {
             $workshopQuery->where('payment_method', 'like', '%' . $request->payment_method . '%');
         }
+        if ($request->filled('is_void')) {
+            $workshopQuery->where('is_void', $request->is_void);
+        }
         if ($request->filled('payment_status')) {
             $workshopQuery->where('payment_status', 'like', '%' . $request->payment_status . '%');
         }
@@ -768,19 +771,32 @@ class WorkshopController extends Controller
 
         return view('AutoCare.workshop.search', $viewData, $formAutoFillup);
     }
-   public function getActivityLog($id)
-{
-    $logs = ActivityLog::where('workshop_id', $id)
-        ->with('user') // make sure user relation exists
-        ->latest()
-        ->get()
-        ->map(function ($log) {
-            $log->changes_array = is_string($log->changes) ? json_decode($log->changes, true) : $log->changes;
-            return $log;
-        });
+    public function getActivityLog($id)
+    {
+        try {
+            $logs = ActivityLog::where('workshop_id', $id)
+                ->with('user')
+                ->latest()
+                ->get()
+                ->map(function ($log) {
+                    // Handle changes field properly
+                    if (is_string($log->changes)) {
+                        $log->changes_array = json_decode($log->changes, true);
+                    } elseif (is_array($log->changes)) {
+                        $log->changes_array = $log->changes;
+                    } else {
+                        $log->changes_array = [];
+                    }
+                    return $log;
+                });
 
-    return view('AutoCare.workshop.modal.activity-log', compact('logs'))->render();
-}
+            return view('AutoCare.workshop.modal.activity-log', compact('logs'))->render();
+
+        } catch (\Exception $e) {
+            \Log::error('Error fetching activity logs for workshop ' . $id . ': ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to load activity logs'], 500);
+        }
+    }
     public function viewSearchInvoice(Request $request)
     {
         $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
@@ -883,20 +899,19 @@ class WorkshopController extends Controller
     }
     public function voidInvoice(Request $request, $invoiceId)
     {
-        // dd($invoiceId);
         DB::beginTransaction();
 
         try {
-            // Void the invoice
+            // Void the workshop
             $workshop = Workshop::findOrFail($invoiceId);
             $workshop->is_void = true;
             $workshop->save();
 
-            // Void the related workshop
-            $Invoice = Invoice::where('workshop_id', $invoiceId)->first();
-            if ($Invoice) {
-                $Invoice->is_void = true;
-                $Invoice->save();
+            // Void the related invoice
+            $invoice = Invoice::where('workshop_id', $invoiceId)->first();
+            if ($invoice) {
+                $invoice->is_void = true;
+                $invoice->save();
 
                 // Void related workshop tyres
                 WorkshopTyre::where('workshop_id', $workshop->id)->where('ref_type', 'workshop')
@@ -907,30 +922,59 @@ class WorkshopController extends Controller
                     ->update(['is_void' => true]);
             }
 
+            // Restore tyre quantities to inventory ===
+            $workshopTyres = WorkshopTyre::where('workshop_id', $workshop->id)
+                ->where('ref_type', 'workshop')
+                ->where('is_void', true) // Only restore those that were voided
+                ->get();
+
+            foreach ($workshopTyres as $workshopTyre) {
+                // Find the tyre product using product_id, supplier, and EAN for matching
+                $tyreProduct = TyresProduct::where(function ($query) use ($workshopTyre) {
+                    $query->where('product_id', $workshopTyre->product_id)
+                        ->where('tyre_supplier_name', $workshopTyre->supplier)
+                        ->where('tyre_ean', $workshopTyre->product_ean);
+                })->first();
+
+                if ($tyreProduct) {
+                    // Restore quantity back to inventory
+                    $tyreProduct->tyre_quantity += $workshopTyre->quantity;
+                    $tyreProduct->save();
+
+                    ActivityLogger::log(
+                        workshopId: $workshop->id,
+                        action: 'Restored Tyre Quantity',
+                        description: 'Restored tyre quantity for product: ' . $tyreProduct->tyre_description. ' '. $tyreProduct->tyre_ean,
+                        changes: ['quantity_restored' => $workshopTyre->quantity,'reason' => 'Void Invoice']
+                    );
+                }
+            }
+
             DB::commit();
+
             ActivityLogger::log(
                 workshopId: $workshop->id,
                 action: 'Void Invoice',
-                description: 'Void Invoice, Invoice ID: ' .$workshop->id,
-                changes: ['changes'=>'Marked workshop and invoice as void',]
+                description: 'Void Invoice, Invoice ID: ' . $workshop->id,
+                changes: [
+                'invoice_id' => $workshop->id,
+                'invoice_status'=>  $workshop->status,
+                'balance amount' => $workshop->balance_price]
             );
 
+            $request->session()->flash('message.level', 'success');
+            $request->session()->flash('message.content', 'Workshop and Invoice voided successfully!');
+            return redirect('/AutoCare/workshop/search');
 
-        $request->session()->flash('message.level', 'success');
-        $request->session()->flash('message.content', 'Workshop and Invoice voided successfully!');
-        return redirect('/AutoCare/workshop/search');
+        } catch (\Exception $e) {
+            DB::rollBack();
 
-    } catch (\Exception $e) {
-        DB::rollBack();
+            \Log::error("Error voiding workshop/invoice: " . $e->getMessage());
 
-        // Log the error
-        \Log::error("Error voiding workshop/invoice: " . $e->getMessage());
-
-        // Error flash and redirect
-        $request->session()->flash('message.level', 'danger');
-        $request->session()->flash('message.content', 'An error occurred while voiding: ' . $e->getMessage());
-        return redirect()->back();
-    }
+            $request->session()->flash('message.level', 'danger');
+            $request->session()->flash('message.content', 'An error occurred while voiding: ' . $e->getMessage());
+            return redirect()->back();
+        }
     }
 
     public function trash(Request $request, $id)

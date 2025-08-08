@@ -441,23 +441,37 @@
     /*----------------------------
     	Cart Plus Minus Button
     ------------------------------ */
-    var CartPlusMinus = $('.cart-plus-minus');
-    CartPlusMinus.prepend('<div class="dec qtybutton">-</div>');
-    CartPlusMinus.append('<div class="inc qtybutton">+</div>');
-    $(".qtybutton").on("click", function() {
-        var $button = $(this);
-        var oldValue = $button.parent().find("input").val();
-        if ($button.text() === "+") {
-            var newVal = parseFloat(oldValue) + 1;
-        } else {
-            // Don't allow decrementing below zero
-            if (oldValue > 0) {
-                var newVal = parseFloat(oldValue) - 1;
-            } else {
-                newVal = 1;
+ $(document).ready(function () {
+        $(document).off('click.qtybutton').on('click.qtybutton', '.qtybutton', function(e) {
+            e.preventDefault(); 
+            var $button = $(this);
+            var $input = $button.parent().find("input.cart-plus-minus-box");
+            var oldValue = parseFloat($input.val());
+            if (isNaN(oldValue)) {
+                oldValue = 1;
             }
-        }
-        $button.parent().find("input").val(newVal);
+
+            var newVal;
+            if ($button.text() === "+") {
+                newVal = oldValue + 1;
+            } else {
+                newVal = oldValue - 1;
+                if (newVal < 1) {
+                    newVal = 1;
+                }
+            }
+            $input.val(newVal);
+        });
+        $('.cart-plus-minus-box').each(function() {
+             var inputValue = parseFloat($(this).val());
+             if (isNaN(inputValue) || inputValue < 1) {
+                 $(this).val(1);
+             }
+             if (!$(this).attr('min')) {
+                 $(this).attr('min', '1');
+             }
+        });
+
     });
     
     

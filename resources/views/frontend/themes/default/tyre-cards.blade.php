@@ -126,7 +126,7 @@
                 <div class="pro-details-quality m-0 mb-3">
                     <div class="cart-plus-minus">
                     <div class="dec qtybutton">-</div>
-                    <input class="cart-plus-minus-box" type="text" name="qtybutton" value="1" readonly>
+                    <input class="cart-plus-minus-box" type="text" name="qtybutton" value="1" min="1">
                     <div class="inc qtybutton">+</div>
                     </div>
 
@@ -229,24 +229,3 @@
     });
 </script>
 <!-- Modal end -->
-
-<script>
-    var CartPlusMinus = $('.cart-plus-minus');
-    CartPlusMinus.prepend('<div class="dec qtybutton">-</div>');
-    CartPlusMinus.append('<div class="inc qtybutton">+</div>');
-    $(".qtybutton").on("click", function() {
-    var $button = $(this);
-    var oldValue = $button.parent().find("input").val();
-    if ($button.text() === "+") {
-    var newVal = parseFloat(oldValue) + 1;
-    } else {
-    // Don't allow decrementing below zero
-    if (oldValue > 0) {
-    var newVal = parseFloat(oldValue) - 1;
-    } else {
-    newVal = 1;
-    }
-    }
-    $button.parent().find("input").val(newVal);
-    });
-</script>

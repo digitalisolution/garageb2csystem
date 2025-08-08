@@ -9,7 +9,9 @@
                     <div class="box box-primary">
                         <ul class="nav nav-tabs">
                             <li class="nav-item"><a class="nav-link active" href="#tab-csv" data-toggle="tab"><strong>CSV Detail</strong></a></li>
+                            @if (isset($id) ? $id : '')
                             <li class="nav-item"><a class="nav-link" href="#delivery_time" data-toggle="tab"><strong>Delivery Time</strong></a></li>
+                            @endif
                         </ul>
                         <div class="tab-content">
                             <div class="tab-pane active in" id="tab-csv">
@@ -124,15 +126,15 @@
 
                                         <div class="col-lg-6 col-md-6 col-12 form-group">
                                             <label for="api_order_enable">API Order Enable</label>
-                                            {{ Form::select('api_order_enable', ['1' => 'Enabled', '0' => 'Disabled'], isset($api_order_enable) ? $api_order_enable : (isset($api_order_details['api_order_enable']) ? $api_order_details['api_order_enable'] : ''), ['class' => 'form-control', 'placeholder' => 'Select API Order Enable', 'id' => 'api_order_enable']) }}
+                                            {{ Form::select('api_order_enable', ['0' => 'Disabled','1' => 'Enabled'], isset($api_order_enable) ? $api_order_enable : (isset($api_order_details['api_order_enable']) ? $api_order_details['api_order_enable'] : ''), ['class' => 'form-control','id' => 'api_order_enable']) }}
                                         </div>
 
                                         <!-- Status Field -->
                                         <div class="col-lg-6 col-md-6 col-12 form-group">
                                             <label for="status">Status</label>
-                                            {{ Form::select('status', ['1' => 'Active', '0' => 'Inactive'], isset($status) ? $status : '', ['class' => 'form-control', 'placeholder' => 'Select Status']) }}
+                                            {{ Form::select('status', ['1' => 'Active', '0' => 'Inactive'], isset($status) ? $status : '', ['class' => 'form-control']) }}
                                         </div>
-                                        @if($supplier_name=='bond')
+                                        @if(isset($supplier_name) && $supplier_name == 'bond')
                                         <div class="col-lg-12">
                                             <div id="api_order_details"
                                                 style="{{ isset($api_order_details['api_order_enable']) && $api_order_details['api_order_enable'] == '1' ? 'display: block;' : 'display: none;' }}">
@@ -163,7 +165,43 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        @elseif($supplier_name=='eden')
+                                        @elseif(isset($supplier_name) && $supplier_name=='bmtr')
+                                        <div class="col-lg-12">
+                                            <div id="api_order_details"
+                                                style="{{ isset($api_order_details['api_order_enable']) && $api_order_details['api_order_enable'] == '1' ? 'display: block;' : 'display: none;' }}">
+                                                <div class="row">                                                   
+                                                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                                                        <label for="bmtr_api_mode">BMTR API Mode</label>
+                                                        {{ Form::select('api_order_details[bmtr_api_mode]', ['live' => 'Live', 'test' => 'Test'], isset($api_order_details['bmtr_api_mode']) ? $api_order_details['bmtr_api_mode'] : '', ['class' => 'form-control', 'placeholder' => 'Select BMTR API Mode']) }}
+                                                    </div>
+
+                                                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                                                        <label for="bmtr_siteid">Site Code</label>
+                                                        {{ Form::text('api_order_details[bmtr_siteid]', isset($api_order_details['bmtr_siteid']) ? $api_order_details['bmtr_siteid'] : '', ['class' => 'form-control', 'placeholder' => 'Site Code']) }}
+                                                    </div>
+                                                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                                                        <label for="bmtr_api_username">API User</label>
+                                                        {{ Form::text('api_order_details[bmtr_api_username]', isset($api_order_details['bmtr_api_username']) ? $api_order_details['bmtr_api_username'] : '', ['class' => 'form-control', 'placeholder' => 'API Username']) }}
+                                                    </div>
+                                                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                                                        <label for="bmtr_api_password">API Password</label>
+                                                        {{ Form::text('api_order_details[bmtr_api_password]', isset($api_order_details['bmtr_api_password']) ? $api_order_details['bmtr_api_password'] : '', ['class' => 'form-control', 'placeholder' => 'API Password']) }}
+                                                    </div>
+
+                                                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                                                        <label for="bmtr_api_key">API Key</label>
+                                                        {{ Form::text('api_order_details[bmtr_api_key]', isset($api_order_details['bmtr_api_key']) ? $api_order_details['bmtr_api_key'] : '', ['class' => 'form-control', 'placeholder' => 'API Key']) }}
+                                                    </div>
+
+                                                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                                                        <label for="bmtr_status_autoorder">Auto Order Status</label>
+                                                        {{ Form::select('api_order_details[bmtr_status_autoorder]', ['1' => 'Enabled', '0' => 'Disabled'], isset($api_order_details['bmtr_status_autoorder']) ? $api_order_details['bmtr_status_autoorder'] : '', ['class' => 'form-control', 'placeholder' => 'Select Auto Order Status']) }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        @elseif(isset($supplier_name) && $supplier_name=='eden')
                                         <div class="col-lg-12">
                                             <div id="api_order_details">
                                             
@@ -177,7 +215,7 @@
                                             <div id="divcsv1" style="display: none;"></div>
                                                 
                                             <div id="divftp1" style="display:none;">
-                                                <legend>FTP Modefsd</legend>
+                                                <legend>FTP Mode</legend>
                                               <fieldset>
                                                 <div class="form-group required">
                                                   <label class="col-sm-2 control-label" for="input-remote_file">Remote File</label>
@@ -221,13 +259,13 @@
                                             <div id="divimportcsv1" style="">
                                               <fieldset>
                                                 <div class="form-group">
-    <label class="col-sm-2 control-label" for="input-import_condition">Upload Mode</label>
-    <div class="col-sm-10">
-            <input type="radio" name="api_order_details[eden_upload_mode]" value="directory" {{ old('api_order_details.eden_upload_mode', $api_order_details['eden_upload_mode'] ?? '') == 'directory' ? 'checked' : '' }}>
-            Directory &nbsp; <input type="radio" name="api_order_details[eden_upload_mode]" value="ftp" {{ old('api_order_details.eden_upload_mode', $api_order_details['eden_upload_mode'] ?? '') == 'ftp' ? 'checked' : '' }}>
-            FTP
-    </div>
-</div>
+                                            <label class="col-sm-2 control-label" for="input-import_condition">Upload Mode</label>
+                                            <div class="col-sm-10">
+                                                    <input type="radio" name="api_order_details[eden_upload_mode]" value="directory" {{ old('api_order_details.eden_upload_mode', $api_order_details['eden_upload_mode'] ?? '') == 'directory' ? 'checked' : '' }}>
+                                                    Directory &nbsp; <input type="radio" name="api_order_details[eden_upload_mode]" value="ftp" {{ old('api_order_details.eden_upload_mode', $api_order_details['eden_upload_mode'] ?? '') == 'ftp' ? 'checked' : '' }}>
+                                                    FTP
+                                            </div>
+                                        </div>
                                                 <div class="form-group required">
                                                         <label class="col-sm-2 control-label" for="input-eden_api_code">External Reference </label>
                                                         <div class="col-sm-10">
@@ -328,7 +366,9 @@
                                 </div>
                                 {{ Form::close() }}
                             </div>
+                            @if (isset($id) ? $id : '')
                             @include('AutoCare/supplier/leadtime')
+                            @endif
                         </div>
                     </div>
                 </div>

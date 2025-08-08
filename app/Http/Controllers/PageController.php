@@ -36,6 +36,7 @@ class PageController extends Controller
         'page_banner_path' => 'nullable|image|mimes:jpeg,webp,png,jpg,gif|max:2048',
         'sort' => 'nullable|integer',
         'status' => 'required|in:0,1',
+        'schema_status' => 'required|in:0,1',
         'meta_title' => 'nullable|string|max:150',
         'meta_keywords' => 'nullable|string|max:255',
         'meta_description' => 'nullable|string|max:5000', // Optional long length
@@ -86,6 +87,7 @@ class PageController extends Controller
         'page_banner_path' => 'nullable|image|mimes:jpeg,webp,png,jpg,gif|max:2048',
         'sort' => 'nullable|integer',
         'status' => 'required|in:0,1',
+        'schema_status' => 'required|in:0,1',
         'meta_title' => 'nullable|string|max:150',
         'meta_keywords' => 'nullable|string|max:255',
         'meta_description' => 'nullable|string|max:5000',

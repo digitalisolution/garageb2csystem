@@ -84,6 +84,13 @@ class CartController extends Controller
         $shippingData = session('postcode_data', []);
         $hasMobileFitting = false;
 
+        if ($qty < 1) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Minimum quantity is 1.'
+        ], 400);
+        }
+
         // Determine product details based on type
         if ($type === 'tyre') {
             $product = TyresProduct::where('product_id', $itemId)->first();

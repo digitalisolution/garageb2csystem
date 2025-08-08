@@ -3,6 +3,7 @@ namespace App\Services;
 
 use App\Services\BondService;
 use App\Services\EdenService;
+use App\Services\BmtrService;
 use App\Services\BitsService;
 use Illuminate\Support\Facades\log;
 use Illuminate\Support\Facades\DB;
@@ -47,8 +48,16 @@ class SupplierServiceFactory
                     'eden_ftp_password' => $credentials['eden_ftp_password'] ?? null,
                     'auto_order' => $credentials['eden_status_autoorder'] == "1",
                 ];
+                }elseif (isset($credentials['bmtr_status_autoorder'], $credentials['bmtr_api_mode'])) {
+                    return [
+                        'bmtr_api_mode' => $credentials['bmtr_api_mode'],
+                        'bmtr_siteid' => $credentials['bmtr_siteid'],
+                        'bmtr_api_username' => $credentials['bmtr_api_username'],
+                        'bmtr_api_password' => $credentials['bmtr_api_password'],
+                        'bmtr_api_key' => $credentials['bmtr_api_key'],
+                        'auto_order' => $credentials['bmtr_status_autoorder'] == "1",
+                    ];
                 } else {
-                    // Log error if required fields are missing
                     Log::error("Missing required fields in decoded credentials", ['supplier_name' => $supplierName, 'credentials' => $credentials]);
                 }
             } catch (\Exception $e) {
@@ -73,6 +82,8 @@ class SupplierServiceFactory
                     return new BondService($credentials);
                 case 'eden':
                     return new EdenService($credentials);
+                case 'bmtr':
+                    return new BmtrService($credentials);
                 case 'bits':
                     return new BitsService($credentials);
                 // Add cases for other suppliers as needed

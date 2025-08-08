@@ -123,3 +123,5 @@ div.tlWrap .euLabelBtn {font-size: 12px}
 	.vehicle_details-wrap .vehicle_bank{gap:5px 15px;}
 	.service_bank .service_card{width:100%;}
 }
+
+.whats_include-link{color:blue;border:none;background:none;text-decoration:underline;margin-left:10px;}

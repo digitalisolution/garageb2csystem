@@ -212,6 +212,16 @@ $favicon = asset("frontend/themes/default/img/favicon.png") . '?v=' . time();
       e.preventDefault();
     });
     </script>
+    <script>
+$(document).ready(function () {
+    $(document).ajaxError(function(event, xhr, settings) {
+        console.log("Global AJAX Error:", xhr.status, xhr.statusText, settings);
+        if (xhr.status === 419 || xhr.status === 401) {
+            window.location.href = '{{ route("login") }}'; 
+        }
+    });
+});
+</script>
   </body>
 
   </html>

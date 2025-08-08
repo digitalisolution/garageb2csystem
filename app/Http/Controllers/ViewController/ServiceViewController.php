@@ -43,6 +43,7 @@ class ServiceViewController extends Controller
         // Get services from the database
         $services = CarService::where('status', 1)->get();
         $vehicleData = Session::get('vehicleData', []);
+        //dd($services);
         $counties = RegionCounty::pluck('name', 'zone_id');
         $countries = Countries::pluck('name', 'country_id');
         return view('service.service', compact('services', 'vehicleData', 'counties', 'countries'));

@@ -1,7 +1,5 @@
 @extends('layouts.app')
-@section('meta_title', $metaTitle)
-@section('meta_keywords', $metaKeywords)
-@section('meta_description', $metaDescription)
+
 @section('content')
 
         @php
@@ -13,6 +11,34 @@
             $bannerImageUrl = asset($bannerPath . $bannerimagePath);
             $fallbackImageUrl = asset($fallbackPath . $bannerimagePath);
         @endphp
+@if(isset($page) && isset($page->schema_status) && $page->schema_status)
+<script type='application/ld+json'>
+{
+  "@context": "http://www.schema.org",
+  "@type": "TireShop",
+  "name": "{{ $garage->garage_name }}",
+  "url": "{{ $garage->website_url }}",
+  "logo": "{{ asset('frontend/' . $domain . '/img/logo/' . $garage->logo) }}?v={{ time() }}",
+  "image": "{{ $bannerImageUrl }}",
+  "description": "{{ $page->meta_description }}",
+  "address": {
+     "@type": "PostalAddress",
+     "streetAddress": "{{ $garage->street }}",
+     "addressRegion": "{{ $garage->city }}",
+     "postalCode": "{{ $garage->zone }}",
+     "addressCountry": "United Kingdom"
+  },
+  "geo": {
+     "@type": "GeoCoordinates",
+     "latitude": "{{ $garage->latitude }}",
+     "longitude": "{{ $garage->longitude }}"
+  },
+  "hasMap": "{{ $garage->google_map_link }}",
+  "openingHours": "{{ $garage->garage_opening_time }}",
+  "telephone": "{{ $garage->phone }}"
+}
+</script>
+@endif
 <div class="breadcrumb-area brand_breadcrumb">
     <img src="{{ $bannerImageUrl }}" onerror="this.onerror=null;this.src='{{ $fallbackImageUrl }}';" alt="{{ $page->title }}" class="img-bank">
     <div class="brand_name">
@@ -69,4 +95,5 @@
         </div>
     </div>
 </div>
+
 @endsection

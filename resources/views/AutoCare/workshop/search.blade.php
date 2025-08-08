@@ -99,6 +99,15 @@
                 </div>
 
                 <div class="col-lg-3 col-md-6 col-12 form-group">
+                    <label for="is_void">Void Invoices:</label>
+                    {{ Form::select('is_void', ['1' => 'Yes', '0' => 'No'], isset($is_void) ? $is_void : old('is_void'), [
+        'id' => 'is_void',
+        'class' => 'form-control',
+        'placeholder' => 'Search Void Invoices'
+    ]) }}
+                </div>
+
+                <div class="col-lg-3 col-md-6 col-12 form-group">
                     <label for="payment_status">Payment Status:</label>
                     {{ Form::select('payment_status', ['1' => 'Paid', '0' => 'Unpaid', '3' => 'Partial'], isset($payment_status) ? $payment_status : old('payment_status'), [
         'id' => 'payment_status',
@@ -196,23 +205,7 @@
                                     <th style="white-space: nowrap">Job Id</th>
                                     <th style="white-space: nowrap" style="white-space: nowrap">Customer Name</th>
                                     <th style="white-space: nowrap">Mobile</th>
-                                    <!-- <th style="white-space: nowrap">Email</th> -->
-                                    <!-- <th style="white-space: nowrap" >Address</th> -->
                                     <th style="white-space: nowrap">Vehicle Reg. No</th>
-                                    <!-- <th width="30%">Model Year</th> -->
-                                    {{-- <th style="white-space: nowrap">Brand</th> --}}
-                                    {{-- <th style="white-space: nowrap">Model </th> --}}
-                                    <!-- <th width="30%">VIN</th>
-                                                    <th width="30%">Reg Number</th>
-                                                    <th width="30%">Odometer Reading</th>
-                                                    <th width="30%">Color</th>
-                                                    <th width="30%">Fuel Type</th>
-                                                    <th width="30%">Engine Number</th>
-                                                    <th width="30%">Key Number</th> -->
-                                    {{-- <th style="white-space: nowrap">Due In</th> --}}
-                                    {{-- <th style="white-space: nowrap">due Out</th> --}}
-                                    {{-- <th style="white-space: nowrap">Advance Received</th> --}}
-                                    {{-- <th style="white-space: nowrap">Paid Amount </th> --}}
                                     <th style="white-space: nowrap">Payment Method</th>
                                     <th style="white-space: nowrap">Amount Due</th>
                                     <th style="white-space: nowrap">Grand Total</th>
@@ -220,10 +213,6 @@
                                     <th style="white-space: nowrap">Origin</th>
                                     <th style="white-space: nowrap">Status</th>
                                     <th style="white-space: nowrap">Invoice Convert</th>
-                                    <!-- <th width="30%">Advisor</th> -->
-                                    {{-- <th style="white-space: nowrap">Notes</th> --}}
-                                    {{-- <th style="white-space: nowrap">Created Date</th> --}}
-                                    <!-- <th width="30%">Updated Date</th> -->
                                     <th align="right">Action</th>
                                 </tr>
                             </thead>
@@ -366,12 +355,6 @@
                                                             </a>
                                                         </li>
                                                     @else
-                                                        <!-- <li>
-                                                                                    <a data-toggle="modal" id="{{ $value->id }}" data-target="#myModal1"
-                                                                                        class="dropdown-item btn btn-success openPayentModel btn-sm">
-                                                                                        <i class="fa fa-undo" aria-hidden="true"></i> Refund
-                                                                                    </a>
-                                                                                </li> -->
                                                         <li>
                                                             <a href="{{ url('/') }}/AutoCare/sale/edit/{{ $value->id }}"
                                                                 class="dropdown-item btn btn-success btn-sm">
@@ -463,66 +446,7 @@
                 margin: 2px;
             }
         </style>
-        <!-- Modal -->
-        <div class="modal fade" id="myModal" role="dialog">
-            <div class="modal-dialog modal-lg">
-
-                <!-- Modal content-->
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h4 class="modal-title text-primary">Sales Return</h4>
-                        <button type="button" class="close" data-dismiss="modal">&times;</button>
-
-                    </div>
-                    <div class="modal-body">
-                        {{-- <form id="formId" action="{{  url('/') }}/ajax/submitSupplierDetail" method="POST"> --}}
-                            {{ csrf_field() }}
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Quantity</th>
-                                        <th>Discription</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-
-                                        <input type="hidden" name="PurchaseId">
-
-                                        <td><input type="number" class="form-control" step="any" name="amount"></td>
-                                        <td>{{ Form::textarea('comments', isset($comments) ? $comments : '', [
-        'class' =>
-            'form-control ',
-        'id' => 'comments',
-        'style' => 'height: 40px;'
-    ]) }}
-                                        </td>
-                                    </tr>
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <td></td>
-                                        <td></td>
-                                        <td><input type="submit" id="payment" class="btn btn-sm btn-success"></td>
-                                        <td></td>
-                                    </tr>
-                                </tfoot>
-
-                            </table>
-                            {{--
-                        </form> --}}
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-        <!---- Model end --->
-
-
-
+       
         <!-- Modal for payment : start-->
         <div class="modal fade" id="workshopPayment" role="dialog">
             <div class="modal-dialog modal-lg">
@@ -1141,16 +1065,37 @@
         });
     </script>
     <script>
-        $(document).on('click', '.open-activity-log-modal', function (e) {
-            e.preventDefault();
-            let workshopId = $(this).data('id');
-            $('#activity-log-content').html('<p>Loading...</p>');
-            $('#activityModal').modal('show');
-            $.get(`AutoCare/workshop/${workshopId}/activity-log`, function (response) {
-                $('#activity-log-content').html(response);
-            }).fail(function () {
-                $('#activity-log-content').html('<p class="text-danger">Failed to load activity logs.</p>');
-            });
-        });
+       $(document).on('click', '.open-activity-log-modal', function (e) {
+    e.preventDefault();
+    let workshopId = $(this).data('id');
+    
+    // Show loading state
+    $('#activity-log-content').html('<div class="text-center p-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2">Loading activity logs...</p></div>');
+    $('#activityModal').modal('show');
+    
+    $.ajax({
+        url: `AutoCare/workshop/${workshopId}/activity-log`,
+        type: 'GET',
+        dataType: 'html',
+        timeout: 10000, // 10 seconds timeout
+        success: function (response) {
+            $('#activity-log-content').html(response);
+        },
+        error: function (xhr, status, error) {
+            console.error('Activity log error:', xhr, status, error);
+            let errorMessage = 'Failed to load activity logs.';
+            
+            if (xhr.status === 404) {
+                errorMessage = 'Workshop not found.';
+            } else if (xhr.status === 500) {
+                errorMessage = 'Server error occurred.';
+            } else if (status === 'timeout') {
+                errorMessage = 'Request timeout. Please try again.';
+            }
+            
+            $('#activity-log-content').html(`<div class="alert alert-danger mb-0"><i class="fas fa-exclamation-triangle me-2"></i>${errorMessage}</div>`);
+        }
+    });
+});
     </script>
 @endsection
