@@ -103,10 +103,7 @@
         <!-- schema_status Field -->
         <div class="col-lg-3 col-md-6 col-12 form-group">
             <label for="schema_status">Schema Status</label>
-            <select name="schema_status" id="schema_status" class="form-control">
-                <option value="0" {{ isset($page) && $page->schema_status == 0 ? 'selected' : '' }}>Inactive</option>
-                <option value="1" {{ isset($page) && $page->schema_status == 1 ? 'selected' : '' }}>Active</option>
-            </select>
+             <textarea name="schema_status" id="schema_status" rows="4" class="form-control">{{ $page->schema_status ?? old('schema_status') }}</textarea>
         </div>
 
         <!-- Meta Title Field -->

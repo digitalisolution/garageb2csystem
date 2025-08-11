@@ -11,35 +11,9 @@
             $bannerImageUrl = asset($bannerPath . $bannerimagePath);
             $fallbackImageUrl = asset($fallbackPath . $bannerimagePath);
         @endphp
+
 @if(isset($page) && isset($page->schema_status) && $page->schema_status)
-<script type='application/ld+json'>
-{
-  "@context": "http://www.schema.org",
-  "@type": "TireShop",
-  "name": "{{ $garage->garage_name }}",
-  "url": "{{ $garage->website_url }}",
-  "logo": "{{ asset('frontend/' . $domain . '/img/logo/' . $garage->logo) }}?v={{ time() }}",
-   @if($page->page_banner_path)
-  "image": "{{ $bannerImageUrl }}",
-  @endif
-  "description": "{{ $page->meta_description }}",
-  "address": {
-     "@type": "PostalAddress",
-     "streetAddress": "{{ $garage->street }}",
-     "addressRegion": "{{ $garage->city }}",
-     "postalCode": "{{ $garage->zone }}",
-     "addressCountry": "United Kingdom"
-  },
-  "geo": {
-     "@type": "GeoCoordinates",
-     "latitude": "{{ $garage->latitude }}",
-     "longitude": "{{ $garage->longitude }}"
-  },
-  "hasMap": "{{ $garage->google_map_link }}",
-  "openingHours": "{{ strip_tags($garage->garage_opening_time) }}",
-  "telephone": "{{ $garage->phone }}"
-}
-</script>
+{!! $page->schema_status !!}
 @endif
 <div class="breadcrumb-area brand_breadcrumb">
      @if($page->page_banner_path)
