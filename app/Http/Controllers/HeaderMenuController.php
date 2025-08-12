@@ -41,6 +41,8 @@ class HeaderMenuController extends Controller
             'title' => 'required|string|max:255',
             'slug' =>  'nullable|string|max:255',
             'parent_type' =>  'nullable|string|max:255',
+            'parent_id' =>  'nullable|integer',
+            'status' =>  'required|boolean',
             'sort' => 'nullable|integer',
         ]);
 
@@ -69,8 +71,10 @@ class HeaderMenuController extends Controller
     // Validation rules
     $validated = $request->validate([
         'title' => 'required|string|max:255',
-        'slug' => 'nullable|string|max:255',
-        'parent_type' => 'nullable|string|max:255',
+        'slug' =>  'nullable|string|max:255',
+        'parent_type' =>  'nullable|string|max:255',
+        'parent_id' =>  'nullable|integer',
+        'status' =>  'required|boolean',
         'sort' => 'nullable|integer',
     ]);
 

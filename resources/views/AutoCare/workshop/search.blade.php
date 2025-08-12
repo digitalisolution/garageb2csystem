@@ -79,6 +79,16 @@
         'placeholder' => 'Select Origin'
     ]) }}
                 </div>
+                
+                 <!-- Invoice -->
+                <div class="col-lg-3 col-md-6 col-12 form-group">
+                    <label for="convert_to_invoice">Convert Invoice:</label>
+                    {{ Form::select('convert_to_invoice', ['1' => 'Invoice', '0' => 'Workshop'], isset($convert_to_invoice) ? $convert_to_invoice : old('convert_to_invoice'), [
+        'id' => 'convert_to_invoice',
+        'class' => 'form-control',
+        'placeholder' => 'Select Invoice Status'
+    ]) }}
+                </div>
 
                 <div class="col-lg-3 col-md-6 col-12 form-group">
                     <label for="status">Workshop Status:</label>

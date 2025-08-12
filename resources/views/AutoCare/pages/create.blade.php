@@ -102,7 +102,7 @@
 
         <!-- schema_status Field -->
         <div class="col-lg-3 col-md-6 col-12 form-group">
-            <label for="schema_status">Schema Status</label>
+            <label for="schema_status">Schema Code</label>
              <textarea name="schema_status" id="schema_status" rows="4" class="form-control">{{ $page->schema_status ?? old('schema_status') }}</textarea>
         </div>
 

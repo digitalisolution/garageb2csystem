@@ -735,6 +735,9 @@ class WorkshopController extends Controller
         if ($request->filled('origin')) {
             $workshopQuery->where('workshop_origin', 'like', '%' . $request->origin . '%');
         }
+        if ($request->filled('convert_to_invoice')) {
+            $workshopQuery->where('workshops.is_converted_to_invoice', $request->convert_to_invoice);
+        }
         if ($request->filled('status')) {
             $workshopQuery->where('status', 'like', '%' . $request->status . '%');
         }
