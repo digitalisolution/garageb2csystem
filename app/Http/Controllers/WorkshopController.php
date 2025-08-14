@@ -796,68 +796,317 @@ class WorkshopController extends Controller
         return view('AutoCare.workshop.search', $viewData, $formAutoFillup);
     }
 
-    public function getWorkshopData(Request $request)
-    {
-        // Start query with your existing filters
-        $workshopQuery = DB::table('workshops')->whereNull('deleted_at')->orderBy('id', 'desc');
 
-        if ($request->filled('id')) {
-            $workshopQuery->where('id', $request->id);
-        }
-        if ($request->filled('customer_id')) {
-            $workshopQuery->where('customer_id', $request->customer_id);
-        }
-        if ($request->filled('name')) {
-            $searchTerm = '%' . $request->name . '%';
-            $workshopQuery->where(function ($query) use ($searchTerm) {
-                $query->where('name', 'like', $searchTerm)
-                    ->orWhere('company_name', 'like', $searchTerm);
-            });
-        }
-        if ($request->filled('created_at_from')) {
-            $workshopQuery->whereDate('created_at', '>=', $request->created_at_from);
-        }
-        if ($request->filled('created_at_to')) {
-            $workshopQuery->whereDate('created_at', '<=', $request->created_at_to);
-        }
-        if ($request->filled('mobile')) {
-            $workshopQuery->where('mobile', 'like', '%' . $request->mobile . '%');
-        }
-        if ($request->filled('email')) {
-            $workshopQuery->where('email', 'like', '%' . $request->email . '%');
-        }
-        if ($request->filled('origin')) {
-            $workshopQuery->where('workshop_origin', 'like', '%' . $request->origin . '%');
-        }
-        if ($request->filled('convert_to_invoice')) {
-            $workshopQuery->where('is_converted_to_invoice', $request->convert_to_invoice);
-        }
-        if ($request->filled('status')) {
-            $workshopQuery->where('status', 'like', '%' . $request->status . '%');
-        }
-        if ($request->filled('payment_method')) {
-            $workshopQuery->where('payment_method', 'like', '%' . $request->payment_method . '%');
-        }
-        if ($request->filled('is_void')) {
-            $workshopQuery->where('is_void', $request->is_void);
-        }
-        if ($request->filled('payment_status')) {
-            $workshopQuery->where('payment_status', 'like', '%' . $request->payment_status . '%');
-        }
-        if ($request->filled('vehicle_reg_number_for_search')) {
-            $workshopQuery->where('vehicle_reg_number', 'like', '%' . $request->vehicle_reg_number_for_search . '%');
-        }
-        if ($request->filled('year')) {
-            $workshopQuery->where('year', $request->year);
-        }
+public function getWorkshopData(Request $request)
+{
+    // Build the base query
+    // Join with invoices if you need invoice.is_void for the void badge or filtering
+    $workshopQuery = DB::table('workshops')
+        //->leftJoin('invoices', 'workshops.id', '=', 'invoices.workshop_id') // Uncomment if needed
+        ->select(
+            'workshops.id',
+            'workshops.created_at as workshop_date', // Alias for sorting/filtering
+            'workshops.name',
+            'workshops.mobile',
+            'workshops.vehicle_reg_number',
+            'workshops.payment_method',
+            'workshops.balance_price',
+            'workshops.grandTotal',
+            'workshops.payment_status',
+            'workshops.workshop_origin',
+            'workshops.status',
+            'workshops.is_converted_to_invoice',
+            'workshops.is_void'
+            // Add 'workshops.customer_id' if joining with customers for name or filtering
+            //'invoices.is_void as invoice_is_void' // If needed
+        )
+        ->whereNull('workshops.deleted_at');
 
-        return DataTables::of($workshopQuery)
-            ->addColumn('actions', function ($row) {
-                return view('AutoCare.workshop.modal.action_button', compact('row'))->render();
-            })
-            ->rawColumns(['actions'])
-            ->make(true);
+    // --- Apply Filters ---
+    // The keys here (e.g., 'id', 'name') must match the keys sent in the 'd' object
+    // from the DataTables ajax.data function in the Blade view.
+
+    if ($request->filled('id')) {
+        $workshopQuery->where('workshops.id', $request->id);
     }
+
+    // Assuming you want to filter by customer name on the workshop table itself
+    // If you join with customers, adjust the where clause accordingly (e.g., customers.name)
+    if ($request->filled('name')) {
+        $searchTerm = '%' . $request->name . '%';
+        $workshopQuery->where(function ($query) use ($searchTerm) {
+            $query->where('workshops.name', 'like', $searchTerm)
+                  ->orWhere('workshops.company_name', 'like', $searchTerm); // Adjust if company_name is elsewhere
+        });
+    }
+
+    if ($request->filled('mobile')) {
+        $workshopQuery->where('workshops.mobile', 'like', '%' . $request->mobile . '%');
+    }
+
+    if ($request->filled('created_at_from')) {
+        $workshopQuery->whereDate('workshops.created_at', '>=', $request->created_at_from);
+    }
+
+    if ($request->filled('created_at_to')) {
+        $workshopQuery->whereDate('workshops.created_at', '<=', $request->created_at_to);
+    }
+
+    if ($request->filled('email')) {
+        $workshopQuery->where('workshops.email', 'like', '%' . $request->email . '%');
+    }
+
+    if ($request->filled('origin')) {
+        $workshopQuery->where('workshops.workshop_origin', $request->origin); // Exact match for select
+    }
+
+    if ($request->filled('convert_to_invoice')) {
+         // Make sure the database value matches the select option value (1/0 or '1'/'0')
+        $workshopQuery->where('workshops.is_converted_to_invoice', $request->convert_to_invoice);
+    }
+
+    if ($request->filled('status')) {
+        $workshopQuery->where('workshops.status', $request->status); // Exact match for select
+    }
+
+    if ($request->filled('payment_method')) {
+        $workshopQuery->where('workshops.payment_method', $request->payment_method); // Exact match
+    }
+
+    if ($request->filled('is_void')) {
+        // Make sure the database value matches the select option value (1/0 or '1'/'0')
+        $workshopQuery->where('workshops.is_void', $request->is_void);
+    }
+
+    if ($request->filled('payment_status')) {
+        // Make sure the database value matches the select option value ('1', '0', '3')
+        $workshopQuery->where('workshops.payment_status', $request->payment_status);
+    }
+
+    if ($request->filled('vehicle_reg_number_for_search')) {
+        $workshopQuery->where('workshops.vehicle_reg_number', 'like', '%' . $request->vehicle_reg_number_for_search . '%');
+    }
+
+    // Add sorting back (DataTables usually handles this, but explicit is good)
+    // This is handled by DataTables based on 'name' in columns, but ensure default sort
+    $workshopQuery->orderBy('workshops.id', 'desc'); // Default sort
+
+    // --- Process with DataTables ---
+    return DataTables::of($workshopQuery)
+        // Format Date
+        ->editColumn('workshop_date_formatted', function ($workshop) {
+            return isset($workshop->workshop_date) ? date('d/m/Y H:i:s', strtotime($workshop->workshop_date)) : '';
+        })
+        // Customer Name (if just taking from workshops)
+        ->addColumn('customer_name', function ($workshop) {
+            return $workshop->name ?? '';
+        })
+        // Vehicle Reg (uppercase)
+        ->addColumn('vehicle_reg', function ($workshop) {
+            return strtoupper($workshop->vehicle_reg_number ?? '');
+        })
+        // Payment Method (formatted)
+        ->addColumn('payment_method_formatted', function ($workshop) {
+            return strtoupper(str_replace('_', ' ', $workshop->payment_method ?? ''));
+        })
+        // Amount Due (formatted)
+        ->addColumn('amount_due', function ($workshop) {
+            return '£' . number_format($workshop->balance_price ?? 0, 2, '.', '');
+        })
+        // Grand Total (formatted)
+        ->addColumn('grand_total', function ($workshop) {
+            return '£' . number_format($workshop->grandTotal ?? 0, 2, '.', '');
+        })
+        // Payment Status Badge
+        ->addColumn('payment_status_badge', function ($workshop) {
+            $statusClass = '';
+            $statusText = '';
+            switch ($workshop->payment_status) {
+                case 1:
+                    $statusClass = 'Paid';
+                    $statusText = 'Paid';
+                    break;
+                case 3:
+                    $statusClass = 'Partially';
+                    $statusText = 'Partially';
+                    break;
+                default: // case 0 or null/other
+                    $statusClass = 'Unpaid';
+                    $statusText = 'Unpaid';
+            }
+            return "<span class='{$statusClass}'>{$statusText}</span>";
+        })
+        // Origin Badge
+        ->addColumn('origin_badge', function ($workshop) {
+            // Ensure workshop_origin is safe for CSS class or escape output
+            return "<span class='" . e($workshop->workshop_origin) . "'>" . e($workshop->workshop_origin) . "</span>";
+        })
+        // Status Badge
+        ->addColumn('status_badge', function ($workshop) {
+             // Ensure status is safe for CSS class or escape output
+            return "<span class='" . e($workshop->status) . "'>" . e($workshop->status) . "</span>";
+        })
+        // Invoice Convert Badge
+        ->addColumn('invoice_convert_badge', function ($workshop) {
+            $text = ($workshop->is_converted_to_invoice == 1) ? 'invoice' : 'workshop';
+            $class = ($workshop->is_converted_to_invoice == 1) ? 'invoice' : 'workshop';
+            return "<span class='{$class}'>{$text}</span>";
+        })
+        // Actions Column (Crucial Part)
+        ->addColumn('actions', function ($workshop) {
+             // --- Replicate Action Logic ---
+            // You need to pass necessary data to the view/partial.
+            // Fetch related data if needed (like invoice void status) or pass workshop data.
+            // For simplicity, pass the workshop object itself.
+            // Ensure $workshop has all necessary fields (is_void, is_converted_to_invoice, etc.)
+
+            // Example using a view (make sure the view exists and logic is correct)
+            // return view('AutoCare.workshop.partials.datatables_actions', compact('workshop'))->render();
+
+            // Or build the HTML directly here (simpler for now, but less maintainable)
+            // You'll need to adjust URLs and permissions (role_id) as needed.
+            $roleId = auth()->user()->role_id ?? 0; // Get role ID for actions
+            $isVoid = ($workshop->is_void ?? false); // || ($workshop->invoice_is_void ?? false); if joined
+
+            $actions = '<div class="btn-group" role="group">
+                            <button id="btnGroupDrop' . $workshop->id . '" type="button"
+                                class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                                Actions
+                            </button>
+                            <ul class="dropdown-menu btngroup-dropdown"
+                                aria-labelledby="btnGroupDrop' . $workshop->id . '">';
+
+            if ($workshop->is_converted_to_invoice == 1) {
+                $actions .= '<li>
+                                <a href="' . url('/') . '/AutoCare/workshop/addinvoice/' . $workshop->id . '"
+                                    class="dropdown-item btn btn-warning btn-sm">
+                                    <i class="fa fa-pencil" aria-hidden="true"></i> Update Invoice
+                                </a>
+                            </li>
+                            <li>
+                                <a target="_blank"
+                                    href="' . url('/') . '/AutoCare/workshop/invoice/' . $workshop->id . '"
+                                    class="dropdown-item btn btn-primary btn-sm">
+                                    <i class="fa fa-eye"></i> View Invoice
+                                </a>
+                            </li>
+                            <li>
+                                <button type="button" class="dropdown-item btn btn-info btn-sm"
+                                    data-toggle="modal" data-target="#emailModal' . $workshop->id . '">
+                                    <i class="fa fa-envelope"></i> Email Invoice
+                                </button>
+                            </li>';
+                if ($roleId == 1) {
+                    $actions .= '<li>
+                                    <a href="' . route('invoice.preview', $workshop->id) . '" target="_blank"
+                                        class="dropdown-item btn btn-info btn-sm">
+                                        <i class="fa fa-eye"></i> Preview PDF
+                                    </a>
+                                </li>';
+                }
+                if (!$isVoid) { 
+                    $actions .= '<li>
+                                    <form action="' . url('/AutoCare/workshop/void/' . $workshop->id) . '"
+                                        method="POST"
+                                        onsubmit="return confirm(\'Are you sure you want to void this workshop?\');">
+                                        ' . csrf_field() . '
+                                        ' . method_field('POST') . '
+                                        <button type="submit" class="dropdown-item btn text-danger btn-sm">
+                                            <i class="fa fa-remove"></i> Void Invoice
+                                        </button>
+                                    </form>
+                                </li>';
+                }
+            } else {
+                $actions .= '<li>
+                                <a href="' . url('/') . '/AutoCare/workshop/addinvoice/' . $workshop->id . '"
+                                    class="dropdown-item btn btn-primary btn-sm">
+                                    <i class="fa fa-upload"></i> Convert to Invoice
+                                </a>
+                            </li>';
+            }
+
+            $actions .= '<li>
+                            <a data-toggle="modal" id="' . $workshop->id . '"
+                                data-target="#workshopDiscount"
+                                data-balance-total="' . ($workshop->balance_price ?? 0) . '"
+                                class="dropdown-item btn btn-success openDiscountModelForWorkshop btn-sm">
+                                <i class="fa fa-money" aria-hidden="true"></i> Discount
+                            </a>
+                        </li>
+                        <li>
+                            <a data-toggle="modal" id="' . $workshop->id . '"
+                                data-target="#workshopPayment"
+                                class="dropdown-item btn btn-success openPayentModelForWorkshop btn-sm"
+                                data-grand-total="' . ($workshop->balance_price ?? 0) . '">
+                                <i class="fa fa-money" aria-hidden="true"></i> Receive Payment
+                            </a>
+                        </li>
+                        <li>
+                            <a target="_blank"
+                                href="' . url('/') . '/AutoCare/workshop/view/' . $workshop->id . '"
+                                class="dropdown-item btn btn-primary btn-sm">
+                                <i class="fa fa-eye"></i> Job View
+                            </a>
+                        </li>';
+            if ($workshop->is_workshop == 1) { // Make sure 'is_workshop' field exists
+                $actions .= '<li>
+                                <a target="_blank"
+                                    href="' . url('/') . '/AutoCare/workshop/payment_history/' . $workshop->id . '"
+                                    class="dropdown-item btn btn-danger btn-sm" title="Payment History">
+                                    <i class="fa fa-eye"></i> Payment History
+                                </a>
+                            </li>';
+                 if (!$isVoid) { // Check void status
+                    $actions .= '<li>
+                                    <a href="' . url('/') . '/AutoCare/workshop/add/' . $workshop->id . '"
+                                        class="dropdown-item btn btn-success btn-sm">
+                                        <i class="fa fa-edit"></i> Edit
+                                    </a>
+                                </li>';
+                 }
+            }
+            $actions .= '<li>
+                            <a href="#"
+                                class="dropdown-item btn btn-success btn-sm open-activity-log-modal"
+                                data-id="' . $workshop->id . '">
+                                <i class="fa fa-eye" aria-hidden="true"></i> Activity Log
+                            </a>
+                        </li>';
+            if ($roleId == 1) {
+                $actions .= '<li>
+                                <form action="' . url('/AutoCare/workshop/trash/' . $workshop->id) . '"
+                                    method="POST"
+                                    onsubmit="return confirm(\'Are you sure you want to delete this workshop?\');">
+                                    ' . csrf_field() . '
+                                    ' . method_field('DELETE') . '
+                                    <button type="submit" class="dropdown-item btn text-danger btn-sm">
+                                        <i class="fa fa-remove"></i> Delete
+                                    </button>
+                                </form>
+                            </li>';
+            }
+            $actions .= '</ul></div>';
+            return $actions;
+        })
+        // Row Class for Void Items
+        ->setRowClass(function ($workshop) {
+             // Check workshop void or invoice void based on your logic
+            $isVoid = ($workshop->is_void ?? false); // || ($workshop->invoice_is_void ?? false); if joined
+            return $isVoid ? 'table-danger' : '';
+        })
+        // Specify columns containing raw HTML
+        ->rawColumns([
+            'workshop_date_formatted', 'customer_name', 'vehicle_reg',
+            'payment_method_formatted', 'amount_due', 'grand_total',
+            'payment_status_badge', 'origin_badge', 'status_badge',
+            'invoice_convert_badge', 'actions'
+        ])
+        // Make sure to return the processed data
+        ->make(true);
+}
+
 
     public function getActivityLog($id)
     {
