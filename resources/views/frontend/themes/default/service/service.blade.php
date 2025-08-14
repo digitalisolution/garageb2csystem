@@ -21,9 +21,7 @@
         </div>
     </div>
 <style type="text/css">
-    .modal.right .modal-dialog {position: fixed;right: 0;margin: 0;top: 0;height: 100%;transform: translateX(100%);transition: transform 0.4s ease-in-out;overflow: auto;width: 100%;}
-    .modal.right .modal-content {border: none;border-radius: 0;}
-    .modal.right.show .modal-dialog {transform: translateX(0);}
+    #quoteEnquiryModal .modal-content{height:auto;}
 </style>    
 <div class="pt-30 pb-30">
         <div class="container">

@@ -7,6 +7,7 @@ use App\Http\Controllers\ServiceController;
 // use App\Http\Controllers\ViewController\SlugController;
 use App\Http\Controllers\ViewController\SitemapController;
 use App\Http\Controllers\TyrePricingController;
+use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\MobileTyrePricingController;
 use App\Http\Controllers\ViewController\TyresProductController;
 use App\Http\Controllers\TyresController;
@@ -438,6 +439,10 @@ Route::middleware('auth:web')->group(function () {
     Route::get('/tinymce-api-key', function () {
         return response()->json(['key' => env('TINYMCE_API_KEY')]);
     });
+    Route::prefix('AutoCare/reports')->group(function () {
+    Route::get('/manage', [ReportsController::class, 'manage'])->name('reports.manage');
+    Route::post('/fetch', [ReportsController::class, 'fetchReports'])->name('reports.fetch');
+    });
 
 
     Route::prefix('AutoCare/meta-settings')->group(function () {
@@ -508,6 +513,9 @@ Route::middleware('auth:web')->group(function () {
     Route::get('/AutoCare/workshop/payment_history/{id}', 'WorkshopController@viewpaymenthistory');
     Route::get('/AutoCare/payment-record', 'PaymentRecordController@index');
     Route::get('AutoCare/workshop/{id}/activity-log', 'WorkshopController@getActivityLog')->name('workshop.activity-log');
+    Route::get('/AutoCare/workshop/data', [WorkshopController::class, 'getWorkshopData'])->name('workshop.data');
+    
+
 
     // Wokshop :stop
     // In routes/web.php

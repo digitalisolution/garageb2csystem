@@ -41,7 +41,7 @@ class SupplierServiceFactory
                     return [
                     'eden_upload_mode' => $credentials['eden_upload_mode'],
                     'external_ref_append' => $credentials['external_ref_append'] ?? null,
-                    'eden_dir_path' => $credentials['eden_dir_path'] ?? null, // Can be null in FTP mode
+                    'eden_dir_path' => $credentials['eden_dir_path'] ?? null,
                     'item_type' => $credentials['item_type'] ?? null,
                     'eden_ftp_host' => $credentials['eden_ftp_host'] ?? null,
                     'eden_ftp_username' => $credentials['eden_ftp_username'] ?? null,

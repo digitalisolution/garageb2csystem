@@ -10,6 +10,7 @@ use App\Models\Workshop;
 use App\Models\Service;
 use DB;
 use App\Models\WorkshopProduct;
+use Yajra\DataTables\Facades\DataTables;
 use App\Models\WorkshopService;
 use App\Models\Modal;
 // use App\Models\ServiceType;
@@ -379,83 +380,23 @@ class WorkshopController extends Controller
         }
 
         // **Save or Update Service Data**
-            if ($request->has('service_id') && $request->service_id[0] != null) {
-                foreach ($request->service_id as $index => $serviceId) {
-                     $serviceItemId = $serviceId ?? null;
+        if ($request->has('service_id') && $request->service_id[0] != null) {
+            foreach ($request->service_id as $index => $serviceId) {
+                $serviceItemId = $serviceId ?? null;
 
-                    $serviceItem = WorkshopService::where('workshop_id', $workshopId)->where('service_id', $serviceItemId)->where('ref_type', 'workshop')->first();
+                $serviceItem = WorkshopService::where('workshop_id', $workshopId)->where('service_id', $serviceItemId)->where('ref_type', 'workshop')->first();
                 // dd( $serviceItem);
-                    if ($serviceItem) {
-                        $original = $serviceItem->toArray();
+                if ($serviceItem) {
+                    $original = $serviceItem->toArray();
 
-                        $serviceItem->service_id = $serviceId;
-                        $serviceItem->service_name = $request->service_name[$index] ?? 'Unknown Service';
-                        $serviceItem->fitting_type = $request->fitting_type ?? 'fully_fitted';
-                        $serviceItem->service_quantity = $request->service_quantity[$index] ?? 1;
-                        $serviceItem->service_price = $request->service_price[$index] ?? 0;
-                        $serviceItem->tax_class_id = $request->service_vat[$index] ?? 0;
+                    $serviceItem->service_id = $serviceId;
+                    $serviceItem->service_name = $request->service_name[$index] ?? 'Unknown Service';
+                    $serviceItem->fitting_type = $request->fitting_type ?? 'fully_fitted';
+                    $serviceItem->service_quantity = $request->service_quantity[$index] ?? 1;
+                    $serviceItem->service_price = $request->service_price[$index] ?? 0;
+                    $serviceItem->tax_class_id = $request->service_vat[$index] ?? 0;
 
-                        $dirty = $serviceItem->getDirty();
-
-                        if (!empty($dirty)) {
-                            $changes = [];
-                            foreach ($dirty as $field => $newValue) {
-                                $changes[$field] = [
-                                    'old' => $original[$field] ?? null,
-                                    'new' => $newValue
-                                ];
-                            }
-
-                            $serviceItem->save();
-
-                            ActivityLogger::log(
-                                workshopId: $workshopId,
-                                action: 'Updated Service',
-                                description: 'Service updated: ' . $serviceItem->service_name,
-                                changes: $changes
-                            );
-                        }
-                    } else {
-                        // Add new service
-                        $serviceItem = new WorkshopService();
-                        $serviceItem->workshop_id = $workshopId;
-                        $serviceItem->ref_type = 'workshop';
-                        $serviceItem->product_type = 'service';
-                        $serviceItem->service_id = $serviceId;
-                        $serviceItem->service_name = $request->service_name[$index] ?? 'Unknown Service';
-                        $serviceItem->fitting_type = $request->fitting_type ?? 'fully_fitted';
-                        $serviceItem->service_quantity = $request->service_quantity[$index] ?? 1;
-                        $serviceItem->service_price = $request->service_price[$index] ?? 0;
-                        $serviceItem->tax_class_id = $request->service_vat[$index] ?? 0;
-                        $serviceItem->save();
-
-                        ActivityLogger::log(
-                            workshopId: $workshopId,
-                            action: 'Added Service',
-                            description: 'Service added: ' . $serviceItem->service_name,
-                            changes: [
-                                'service_id' => ['old' => null, 'new' => $serviceId],
-                                'quantity' => ['old' => null, 'new' => $serviceItem->service_quantity],
-                                'price' => ['old' => null, 'new' => $serviceItem->service_price],
-                                'vat' => ['old' => null, 'new' => $serviceItem->tax_class_id],
-                            ]
-                        );
-                    }
-                }
-            }
-
-        // **Save Booking Data**
-            if ($request->has('due_in') && $request->has('due_out')) {
-                $booking = Booking::where('workshop_id', $workshopId)->first();
-                
-                if ($booking) {
-                    $original = $booking->toArray();
-
-                    $booking->title = $request->name ?? 'Workshop Booking';
-                    $booking->start = $request->due_in;
-                    $booking->end = $request->due_out;
-
-                    $dirty = $booking->getDirty();
+                    $dirty = $serviceItem->getDirty();
 
                     if (!empty($dirty)) {
                         $changes = [];
@@ -466,36 +407,96 @@ class WorkshopController extends Controller
                             ];
                         }
 
-                        $booking->save();
+                        $serviceItem->save();
 
                         ActivityLogger::log(
                             workshopId: $workshopId,
-                            action: 'Updated Booking',
-                            description: 'Booking updated from ' . ($original['start'] ?? '-') . ' to ' . ($original['end'] ?? '-'),
+                            action: 'Updated Service',
+                            description: 'Service updated: ' . $serviceItem->service_name,
                             changes: $changes
                         );
                     }
-
                 } else {
-                    $booking = new Booking();
-                    $booking->workshop_id = $workshopId;
-                    $booking->title = $request->name ?? 'Workshop Booking';
-                    $booking->start = $request->due_in;
-                    $booking->end = $request->due_out;
-                    $booking->save();
+                    // Add new service
+                    $serviceItem = new WorkshopService();
+                    $serviceItem->workshop_id = $workshopId;
+                    $serviceItem->ref_type = 'workshop';
+                    $serviceItem->product_type = 'service';
+                    $serviceItem->service_id = $serviceId;
+                    $serviceItem->service_name = $request->service_name[$index] ?? 'Unknown Service';
+                    $serviceItem->fitting_type = $request->fitting_type ?? 'fully_fitted';
+                    $serviceItem->service_quantity = $request->service_quantity[$index] ?? 1;
+                    $serviceItem->service_price = $request->service_price[$index] ?? 0;
+                    $serviceItem->tax_class_id = $request->service_vat[$index] ?? 0;
+                    $serviceItem->save();
 
                     ActivityLogger::log(
                         workshopId: $workshopId,
-                        action: 'Created Booking',
-                        description: 'Booking from ' . $request->due_in . ' to ' . $request->due_out,
+                        action: 'Added Service',
+                        description: 'Service added: ' . $serviceItem->service_name,
                         changes: [
-                            'start' => ['old' => null, 'new' => $request->due_in],
-                            'end' => ['old' => null, 'new' => $request->due_out],
-                            'title' => ['old' => null, 'new' => $booking->title],
+                            'service_id' => ['old' => null, 'new' => $serviceId],
+                            'quantity' => ['old' => null, 'new' => $serviceItem->service_quantity],
+                            'price' => ['old' => null, 'new' => $serviceItem->service_price],
+                            'vat' => ['old' => null, 'new' => $serviceItem->tax_class_id],
                         ]
                     );
                 }
             }
+        }
+
+        // **Save Booking Data**
+        if ($request->has('due_in') && $request->has('due_out')) {
+            $booking = Booking::where('workshop_id', $workshopId)->first();
+
+            if ($booking) {
+                $original = $booking->toArray();
+
+                $booking->title = $request->name ?? 'Workshop Booking';
+                $booking->start = $request->due_in;
+                $booking->end = $request->due_out;
+
+                $dirty = $booking->getDirty();
+
+                if (!empty($dirty)) {
+                    $changes = [];
+                    foreach ($dirty as $field => $newValue) {
+                        $changes[$field] = [
+                            'old' => $original[$field] ?? null,
+                            'new' => $newValue
+                        ];
+                    }
+
+                    $booking->save();
+
+                    ActivityLogger::log(
+                        workshopId: $workshopId,
+                        action: 'Updated Booking',
+                        description: 'Booking updated from ' . ($original['start'] ?? '-') . ' to ' . ($original['end'] ?? '-'),
+                        changes: $changes
+                    );
+                }
+
+            } else {
+                $booking = new Booking();
+                $booking->workshop_id = $workshopId;
+                $booking->title = $request->name ?? 'Workshop Booking';
+                $booking->start = $request->due_in;
+                $booking->end = $request->due_out;
+                $booking->save();
+
+                ActivityLogger::log(
+                    workshopId: $workshopId,
+                    action: 'Created Booking',
+                    description: 'Booking from ' . $request->due_in . ' to ' . $request->due_out,
+                    changes: [
+                        'start' => ['old' => null, 'new' => $request->due_in],
+                        'end' => ['old' => null, 'new' => $request->due_out],
+                        'title' => ['old' => null, 'new' => $booking->title],
+                    ]
+                );
+            }
+        }
 
         // Save VehicleDetail Data and manage customer_vehicle relationship
         if ($request->has('vehicle_reg_number') && $request->vehicle_reg_number != null) {
@@ -639,6 +640,16 @@ class WorkshopController extends Controller
             if ($existingInvoice) {
                 $existingInvoice->update($invoiceData);
                 $workshop->update(['is_converted_to_invoice' => 1]);
+                ActivityLogger::log(
+                    workshopId: $workshop->id,
+                    action: 'Update Invoice',
+                    description: 'Update Invoice: ' . $workshop->id,
+                    changes: [
+                        'workshop' => $workshop->id,
+                        'balance_amount' => $workshop->balance_price,
+                        'payment_status' => $workshop->payment_status
+                    ]
+                );
                 // return redirect()->back();
             } else {
                 $invoiceData = array_merge($workshopData, [
@@ -647,6 +658,16 @@ class WorkshopController extends Controller
                 ]);
                 $newInvoice = Invoice::create($invoiceData);
                 $workshop->update(['is_converted_to_invoice' => 1]);
+                ActivityLogger::log(
+                    workshopId: $workshop->id,
+                    action: 'Create Invoice',
+                    description: 'Create New Invoice: ' . $workshop->id,
+                    changes: [
+                        'workshop' => $workshop->id,
+                        'balance_amount' => $workshop->balance_price,
+                        'payment_status' => $workshop->payment_status
+                    ]
+                );
                 // return redirect()->back();
             }
 
@@ -774,6 +795,70 @@ class WorkshopController extends Controller
 
         return view('AutoCare.workshop.search', $viewData, $formAutoFillup);
     }
+
+    public function getWorkshopData(Request $request)
+    {
+        // Start query with your existing filters
+        $workshopQuery = DB::table('workshops')->whereNull('deleted_at')->orderBy('id', 'desc');
+
+        if ($request->filled('id')) {
+            $workshopQuery->where('id', $request->id);
+        }
+        if ($request->filled('customer_id')) {
+            $workshopQuery->where('customer_id', $request->customer_id);
+        }
+        if ($request->filled('name')) {
+            $searchTerm = '%' . $request->name . '%';
+            $workshopQuery->where(function ($query) use ($searchTerm) {
+                $query->where('name', 'like', $searchTerm)
+                    ->orWhere('company_name', 'like', $searchTerm);
+            });
+        }
+        if ($request->filled('created_at_from')) {
+            $workshopQuery->whereDate('created_at', '>=', $request->created_at_from);
+        }
+        if ($request->filled('created_at_to')) {
+            $workshopQuery->whereDate('created_at', '<=', $request->created_at_to);
+        }
+        if ($request->filled('mobile')) {
+            $workshopQuery->where('mobile', 'like', '%' . $request->mobile . '%');
+        }
+        if ($request->filled('email')) {
+            $workshopQuery->where('email', 'like', '%' . $request->email . '%');
+        }
+        if ($request->filled('origin')) {
+            $workshopQuery->where('workshop_origin', 'like', '%' . $request->origin . '%');
+        }
+        if ($request->filled('convert_to_invoice')) {
+            $workshopQuery->where('is_converted_to_invoice', $request->convert_to_invoice);
+        }
+        if ($request->filled('status')) {
+            $workshopQuery->where('status', 'like', '%' . $request->status . '%');
+        }
+        if ($request->filled('payment_method')) {
+            $workshopQuery->where('payment_method', 'like', '%' . $request->payment_method . '%');
+        }
+        if ($request->filled('is_void')) {
+            $workshopQuery->where('is_void', $request->is_void);
+        }
+        if ($request->filled('payment_status')) {
+            $workshopQuery->where('payment_status', 'like', '%' . $request->payment_status . '%');
+        }
+        if ($request->filled('vehicle_reg_number_for_search')) {
+            $workshopQuery->where('vehicle_reg_number', 'like', '%' . $request->vehicle_reg_number_for_search . '%');
+        }
+        if ($request->filled('year')) {
+            $workshopQuery->where('year', $request->year);
+        }
+
+        return DataTables::of($workshopQuery)
+            ->addColumn('actions', function ($row) {
+                return view('AutoCare.workshop.modal.action_button', compact('row'))->render();
+            })
+            ->rawColumns(['actions'])
+            ->make(true);
+    }
+
     public function getActivityLog($id)
     {
         try {
@@ -802,62 +887,109 @@ class WorkshopController extends Controller
     }
     public function viewSearchInvoice(Request $request)
     {
-        $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
+        $viewData['header_link'] = HeaderLink::where("menu_id", '3')
+            ->select("link_title", "link_name")
+            ->orderBy('id', 'desc')
+            ->get();
+
         $viewData['customerNameSelect'] = Customer::pluck('customer_name', 'id');
+        $now = \Carbon\Carbon::now();
+
         if ($request->isMethod('post')) {
             $viewData['pageTitle'] = 'Add Party';
             $workshop = DB::table('invoices');
-            // $workshop->leftJoin('modals', 'modals.id', '=', 'invoices.year');
+            $workshop->where('invoices.is_void', 0);
+            $workshop->whereNull('invoices.deleted_at');
+
             $getFormAutoFillup = $request->all();
-            $workshop->where('invoices.deleted_at', '=', null);
-            if ($request->has('id') && $request->id != '') {
-                $workshop->where('invoices.id', '=', $request->id);
+
+            // Apply filters
+            if ($request->filled('id')) {
+                $workshop->where('invoices.workshop_id', '=', $request->id);
             }
             if ($request->filled('name')) {
-                $workshop->where('name', 'like', '%' . $request->name . '%'); // Partial match for name
+                $workshop->where('name', 'like', '%' . $request->name . '%');
             }
-            if ($request->has('customer_id') && $request->customer_id != '') {
+            if ($request->filled('customer_id')) {
                 $workshop->where('invoices.customer_id', 'like', '%' . $request->customer_id . '%');
             }
-            if ($request->has('created_at_from') && $request->created_at_from != '') {
-                $workshop->whereDate('invoices.created_at', '<=', $request->created_at_from);
+            if ($request->filled('created_at_from')) {
+                $workshop->whereDate('invoices.created_at', '>=', $request->created_at_from);
             }
-            if ($request->has('created_at_to') && $request->created_at_to != '') {
-                $workshop->whereDate('invoices.created_at', '>=', $request->created_at_to);
+            if ($request->filled('created_at_to')) {
+                $workshop->whereDate('invoices.created_at', '<=', $request->created_at_to);
             }
-            if ($request->has('mobile') && $request->mobile != '') {
+            if ($request->filled('mobile')) {
                 $workshop->where('invoices.mobile', 'like', '%' . $request->mobile . '%');
             }
-            if ($request->has('email') && $request->email != '') {
+            if ($request->filled('email')) {
                 $workshop->where('invoices.email', 'like', '%' . $request->email . '%');
             }
-            if ($request->has('vehicle_reg_number_for_search') && $request->vehicle_reg_number_for_search != '') {
+            if ($request->filled('vehicle_reg_number_for_search')) {
                 $workshop->where('invoices.vehicle_reg_number', 'like', '%' . $request->vehicle_reg_number_for_search . '%');
             }
-
-            if ($request->has('year') && $request->year != '') {
+            if ($request->filled('year')) {
                 $workshop->where('invoices.year', '=', $request->year);
             }
-            // $workshop->select('invoices.*', 'modals.model_name as modelNumber');
-            $workshop->orderBy('id', 'desc');
-            $workshop = $workshop->get();
-            $viewData['workshop'] = json_decode(json_encode($workshop), true);
-            return view('AutoCare.workshop.search-invoice', $viewData)->with($getFormAutoFillup);
+
+            $workshop->orderBy('workshop_id', 'desc');
+            $workshopData = $workshop->get();
+            $viewData['workshop'] = json_decode(json_encode($workshopData), true);
+            $totals = DB::table('invoices')
+                ->where('invoices.is_void', 0)
+                ->whereNull('invoices.deleted_at')
+                ->when($request->filled('id'), fn($q) => $q->where('invoices.workshop_id', '=', $request->id))
+                ->when($request->filled('name'), fn($q) => $q->where('name', 'like', '%' . $request->name . '%'))
+                ->when($request->filled('customer_id'), fn($q) => $q->where('invoices.customer_id', 'like', '%' . $request->customer_id . '%'))
+                ->when($request->filled('created_at_from'), fn($q) => $q->whereDate('invoices.created_at', '>=', $request->created_at_from))
+                ->when($request->filled('created_at_to'), fn($q) => $q->whereDate('invoices.created_at', '<=', $request->created_at_to))
+                ->when($request->filled('mobile'), fn($q) => $q->where('invoices.mobile', 'like', '%' . $request->mobile . '%'))
+                ->when($request->filled('email'), fn($q) => $q->where('invoices.email', 'like', '%' . $request->email . '%'))
+                ->when($request->filled('vehicle_reg_number_for_search'), fn($q) => $q->where('invoices.vehicle_reg_number', 'like', '%' . $request->vehicle_reg_number_for_search . '%'))
+                ->when($request->filled('year'), fn($q) => $q->where('invoices.year', '=', $request->year))
+                ->selectRaw('SUM(CASE WHEN due_out IS NOT NULL AND due_out < ? AND balance_price > 0 THEN balance_price ELSE 0 END) as total_overdue', [$now])
+                ->selectRaw('
+                SUM(paid_price) as total_paid,
+                SUM(balance_price) as total_balance,
+                SUM(discount_price) as total_discount
+            ')
+                ->first();
+
+            $viewData['total_paid'] = $totals->total_paid ?? 0;
+            $viewData['total_balance'] = $totals->total_balance ?? 0;
+            $viewData['total_overdue'] = $totals->total_overdue ?? 0;
+            $viewData['total_discount'] = $totals->total_discount ?? 0;
+
+            return view('AutoCare.workshop.search-invoice', $viewData)
+                ->with($getFormAutoFillup);
 
         } else {
             $viewData['pageTitle'] = 'Workshop Details';
-            $workshop = DB::table('invoices');
-            $workshop->where('invoices.deleted_at', '=', null);
-            $workshop->orderBy('invoices.id', 'asc');
-            $workshop = $workshop->get();
+            $workshop = DB::table('invoices')
+                ->where('invoices.is_void', 0)
+                ->whereNull('invoices.deleted_at')
+                ->orderBy('invoices.workshop_id', 'desc')
+                ->get();
             $viewData['workshop'] = json_decode(json_encode($workshop), true);
-            //  $workshop= DB::table('workshops');
-            //$workshop->orderBy('id','desc');
-            //$workshop= $workshop->get();
-            //$viewData['workshop']=json_decode(json_encode($workshop), true);
+
+            $totals = DB::table('invoices')
+                ->where('invoices.is_void', 0)
+                ->whereNull('invoices.deleted_at')
+                ->selectRaw('SUM(CASE WHEN due_out IS NOT NULL AND due_out < ? AND balance_price > 0 THEN balance_price ELSE 0 END) as total_overdue', [$now])
+                ->selectRaw('
+                SUM(paid_price) as total_paid,
+                SUM(balance_price) as total_balance,
+                 SUM(discount_price) as total_discount
+            ')
+                ->first();
+
+            $viewData['total_paid'] = $totals->total_paid ?? 0;
+            $viewData['total_balance'] = $totals->total_balance ?? 0;
+            $viewData['total_overdue'] = $totals->total_overdue ?? 0;
+            $viewData['total_discount'] = $totals->total_discount ?? 0;
+
             return view('AutoCare.workshop.search-invoice', $viewData);
         }
-
     }
     public function viewpaymenthistory($id)
     {
@@ -947,11 +1079,16 @@ class WorkshopController extends Controller
                     ActivityLogger::log(
                         workshopId: $workshop->id,
                         action: 'Restored Tyre Quantity',
-                        description: 'Restored tyre quantity for product: ' . $tyreProduct->tyre_description. ' '. $tyreProduct->tyre_ean,
-                        changes: ['quantity_restored' => $workshopTyre->quantity,'reason' => 'Void Invoice']
+                        description: 'Restored tyre quantity for product: ' . $tyreProduct->tyre_description . ' ' . $tyreProduct->tyre_ean,
+                        changes: ['quantity_restored' => $workshopTyre->quantity, 'reason' => 'Void Invoice']
                     );
                 }
             }
+
+            DB::table('stock_history')
+            ->where('ref_type', 'INV')
+            ->where('ref_id', $workshop->id)
+            ->delete();
 
             DB::commit();
 
@@ -960,9 +1097,10 @@ class WorkshopController extends Controller
                 action: 'Void Invoice',
                 description: 'Void Invoice, Invoice ID: ' . $workshop->id,
                 changes: [
-                'invoice_id' => $workshop->id,
-                'invoice_status'=>  $workshop->status,
-                'balance amount' => $workshop->balance_price]
+                    'invoice_id' => $workshop->id,
+                    'invoice_status' => $workshop->status,
+                    'balance amount' => $workshop->balance_price
+                ]
             );
 
             $request->session()->flash('message.level', 'success');
@@ -1059,7 +1197,7 @@ class WorkshopController extends Controller
             \Log::error("Error trashing workshop ID: $id", ['error' => $e->getMessage()]);
 
             // Flash error message
-            session()->flash('status', ['danger', 'Operation Failed!'.$e->getMessage()]);
+            session()->flash('status', ['danger', 'Operation Failed!' . $e->getMessage()]);
         }
 
         // Prepare view data

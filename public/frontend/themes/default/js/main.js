@@ -291,7 +291,31 @@
             }
         }
     })
-    
+    /* Testimonial 3 active */
+    $('.testimonial-active-3').owlCarousel({
+        loop: true,
+        nav: false,
+        autoplay: false,
+        navText: ['<i class="pe-7s-angle-left"></i>', '<i class="pe-7s-angle-right"></i>'],
+        autoplayTimeout: 5000,
+        item: 3,
+        margin:30,
+        responsive: {
+            0: {
+                items: 1,
+                autoplay: true,
+            },
+            576: {
+                items: 1
+            },
+            768: {
+                items:2
+            },
+            1000: {
+                items: 3
+            }
+        }
+    })
     
     /* Brand logo active */
     $('.brand-logo-active').owlCarousel({

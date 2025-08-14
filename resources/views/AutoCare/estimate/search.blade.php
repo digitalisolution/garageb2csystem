@@ -171,7 +171,7 @@
                         <i class="fa fa-align-justify"></i> Estimate Detail
                     </div>
                     <div class="card-body table-responsive"
-                        style="font-size: 13px;padding-left:10px;vertical-align:middle;">
+                        style="font-size: 13px;padding-left:10px;vertical-align:middle;min-height:500px;">
                         <table id="" class="table table-hover" style="font-size: 13px;">
                             <thead class="thead-dark">
                                 <tr>

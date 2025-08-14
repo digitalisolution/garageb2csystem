@@ -380,32 +380,25 @@ class TyreImportController extends Controller
 
     private function importBondCsv($fileContent, $supplierId, $supplierName)
     {
-
-        // Debugging: log the type and content of $fileContent
-        // \Log::debug('File Content Type: ' . gettype($fileContent));
-        // \Log::debug('File Content: ' . var_export($fileContent, true));
-
-        // Set a longer execution time to handle large data imports
         set_time_limit(300);
 
-        // Ensure $fileContent is an array of rows (no need to implode if it's already an array)
         if (is_array($fileContent)) {
-            $rows = $fileContent; // Use the array directly
+            $rows = $fileContent;
         } else {
             \Log::error('File content is not an array, unable to process.');
-            return; // Exit if file content is not in the expected format
+            return; 
         }
 
-        // Step 1: Extract the header (first row)
-        $header = array_shift($rows); // Remove the first row as the header
+        $header = array_shift($rows);
+        $header = array_map(function ($key) {
+            return str_replace(' ', '_', $key);
+        }, $header);
 
-        // Step 2: Delete existing data for the `bond` source
         TyresProduct::where('tyre_supplier_name', $supplierName)
             ->where('supplier_id', $supplierId)
-            ->where('instock', 0) // Ensure correct column name and numeric comparison
+            ->where('instock', 0) 
             ->delete();
 
-        // Step 3: Reset AUTO_INCREMENT safely if the table is empty
         if (!TyresProduct::exists()) {
             $tableName = (new TyresProduct)->getTable();
             $connection = (new TyresProduct)->getConnectionName() ?? config('database.default');
@@ -413,80 +406,72 @@ class TyreImportController extends Controller
             DB::connection($connection)->statement("ALTER TABLE {$tableName} AUTO_INCREMENT = 1");
         }
 
-
-        // Step 3: Batch processing variables
         $insertData = [];
         $batchSize = 500;
 
-        // Step 4: Helper function to normalize keys
-
-
-        // Step 5: Process each row in the CSV file
         foreach ($rows as $line) {
-            // Skip empty lines
             if (empty($line)) {
                 continue;
             }
 
-            // Process each line using array_combine with header
-            $row = array_combine($header, $line);  // Combine header and line into an associative array
+            $row = array_combine($header, $line);
 
-            // Apply your conditions for valid rows
             if (
                 ($row['PRICE'] ?? 0) > 1 || ($row['STOCKBAL'] ?? 0) > 1 &&
                 !empty($row['EAN']) && ($row['EAN'] != '-') &&
                 !empty($row['SECTION']) && !empty($row['PROFILE']) && !empty($row['RIM'])
             ) {
-                // Handle manufacturer_id logic
+
                 $manufacturerId = null;
                 $brandName = $row['BRAND'] ?? null;
+                $budgettype= $row['BRAND_CATEGORY'] ?? null;
 
                 if ($brandName) {
-                    // Check if the brand exists
                     $brand = tyre_brands::where('name', '=', $brandName)->first();
 
                     if ($brand) {
                         $manufacturerId = $brand->brand_id;
                     } else {
-                        // Create a new brand entry
                         $newBrandId = tyre_brands::insertGetId([
                             'name' => $brandName,
                             'slug' => Str::slug($brandName),
                             'promoted' => 0,
-                            'image' => Str::slug($brandName) . '.jpg',
+                            'image' => Str::slug($brandName) . '.webp',
+                            'budget_type' => $budgettype,
                             'sort_order' => 1,
                             'status' => 1,
                             'product_type' => 'tyre',
                             'created_at' => now(),
                             'updated_at' => now(),
                         ]);
+                        //dd($newBrandId);
 
                         $manufacturerId = $newBrandId;
+
                     }
                 }
 
-                // Normalize the row keys
                 $normalized_row = [];
                 foreach ($row as $key => $value) {
                     $normalized_row[$this->normalizeKey($key)] = $value;
                 }
+                //dd($row); 
                 
                 $tyre_runflat = isset($row['RFT']) && ($row['RFT'] === 'Yes' || $row['RFT'] === 'RFT') ? 1 : 0;
                 $tyre_extraload = isset($row['XL']) && $row['XL'] === 'XL' ? 1 : 0;
-                // $seasonMap = [
-                //     'S' => 'Summer',
-                //     'A' => 'All Season',
-                //     'W' => 'Winter',
-                //     'Summer' => 'Summer',
-                //     'All Season' => 'All Season',
-                //     'Winter' => 'Winter',
-                // ];
-                // $tyre_season = isset($row['SEASON']) && isset($seasonMap[strtoupper($row['SEASON'])])
-                //     ? $seasonMap[strtoupper($row['SEASON'])]
-                //     : 'Summer';
+                /*$seasonMap = [
+                    'S' => 'Summer',
+                    'A' => 'All Season',
+                    'W' => 'Winter',
+                    'Summer' => 'Summer',
+                    'All Season' => 'All Season',
+                    'Winter' => 'Winter',
+                ];
+                $tyre_season = isset($row['SEASON']) && isset($seasonMap[strtoupper($row['SEASON'])])
+                    ? $seasonMap[strtoupper($row['SEASON'])]
+                    : 'Summer';*/
 
                 $tyre_season = $row['SEASON'] ?? null;
-                // Handle human-readable text for antiflat and reinforcement
                 $antiflat_text = $tyre_runflat ? 'RFT' : '';
                 $reinforced_text = $tyre_extraload ? 'XL' : '';
                 $season = $tyre_season ? $tyre_season . ' Tyre ' : 'Summer Tyre ';
@@ -495,9 +480,7 @@ class TyreImportController extends Controller
                 if ($vehicleType == 'van' || $vehicleType == 'commercial van') {
                     $rimText .= 'C';
                 }
-                // Combine texts intelligently for the description
                 $additional_features = trim(($antiflat_text . ' ' . $reinforced_text));
-                // Prepare the tyre data and include supplier_id and supplier_name
                 $tyre_data = [
                     'tyre_sku' => $row['BOND_CODE'] ?? null,
                     'tyre_ean' => $row['EAN'] ?? null,
@@ -509,6 +492,7 @@ class TyreImportController extends Controller
                     'tyre_profile' => $row['PROFILE'] ?? null,
                     'tyre_diameter' => $row['RIM'] ?? null,
                     'tyre_speed' => $row['SPEED'] ?? null,
+                    'tyre_loadindex' => $row['LOAD_INDEX'] ?? null,
                     'status' => ($row['STOCKBAL'] ?? 0) >= 1 ? 1 : 0,
                     'tyre_fullyfitted_price' => (float) ($row['PRICE'] ?? 0) + 25,
                     'trade_costprice' => (float) ($row['PRICE'] ?? 0) + 4.84,
@@ -516,13 +500,31 @@ class TyreImportController extends Controller
                     'tyre_model' => $row['PATTERN'] ?? null,
                     'created_at' => now(),
                     'updated_at' => now(),
-                    'tyre_noisedb' => is_numeric($normalized_row['noise'] ?? $normalized_row['noisedb'] ?? null)
-                        ? ($normalized_row['noise'] ?? $normalized_row['noisedb'])
+                    'tyre_noisedb' => is_numeric(
+                            $normalized_row['noise'] 
+                            ?? $normalized_row['noisedb'] 
+                            ?? $normalized_row['noise_'] 
+                            ?? null
+                        )
+                        ? (
+                            $normalized_row['noise'] 
+                            ?? $normalized_row['noisedb'] 
+                            ?? $normalized_row['noise_']
+                        )
                         : null,
-                    'tyre_fuel' => $row['FUEL'] ?? null,
-                    'tyre_wetgrip' => $row['WET'] ?? '',
+
+                    //'tyre_fuel' => $row['FUEL'] ?? null,
+                        'tyre_fuel' => isset($row['FUEL']) 
+                            ? strtoupper(substr(str_replace('-', '', trim($row['FUEL'])), 0, 1)) 
+                            : null,
+
+                                            //'tyre_wetgrip' => $row['WET'] ?? '',
+                            'tyre_wetgrip' => isset($row['WET']) 
+                            ? strtoupper(substr(str_replace('-', '', trim($row['WET'])), 0, 1)) 
+                            : null,
+
                     'tyre_runflat' => $tyre_runflat,
-                    'tyre_loadindex' => $row['LOAD_INDEX'] ?? null,
+                    
                     'tyre_extraload' => $tyre_extraload,
                     'vehicle_type' =>  $vehicleType,
                     'tyre_weight' => $row['WEIGHT'] ?? $row['WEIGHT_KG'] ?? null,
@@ -545,11 +547,10 @@ class TyreImportController extends Controller
                     ),
 
                 ];
+                //dd($tyre_data);
 
-                // Add the processed data to the insert array
                 $insertData[] = $tyre_data;
 
-                // Insert data in batches for efficiency
                 if (count($insertData) >= $batchSize) {
                     TyresProduct::insert($insertData);
                     $insertData = [];
@@ -557,7 +558,6 @@ class TyreImportController extends Controller
             }
         }
 
-        // Insert any remaining data that was not inserted in the batch
         if (!empty($insertData)) {
             TyresProduct::insert($insertData);
         }
@@ -1213,7 +1213,7 @@ class TyreImportController extends Controller
                 foreach ($row as $key => $value) {
                     $normalized_row[$this->normalizeKey($key)] = $value;
                 }
-    
+    //dd($row);
                 $sku = $row['Product_Stock_Number'] ?? $this->generateRandom13DigitNumber() . 'A';
                 $ean = $row['Product_EAN'] ?? $this->generateRandom13DigitNumber() . 'Z';
     

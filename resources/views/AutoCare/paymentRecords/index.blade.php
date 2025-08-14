@@ -1,11 +1,8 @@
 @extends('samples')
 
 @section('content')
-<div class="container">
-    <div class="m-3">
-        <h1>Payment Record Details</h1>
-    </div>
-
+<div class="container-fluid">
+        <h5>Payment Record Details</h5>
     <table id="datable_1" class="table table-bordered">
         <thead class="thead-dark">
             <tr>

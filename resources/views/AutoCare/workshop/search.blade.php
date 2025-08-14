@@ -79,8 +79,8 @@
         'placeholder' => 'Select Origin'
     ]) }}
                 </div>
-                
-                 <!-- Invoice -->
+
+                <!-- Invoice -->
                 <div class="col-lg-3 col-md-6 col-12 form-group">
                     <label for="convert_to_invoice">Convert Invoice:</label>
                     {{ Form::select('convert_to_invoice', ['1' => 'Invoice', '0' => 'Workshop'], isset($convert_to_invoice) ? $convert_to_invoice : old('convert_to_invoice'), [
@@ -208,7 +208,7 @@
                     </div>
                     <div class="card-body table-responsive"
                         style="font-size: 13px;padding-left:10px;vertical-align:middle;">
-                        <table id="" class="table table-hover" style="font-size: 13px;">
+                        <table id="workshopTable" class="table table-hover" style="font-size: 13px;">
                             <thead class="thead-dark">
                                 <tr>
                                     <th style="white-space: nowrap">Workshop Date</th>
@@ -234,7 +234,8 @@
                                         $due_out = isset($value->due_out) ? date('d/m/Y', strtotime($value->due_out)) : '';
                                         $workshop_date = isset($value->workshop_date) ? date('d/m/Y H:i:s', strtotime($value->workshop_date)) : '';
                                     @endphp
-                                   <tr class="{{ ($value->is_void ?? false) || ($value->invoice->is_void ?? false) ? 'table-danger' : '' }}">
+                                    <tr
+                                        class="{{ ($value->is_void ?? false) || ($value->invoice->is_void ?? false) ? 'table-danger' : '' }}">
                                         <td>{{ $workshop_date }}</td>
                                         <td>{{ $value->id }}</td>
                                         <td>{{ $value->name }}</td>
@@ -303,18 +304,18 @@
                                                             </li>
                                                         @endif
                                                         @if($value->is_void === 0)
-                                                        <li>
-                                                        <form action="{{ url('/AutoCare/workshop/void/' . $value->id) }}"
-                                                            method="POST"
-                                                            onsubmit="return confirm('Are you sure you want to void this workshop?');">
-                                                            @csrf
-                                                            @method('POST')
-                                                            <button type="submit" class="dropdown-item btn text-danger btn-sm">
-                                                                <i class="fa fa-remove"></i> Void Invoice
-                                                            </button>
-                                                        </form>
-                                                    </li>
-                                                    @endif
+                                                            <li>
+                                                                <form action="{{ url('/AutoCare/workshop/void/' . $value->id) }}"
+                                                                    method="POST"
+                                                                    onsubmit="return confirm('Are you sure you want to void this workshop?');">
+                                                                    @csrf
+                                                                    @method('POST')
+                                                                    <button type="submit" class="dropdown-item btn text-danger btn-sm">
+                                                                        <i class="fa fa-remove"></i> Void Invoice
+                                                                    </button>
+                                                                </form>
+                                                            </li>
+                                                        @endif
                                                     @else
                                                         <li>
                                                             <a href="{{ url('/') }}/AutoCare/workshop/addinvoice/{{ $value->id }}"
@@ -358,19 +359,14 @@
                                                                 <i class="fa fa-eye"></i> Payment History
                                                             </a>
                                                         </li>
-                                                        <li>
-                                                            <a href="{{ url('/') }}/AutoCare/workshop/add/{{ $value->id }}"
-                                                                class="dropdown-item btn btn-success btn-sm">
-                                                                <i class="fa fa-edit"></i> Edit
-                                                            </a>
-                                                        </li>
-                                                    @else
-                                                        <li>
-                                                            <a href="{{ url('/') }}/AutoCare/sale/edit/{{ $value->id }}"
-                                                                class="dropdown-item btn btn-success btn-sm">
-                                                                <i class="fa fa-edit"></i> Edit
-                                                            </a>
-                                                        </li>
+                                                        @if($value->is_void === 0)
+                                                            <li>
+                                                                <a href="{{ url('/') }}/AutoCare/workshop/add/{{ $value->id }}"
+                                                                    class="dropdown-item btn btn-success btn-sm">
+                                                                    <i class="fa fa-edit"></i> Edit
+                                                                </a>
+                                                            </li>
+                                                        @endif
                                                     @endif
                                                     <li>
                                                         <a href="#"
@@ -380,18 +376,18 @@
                                                         </a>
                                                     </li>
 
-                                                    @if ($role_id == 1)    
-                                                    <li>
-                                                        <form action="{{ url('/AutoCare/workshop/trash/' . $value->id) }}"
-                                                            method="POST"
-                                                            onsubmit="return confirm('Are you sure you want to delete this workshop?');">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="dropdown-item btn text-danger btn-sm">
-                                                                <i class="fa fa-remove"></i> Delete
-                                                            </button>
-                                                        </form>
-                                                    </li>
+                                                    @if ($role_id == 1)
+                                                        <li>
+                                                            <form action="{{ url('/AutoCare/workshop/trash/' . $value->id) }}"
+                                                                method="POST"
+                                                                onsubmit="return confirm('Are you sure you want to delete this workshop?');">
+                                                                @csrf
+                                                                @method('DELETE')
+                                                                <button type="submit" class="dropdown-item btn text-danger btn-sm">
+                                                                    <i class="fa fa-remove"></i> Delete
+                                                                </button>
+                                                            </form>
+                                                        </li>
                                                     @endif
                                                 </ul>
                                             </div>
@@ -400,47 +396,18 @@
                                     @include('AutoCare.workshop.invoice-email-modal', ['invoiceId' => $value->id])
                                 @endforeach
                             </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-12" id="HideForShowProduct2" style="display: none">
-                <div class="card">
-                    <div class="card-header"></div>
-                    <div class="card-body">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Id</th>
-                                    <th>Workshop Id</th>
-                                    <th>Spare Name</th>
-                                    <th>Product Quantity</th>
-                                    <th>Product Price</th>
-                                    <th align="right">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="productDetail">
-                            </tbody>
                             <tfoot>
                                 <tr>
-                                    <td colspan="5"><input type="button" id="closeProdultDetail" class="btn btn-primary"
-                                            value="close"></td>
+                                    <th colspan="7" style="text-align:right">Total Grand Total:</th>
+                                    <th></th> <!-- GrandTotal column -->
+                                    <th colspan="5"></th>
                                 </tr>
                             </tfoot>
-                        </table>
 
+                        </table>
                     </div>
-                    <div class="card-footer"></div>
                 </div>
             </div>
-
-        </div>
-        <div class="row">
-            <!-- Laravel Pagination Links -->
-            <div class="pagination-container">
-                {{ $workshop->appends(request()->except('page'))->links('pagination::bootstrap-5') }}
-            </div>
-
         </div>
         <style>
             #datable_1_info,
@@ -456,7 +423,7 @@
                 margin: 2px;
             }
         </style>
-       
+
         <!-- Modal for payment : start-->
         <div class="modal fade" id="workshopPayment" role="dialog">
             <div class="modal-dialog modal-lg">
@@ -622,6 +589,9 @@
 
         <!-- Email Modal -->
     </section>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
     <script src="{{ asset('alerts-boxes/js/sweetalert.min.js') }}"></script>
     <script type="text/javascript">
         $(document).ready(function () {
@@ -862,17 +832,17 @@
 
                         response.forEach(log => {
                             const row = `
-                                                <tr>
-                                                    <td>£${log.debit_amount}</td>
-                                                    <td>${log.payment_date}</td>
-                                                 <td>${log.payment_type_label}</td>
-                                                    <td>${log.comments || '-'}</td>
-                                                    <td>
-                                                        <button class="btn btn-sm btn-primary editPaymentLog" data-id="${log.id}">Edit</button>
-                                                        <button class="btn btn-sm btn-danger deletePaymentLog" data-id="${log.id}">Delete</button>
-                                                    </td>
-                                                </tr>
-                                            `;
+                                                    <tr>
+                                                        <td>£${log.debit_amount}</td>
+                                                        <td>${log.payment_date}</td>
+                                                     <td>${log.payment_type_label}</td>
+                                                        <td>${log.comments || '-'}</td>
+                                                        <td>
+                                                            <button class="btn btn-sm btn-primary editPaymentLog" data-id="${log.id}">Edit</button>
+                                                            <button class="btn btn-sm btn-danger deletePaymentLog" data-id="${log.id}">Delete</button>
+                                                        </td>
+                                                    </tr>
+                                                `;
                             paymentLogsTable.append(row);
                         });
                     },
@@ -975,13 +945,13 @@
                         workshop_Product = JSON.parse(data);
                         for (index = 0; index < workshop_Product.length; ++index) {
                             $('#productDetail').append("<tr>\
-                                            <td>" + workshop_Product[index]['workshop_id'] + "</td>\
-                                            <td>" + workshop_Product[index]['workshop_id'] + "</td>\
-                                            <td>" + workshop_Product[index]['product_name'] + "</td>\
-                                            <td>" + workshop_Product[index]['product_quantity'] + "</td>\
-                                            <td>" + workshop_Product[index]['UnitExitPrice'] + "</td>\
-                                            <td><a data-toggle=\"modal\" id=\"" + workshop_Product[index]['WorkshopProId'] + "\" data-target=\"#myModal\"  class=\"btn btn-success openPayentModelForProduct btn-sm\"><i class=\"fa fa-undo\" aria-hidden=\"true\"></i></a> </th>\
-                                            </tr>");
+                                                <td>" + workshop_Product[index]['workshop_id'] + "</td>\
+                                                <td>" + workshop_Product[index]['workshop_id'] + "</td>\
+                                                <td>" + workshop_Product[index]['product_name'] + "</td>\
+                                                <td>" + workshop_Product[index]['product_quantity'] + "</td>\
+                                                <td>" + workshop_Product[index]['UnitExitPrice'] + "</td>\
+                                                <td><a data-toggle=\"modal\" id=\"" + workshop_Product[index]['WorkshopProId'] + "\" data-target=\"#myModal\"  class=\"btn btn-success openPayentModelForProduct btn-sm\"><i class=\"fa fa-undo\" aria-hidden=\"true\"></i></a> </th>\
+                                                </tr>");
 
                             //  thisSelf.parent().parent().find('[name^=model_number]').append(
 
@@ -1075,37 +1045,115 @@
         });
     </script>
     <script>
-       $(document).on('click', '.open-activity-log-modal', function (e) {
-    e.preventDefault();
-    let workshopId = $(this).data('id');
-    
-    // Show loading state
-    $('#activity-log-content').html('<div class="text-center p-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2">Loading activity logs...</p></div>');
-    $('#activityModal').modal('show');
-    
-    $.ajax({
-        url: `AutoCare/workshop/${workshopId}/activity-log`,
-        type: 'GET',
-        dataType: 'html',
-        timeout: 10000, // 10 seconds timeout
-        success: function (response) {
-            $('#activity-log-content').html(response);
-        },
-        error: function (xhr, status, error) {
-            console.error('Activity log error:', xhr, status, error);
-            let errorMessage = 'Failed to load activity logs.';
-            
-            if (xhr.status === 404) {
-                errorMessage = 'Workshop not found.';
-            } else if (xhr.status === 500) {
-                errorMessage = 'Server error occurred.';
-            } else if (status === 'timeout') {
-                errorMessage = 'Request timeout. Please try again.';
-            }
-            
-            $('#activity-log-content').html(`<div class="alert alert-danger mb-0"><i class="fas fa-exclamation-triangle me-2"></i>${errorMessage}</div>`);
-        }
-    });
-});
+        $(document).on('click', '.open-activity-log-modal', function (e) {
+            e.preventDefault();
+            let workshopId = $(this).data('id');
+
+            // Show loading state
+            $('#activity-log-content').html('<div class="text-center p-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2">Loading activity logs...</p></div>');
+            $('#activityModal').modal('show');
+
+            $.ajax({
+                url: `AutoCare/workshop/${workshopId}/activity-log`,
+                type: 'GET',
+                dataType: 'html',
+                timeout: 10000, // 10 seconds timeout
+                success: function (response) {
+                    $('#activity-log-content').html(response);
+                },
+                error: function (xhr, status, error) {
+                    console.error('Activity log error:', xhr, status, error);
+                    let errorMessage = 'Failed to load activity logs.';
+
+                    if (xhr.status === 404) {
+                        errorMessage = 'Workshop not found.';
+                    } else if (xhr.status === 500) {
+                        errorMessage = 'Server error occurred.';
+                    } else if (status === 'timeout') {
+                        errorMessage = 'Request timeout. Please try again.';
+                    }
+
+                    $('#activity-log-content').html(`<div class="alert alert-danger mb-0"><i class="fas fa-exclamation-triangle me-2"></i>${errorMessage}</div>`);
+                }
+            });
+        });
     </script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            var table = $('#workshopTable').DataTable({
+                processing: true,
+                serverSide: true,
+                responsive: true,
+                lengthMenu: [
+                    [10, 25, 50, 100, -1],
+                    [10, 25, 50, 100, "All"]
+                ],
+
+                ajax: {
+                    url: "{{ route('workshop.data') }}",
+                    data: function (d) {
+                        // Send filter parameters from search form if needed
+                        d.id = $('#filter_id').val();
+                        d.customer_id = $('#filter_customer_id').val();
+                        d.name = $('#filter_name').val();
+                        d.created_at_from = $('#filter_created_at_from').val();
+                        d.created_at_to = $('#filter_created_at_to').val();
+                        d.mobile = $('#filter_mobile').val();
+                        // ... add others if needed
+                    }
+                },
+                columns: [
+                    { data: 'workshop_date', name: 'workshop_date' },
+                    { data: 'id', name: 'id' },
+                    { data: 'name', name: 'name' },
+                    { data: 'mobile', name: 'mobile' },
+                    { data: 'vehicle_reg_number', name: 'vehicle_reg_number' },
+                    { data: 'payment_method', name: 'payment_method' },
+                    { data: 'balance_price', name: 'balance_price' },
+                    { data: 'grandTotal', name: 'grandTotal' },
+                    { data: 'payment_status', name: 'payment_status' },
+                    { data: 'workshop_origin', name: 'workshop_origin' },
+                    { data: 'status', name: 'status' },
+                    { data: 'is_converted_to_invoice', name: 'is_converted_to_invoice' },
+                    { data: 'actions', name: 'actions', orderable: false, searchable: false }
+                ],
+                footerCallback: function (row, data, start, end, display) {
+                    var api = this.api();
+
+                    // Remove formatting to get integer data for total
+                    var intVal = function (i) {
+                        return typeof i === 'string' ?
+                            i.replace(/[\£,]/g, '') * 1 :
+                            typeof i === 'number' ? i : 0;
+                    };
+
+                    // Total over all pages
+                    totalGrand = api
+                        .column(7) // column index for grandTotal
+                        .data()
+                        .reduce(function (a, b) {
+                            return intVal(a) + intVal(b);
+                        }, 0);
+
+                    // Update footer
+                    $(api.column(7).footer()).html('£' + totalGrand.toFixed(2));
+                }
+            });
+
+            // Optional: redraw table on filter change
+            $('#filterForm input, #filterForm select').on('change', function () {
+                table.draw();
+            });
+        });
+    </script>
+
+
 @endsection

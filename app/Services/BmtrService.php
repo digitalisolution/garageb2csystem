@@ -40,50 +40,46 @@ class BmtrService
     }
 
     /**
-     * Save new login token
+     * login token
      */
     private function saveLoginToken(): bool
-{
-    $url = "{$this->apiUrl}/api/GetLoginToken";
+    {
+        $url = rtrim($this->apiUrl, '/') . '/api/GetLoginToken';
 
-    $data = [
-        'username'   => $this->username,
-        'password'   => $this->password,
-        'apiKey'     => $this->apiKey,
-        'SiteID'     => '181620',//$this->siteId,
-        'forceLogin' => true,
-    ];
+        $data = [
+            'username'   => $this->username,
+            'password'   => $this->password,
+            'apiKey'     => $this->apiKey,
+            'forceLogin' => true,
+        ];
 
-    Log::info("BMTR Save Login Token Request", $data);
+        Log::info("BMTR Save Login Token Request", $data);
 
-    $response = Http::withoutVerifying()
-        ->acceptJson()
-        ->post($url, $data);
+        $response = Http::withoutVerifying()
+            ->withHeaders(['Content-Type' => 'application/json'])
+            ->send('POST', $url, ['json' => $data]);
 
-    if ($response->failed()) {
-        Log::error("BMTR Token Request Failed", [
-            'status' => $response->status(),
-            'body'   => $response->body()
-        ]);
-        return false;
+        if ($response->failed()) {
+            Log::error("BMTR Token Request Failed", [
+                'status' => $response->status(),
+                'body'   => $response->body()
+            ]);
+            return false;
+        }
+
+        $token = $response->body();
+        $token = str_replace('"', '', $token);
+
+        if (!$token) {
+            Log::error("BMTR No Token Found", ['body' => $response->body()]);
+            return false;
+        }
+
+        Storage::put($this->tokenFile, $token);
+        Log::info("BMTR token saved successfully.");
+        return true;
     }
 
-    $json = $response->json();
-    if (isset($json['Error'])) {
-        Log::error("BMTR Token Error", ['error' => $json['Error']]);
-        return false;
-    }
-
-    $token = $json['Token'] ?? null;
-    if (!$token) {
-        Log::error("BMTR No Token Found", ['body' => $response->body()]);
-        return false;
-    }
-
-    Storage::put($this->tokenFile, $token);
-    Log::info("BMTR token saved successfully.");
-    return true;
-}
 
 
     /**

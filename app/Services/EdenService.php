@@ -85,6 +85,7 @@ class EdenService
 
     return [
     'api_order_id' => 'eden-' . rand(10000, 90000),
+    //'api_order_id' => rand(10000, 90000),
     'type' => $this->api['eden_upload_mode'],
     'msg' => 'Order placed successfully',
     'status' => 'success',
@@ -94,10 +95,10 @@ class EdenService
             'ean' => $item['ean'] ?? null,
             'quantity' => $item['quantity'] ?? 0,
             'supplier' => $item['supplier'] ?? null,
-            'reference' => $reference,
-            'api_order_id' => 'eden-' . rand(10000, 90000), // consistent with above
+            'reference' => 'JOB-' . $reference,
+            'api_order_id' => rand(10000, 90000), // consistent with above
         ];
-    }, $rows),
+    }, $products),
     ];
 
     }

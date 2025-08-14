@@ -6,6 +6,7 @@ use App\Models\tyre_brands;
 use App\Models\TyresProduct;
 use App\Models\MetaSettings;
 use App\Models\GarageDetails;
+use App\Models\Supplier;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -27,10 +28,12 @@ class TyresProductController extends Controller
         $widths = TyresProduct::select('tyre_width')->distinct()->pluck('tyre_width');
         $profiles = TyresProduct::select('tyre_profile')->distinct()->pluck('tyre_profile');
         $diameters = TyresProduct::select('tyre_diameter')->distinct()->pluck('tyre_diameter');
+        $activeSupplierIds = Supplier::where('status', 1)->pluck('id');
 
         $recommendedTyres = $this->getRecommendedTyres($request);
         $message = empty($recommendedTyres) ? 'No recommended tyres found.' : null;
         $query = TyresProduct::query();
+        $query->whereIn('supplier_id', $activeSupplierIds);
         $query->where('tyre_quantity', '>', 0);
         $query->where('tyre_fullyfitted_price', '>', 0);
         if ($request->filled('width')) {
@@ -172,8 +175,6 @@ class TyresProductController extends Controller
 
         return response()->json($fuelEfficiencies);
     }
-
-
     public function getSeasonOptions(Request $request)
     {
         $seasons = TyresProduct::distinct()->where('tyre_season', '!=', '')->pluck('tyre_season');
@@ -234,7 +235,9 @@ class TyresProductController extends Controller
             $tyresModel = new TyresProduct();
             $tyresTable = $tyresModel->getTable(); // Dynamic table name
             $brandsTable = (new \App\Models\tyre_brands())->getTable(); // 
+            $activeSupplierIds = Supplier::where('status', 1)->pluck('id');
             $query = TyresProduct::from("$tyresTable as tp");
+            $query->whereIn('tp.supplier_id', $activeSupplierIds);
             $query->where('tyre_quantity', '>', 0);
             $query->where('tyre_fullyfitted_price', '>', 0);
             $query->where('tp.status', '=', '1');
@@ -364,6 +367,7 @@ class TyresProductController extends Controller
 
         $db = \DB::connection($connection);
         $query = collect();
+        $activeSupplierIds = Supplier::where('status', 1)->pluck('id');
 
         foreach ($recommendedBrands as $brandId) {
             // Try to get cheapest ownstock tyre
@@ -371,6 +375,7 @@ class TyresProductController extends Controller
                 ->join("$brandsTable as tb", 'tb.brand_id', '=', 'tp.tyre_brand_id')
                 ->select('tp.*', 'tb.name as brand_name', 'tb.image as brand_logo', 'tb.budget_type', 'tb.recommended_tyre')
                 ->where('tp.tyre_supplier_name', 'ownstock')
+                ->whereIn('tp.supplier_id', $activeSupplierIds)
                 ->where('tp.tyre_price', '>', 0)
                 ->where('tp.tyre_quantity', '>', 0)
                 ->where('tp.status', '=', 1)
@@ -400,6 +405,7 @@ class TyresProductController extends Controller
                 ->join("$brandsTable as tb", 'tb.brand_id', '=', 'tp.tyre_brand_id')
                 ->select('tp.*', 'tb.name as brand_name', 'tb.image as brand_logo', 'tb.budget_type', 'tb.recommended_tyre')
                 ->where('tp.tyre_supplier_name', '!=', 'ownstock')
+                ->whereIn('tp.supplier_id', $activeSupplierIds)
                 ->where('tp.tyre_price', '>', 0)
                 ->where('tp.tyre_quantity', '>', 0)
                 ->where('tp.status', '=', 1)
@@ -457,12 +463,12 @@ class TyresProductController extends Controller
         }
 
         // Fetch tyre by ID
-        $tyre = TyresProduct::with('brand') // Assuming you have a relation called brandRelation
+        $tyre = TyresProduct::with('brand')
             ->findOrFail($tyreId);
 
         // Optional: Verify that brand matches
         if ($tyre->brand && strtolower($tyre->brand->slug) !== $brand) {
-            abort(404); // Prevent mismatched URLs
+            abort(404);
         }
 
         return view('tyre-productDetails', compact('tyre', 'brand', 'model', 'size'));
@@ -471,11 +477,13 @@ class TyresProductController extends Controller
 
     public function getTyreSizes()
 {
+    $activeSupplierIds = Supplier::where('status', 1)->pluck('id');
     $tyreSizes = TyresProduct::select('tyre_width', 'tyre_profile', 'tyre_diameter')
-        ->with('brand') // optional: loads brand relation if needed
+        ->with('brand')
         ->where('tyre_width', '>', 0)
         ->where('tyre_quantity', '>', 0)
         ->where('tyre_fullyfitted_price', '>', 0)
+        ->whereIn('supplier_id', $activeSupplierIds)
         ->where('status', 1)
         ->distinct()
         ->groupBy('tyre_width', 'tyre_profile', 'tyre_diameter')

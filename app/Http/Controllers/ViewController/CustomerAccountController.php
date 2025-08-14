@@ -125,6 +125,7 @@ class CustomerAccountController extends Controller
         // Fetch workshops created by the logged-in customer with their associated items
         $workshops = Workshop::where('customer_id', $customer->id)
             ->with('items') // Ensure items are loaded
+            ->where('is_void', 0)
             ->orderBy('id', 'desc')
             ->paginate(15)
             ->onEachSide(2);
@@ -138,7 +139,7 @@ class CustomerAccountController extends Controller
         $customer = Auth::guard('customer')->user();
 
         // Fetch the workshop (acting as the order) created by the logged-in customer
-        $workshop = Workshop::where('customer_id', $customer->id)->findOrFail($id);
+        $workshop = Workshop::where('customer_id', $customer->id)->where('is_void', 0)->findOrFail($id);
 
         // If the workshop is not found, show an error
         if (!$workshop) {
@@ -149,10 +150,10 @@ class CustomerAccountController extends Controller
         $vehicle = $workshop->vehicle; // Vehicle associated with the workshop
 
         // Fetch products from WorkshopTyre table using workshop_id
-        $WorkshopTyre = WorkshopTyre::where('workshop_id', $workshop->id)->get();
+        $WorkshopTyre = WorkshopTyre::where('workshop_id', $workshop->id)->where('is_void', 0)->get();
         // dd($items);
         // Fetch services from WorkshopService table using workshop_id
-        $WorkshopService = WorkshopService::where('workshop_id', $workshop->id)->get();
+        $WorkshopService = WorkshopService::where('workshop_id', $workshop->id)->where('is_void', 0)->get();
         $WorkshopVehicle = DB::table('vehicle_details')
                 ->where('vehicle_reg_number', $workshop->vehicle_reg_number)
                 ->get();
@@ -311,13 +312,13 @@ class CustomerAccountController extends Controller
     public function invoices()
     {
         $customer = Auth::guard('customer')->user();
-        $invoices = $customer->invoices()->paginate(10); // 10 invoices per page
+        $invoices = $customer->invoices()->where('is_void', 0)->paginate(10); // 10 invoices per page
 
         // Calculate invoice counts for each status
-        $unpaidCount = $customer->invoices()->where('status', 'Unpaid')->count();
-        $paidCount = $customer->invoices()->where('status', 'Paid')->count();
-        $overdueCount = $customer->invoices()->where('status', 'Overdue')->count();
-        $partiallyPaidCount = $customer->invoices()->where('status', 'Partially Paid')->count();
+        $unpaidCount = $customer->invoices()->where('status', 'Unpaid')->where('is_void', 0)->count();
+        $paidCount = $customer->invoices()->where('status', 'Paid')->where('is_void', 0)->count();
+        $overdueCount = $customer->invoices()->where('status', 'Overdue')->where('is_void', 0)->count();
+        $partiallyPaidCount = $customer->invoices()->where('status', 'Partially Paid')->where('is_void', 0)->count();
 
         return view('customer.invoices', compact('invoices', 'unpaidCount', 'paidCount', 'overdueCount', 'partiallyPaidCount'));
     }
@@ -330,6 +331,7 @@ class CustomerAccountController extends Controller
         // Fetch the workshop (acting as the order) created by the logged-in customer
         $invoices = Invoice::where('customer_id', $customer->id)
             ->where('workshop_id', $id)
+            ->where('is_void', 0)
             ->firstOrFail();
         // dd($invoices);
         // If the workshop is not found, show an error
@@ -341,10 +343,10 @@ class CustomerAccountController extends Controller
         $vehicle = $invoices->vehicle; // Vehicle associated with the workshop
 
         // Fetch products from WorkshopTyre table using workshop_id
-        $WorkshopTyre = WorkshopTyre::where('workshop_id', $invoices->workshop_id)->get();
+        $WorkshopTyre = WorkshopTyre::where('workshop_id', $invoices->workshop_id)->where('is_void', 0)->get();
         // dd($items);
         // Fetch services from WorkshopService table using workshop_id
-        $WorkshopService = WorkshopService::where('workshop_id', $invoices->workshop_id)->get();
+        $WorkshopService = WorkshopService::where('workshop_id', $invoices->workshop_id)->where('is_void', 0)->get();
         $WorkshopVehicle = DB::table('vehicle_details')
                 ->where('vehicle_reg_number', $invoices->vehicle_reg_number)
                 ->get();
@@ -380,7 +382,7 @@ class CustomerAccountController extends Controller
        public function statements(Request $request)
     {
         $customer = Auth::guard('customer')->user();
-        $query = Invoice::where('customer_id', $customer->id)->orderBy('created_at', 'asc');
+        $query = Invoice::where('customer_id', $customer->id)->where('is_void', 0)->orderBy('created_at', 'asc');
 
         if ($request->filled('from') && $request->filled('to')) {
             try {

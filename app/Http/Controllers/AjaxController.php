@@ -6,10 +6,6 @@ use Illuminate\Http\Request;
 use App\Models\Product;
 use Illuminate\Support\Facades\DB;
 use App\Models\Purchase;
-use App\Models\Service;
-use App\Models\Brand;
-use App\Models\Modal;
-use App\Models\ServiceName;
 use App\Models\SupplierDebitLog;
 use App\Models\Customer;
 use App\Models\CustomerDebitLog;
@@ -520,9 +516,6 @@ class AjaxController extends Controller
 
         // Store old values for logging
         $oldBalancePrice = $workshopDetail->balance_price;
-        $oldPaidPrice = $workshopDetail->paid_price;
-        $oldPaymentStatus = DB::table('workshops')->where('id', $workshopIdForPayment)->value('payment_status');
-        $oldWorkshopStatus = DB::table('workshops')->where('id', $workshopIdForPayment)->value('status');
 
         // Determine payment status
         $paymentStatus = 0; // Default: Unpaid
