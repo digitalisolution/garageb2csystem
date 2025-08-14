@@ -1050,7 +1050,7 @@ public function getWorkshopData(Request $request)
                                 <i class="fa fa-eye"></i> Job View
                             </a>
                         </li>';
-            if ($workshop->is_workshop == 1) { // Make sure 'is_workshop' field exists
+            if ($workshop->payment_status == 1) { // Make sure 'is_workshop' field exists
                 $actions .= '<li>
                                 <a target="_blank"
                                     href="' . url('/') . '/AutoCare/workshop/payment_history/' . $workshop->id . '"

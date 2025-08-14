@@ -4,142 +4,155 @@
         $role_id = Auth::user()->role_id;
     @endphp
     <section class="container-fluid">
-        <div class="bg-white p-3 mb-3">
-            {{ Form::open([
-        'url' => 'AutoCare/workshop/search',
-        'files' => 'true',
-        'enctype' => 'multipart/form-data',
-        'autocomplete' => 'OFF'
-    ]) }}
-            <div class="row">
-                <!-- Job/Workshop Id -->
-                <div class="col-lg-3 col-md-6 col-12 form-group">
-                    <label>Job/Workshop Id:</label>
-                    {{ Form::text('id', isset($id) ? $id : old('id'), [
-        'class' => 'form-control',
-        'id' => 'id',
-        'placeholder' => 'Job Id'
-    ]) }}
-                </div>
+       <div class="bg-white p-3 mb-3">
+    <!-- Toggle Button for Filters -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Filters</h5> <!-- Optional: Add a title -->
+        <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#workshopFilters" aria-expanded="true" aria-controls="workshopFilters" id="filterToggleBtn">
+            <!-- Icons will be toggled by JS -->
+            <span id="filterToggleText">Show Filters</span>
+            <i id="filterToggleIcon" class="fa fa-chevron-up ms-1"></i> <!-- Font Awesome Icon -->
+        </button>
+    </div>
 
-                <!-- Customer Name -->
-                <div class="col-lg-3 col-md-6 col-12 form-group">
-                    <label>Customer Name:</label>
-                    {{ Form::text('name', isset($name) ? $name : old('name'), [
-        'class' => 'form-control',
-        'name' => 'name',
-        'placeholder' => 'Name'
-    ]) }}
-                </div>
-
-                <!-- Mobile Number -->
-                <div class="col-lg-3 col-md-6 col-12 form-group">
-                    <label>Mobile Number:</label>
-                    {{ Form::text('mobile', isset($mobile) ? $namobileme : old('mobile'), [
-        'class' => 'form-control',
-        'mobile' => 'mobile',
-        'placeholder' => 'Mobile'
-    ]) }}
-                </div>
-
-                <!-- From Date -->
-                <div class="col-lg-3 col-md-6 col-12 form-group">
-                    <label>From Date:</label>
-                    {{ Form::date('created_at_from', isset($created_at_from) ? $created_at_from : old('created_at_from'), [
-        'class' => 'form-control',
-        'created_at_from' => 'created_at_from',
-        'placeholder' => 'created_at_from'
-    ]) }}
-                </div>
-
-                <!-- To Date -->
-                <div class="col-lg-3 col-md-6 col-12 form-group">
-                    <label>To Date:</label>
-                    {{ Form::date('created_at_to', isset($created_at_to) ? $created_at_to : old('created_at_to'), [
-        'class' => 'form-control',
-        'created_at_to' => 'created_at_to',
-        'placeholder' => 'created_at_to'
-    ]) }}
-                </div>
-
-                <!-- Email -->
-                <div class="col-lg-3 col-md-6 col-12 form-group">
-                    <label>Email:</label>
-                    {{ Form::text('email', isset($email) ? $email : old('email'), [
-        'class' => 'form-control',
-        'email' => 'email',
-        'placeholder' => 'Email'
-    ]) }}
-                </div>
-                <div class="col-lg-3 col-md-6 col-12 form-group">
-                    <label for="origin">Origin:</label>
-                    {{ Form::select('origin', ['website' => 'Website', 'admin' => 'Admin'], isset($origin) ? $origin : old('origin'), [
-        'id' => 'origin',
-        'class' => 'form-control',
-        'placeholder' => 'Select Origin'
-    ]) }}
-                </div>
-
-                <!-- Invoice -->
-                <div class="col-lg-3 col-md-6 col-12 form-group">
-                    <label for="convert_to_invoice">Convert Invoice:</label>
-                    {{ Form::select('convert_to_invoice', ['1' => 'Invoice', '0' => 'Workshop'], isset($convert_to_invoice) ? $convert_to_invoice : old('convert_to_invoice'), [
-        'id' => 'convert_to_invoice',
-        'class' => 'form-control',
-        'placeholder' => 'Select Invoice Status'
-    ]) }}
-                </div>
-
-                <div class="col-lg-3 col-md-6 col-12 form-group">
-                    <label for="status">Workshop Status:</label>
-                    {{ Form::select('status', ['booked' => 'Booked', 'completed' => 'Completed', 'failed' => 'Failed', 'pending' => 'Pending'], isset($status) ? $status : old('status'), [
-        'id' => 'status',
-        'class' => 'form-control',
-        'placeholder' => 'Select Workshop Status'
-    ]) }}
-                </div>
-
-                <div class="col-lg-3 col-md-6 col-12 form-group">
-                    <label for="payment_method">Payment Method:</label>
-                    {{ Form::select('payment_method', ['pay_at_fitting_center' => 'Pay at Center', 'dojo' => 'dojo', 'global_payment' => 'Global Pay'], isset($payment_method) ? $payment_method : old('payment_method'), [
-        'id' => 'payment_method',
-        'class' => 'form-control',
-        'placeholder' => 'Select Payment Method'
-    ]) }}
-                </div>
-
-                <div class="col-lg-3 col-md-6 col-12 form-group">
-                    <label for="is_void">Void Invoices:</label>
-                    {{ Form::select('is_void', ['1' => 'Yes', '0' => 'No'], isset($is_void) ? $is_void : old('is_void'), [
-        'id' => 'is_void',
-        'class' => 'form-control',
-        'placeholder' => 'Search Void Invoices'
-    ]) }}
-                </div>
-
-                <div class="col-lg-3 col-md-6 col-12 form-group">
-                    <label for="payment_status">Payment Status:</label>
-                    {{ Form::select('payment_status', ['1' => 'Paid', '0' => 'Unpaid', '3' => 'Partial'], isset($payment_status) ? $payment_status : old('payment_status'), [
-        'id' => 'payment_status',
-        'class' => 'form-control',
-        'placeholder' => 'Select payment status'
-    ]) }}
-                </div>
-                <!-- Vehicle Registration Number -->
-                <div class="col-lg-3 col-md-6 col-12 form-group">
-                    <label>Vehicle Registration Number:</label>
-                    {{ Form::text('vehicle_reg_number_for_search', isset($vehicle_reg_number_for_search) ? $vehicle_reg_number_for_search : old('vehicle_reg_number_for_search'), [
-        'class' => 'form-control',
-        'vehicle_reg_number_for_search' => 'vehicle_reg_number_for_search',
-        'placeholder' => 'Vehicle Reg No.'
-    ]) }}
-                </div>
+    <!-- Collapsible Filter Form -->
+    <!-- Show initially by adding 'show' class. Remove 'show' if you want it hidden by default -->
+    <div class="collapse" id="workshopFilters">
+        {{ Form::open([
+            'url' => 'AutoCare/workshop/search',
+            'files' => 'true',
+            'enctype' => 'multipart/form-data',
+            'autocomplete' => 'OFF'
+        ]) }}
+        <div class="row">
+            <!-- Job/Workshop Id -->
+            <div class="col-lg-3 col-md-6 col-12 form-group">
+                <label>Job/Workshop Id:</label>
+                {{ Form::text('id', request('id', old('id')), [ // Use request() helper for cleaner syntax
+                    'class' => 'form-control',
+                    'id' => 'id',
+                    'placeholder' => 'Job Id'
+                ]) }}
             </div>
-            <div class="text-right">
-                <input type="submit" name="search" class="btn btn-primary" value="Search">
+
+            <!-- Customer Name -->
+            <div class="col-lg-3 col-md-6 col-12 form-group">
+                <label>Customer Name:</label>
+                {{ Form::text('name', request('name', old('name')), [
+                    'class' => 'form-control',
+                    'name' => 'name', // This attribute is redundant if using Form::text
+                    'placeholder' => 'Name'
+                ]) }}
             </div>
-            {{ Form::close() }}
+
+            <!-- Mobile Number -->
+            <div class="col-lg-3 col-md-6 col-12 form-group">
+                <label>Mobile Number:</label>
+                {{ Form::text('mobile', request('mobile', old('mobile')), [ // Fixed variable name typo
+                    'class' => 'form-control',
+                    'placeholder' => 'Mobile' // Removed incorrect attribute name
+                ]) }}
+            </div>
+
+            <!-- From Date -->
+            <div class="col-lg-3 col-md-6 col-12 form-group">
+                <label>From Date:</label>
+                {{ Form::date('created_at_from', request('created_at_from', old('created_at_from')), [
+                    'class' => 'form-control',
+                    'placeholder' => 'created_at_from' // Removed incorrect attribute name
+                ]) }}
+            </div>
+
+            <!-- To Date -->
+            <div class="col-lg-3 col-md-6 col-12 form-group">
+                <label>To Date:</label>
+                {{ Form::date('created_at_to', request('created_at_to', old('created_at_to')), [
+                    'class' => 'form-control',
+                    'placeholder' => 'created_at_to' // Removed incorrect attribute name
+                ]) }}
+            </div>
+
+            <!-- Email -->
+            <div class="col-lg-3 col-md-6 col-12 form-group">
+                <label>Email:</label>
+                {{ Form::text('email', request('email', old('email')), [
+                    'class' => 'form-control',
+                    'placeholder' => 'Email' // Removed incorrect attribute name
+                ]) }}
+            </div>
+
+            <div class="col-lg-3 col-md-6 col-12 form-group">
+                <label for="origin">Origin:</label>
+                {{ Form::select('origin', ['website' => 'Website', 'admin' => 'Admin'], request('origin', old('origin')), [
+                    'id' => 'origin',
+                    'class' => 'form-control',
+                    'placeholder' => 'Select Origin'
+                ]) }}
+            </div>
+
+            <!-- Invoice -->
+            <div class="col-lg-3 col-md-6 col-12 form-group">
+                <label for="convert_to_invoice">Convert Invoice:</label>
+                {{ Form::select('convert_to_invoice', ['1' => 'Invoice', '0' => 'Workshop'], request('convert_to_invoice', old('convert_to_invoice')), [
+                    'id' => 'convert_to_invoice',
+                    'class' => 'form-control',
+                    'placeholder' => 'Select Invoice Status'
+                ]) }}
+            </div>
+
+            <div class="col-lg-3 col-md-6 col-12 form-group">
+                <label for="status">Workshop Status:</label>
+                {{ Form::select('status', ['booked' => 'Booked', 'completed' => 'Completed', 'failed' => 'Failed', 'pending' => 'Pending'], request('status', old('status')), [
+                    'id' => 'status',
+                    'class' => 'form-control',
+                    'placeholder' => 'Select Workshop Status'
+                ]) }}
+            </div>
+
+            <div class="col-lg-3 col-md-6 col-12 form-group">
+                <label for="payment_method">Payment Method:</label>
+                {{ Form::select('payment_method', ['pay_at_fitting_center' => 'Pay at Center', 'dojo' => 'dojo', 'global_payment' => 'Global Pay'], request('payment_method', old('payment_method')), [
+                    'id' => 'payment_method',
+                    'class' => 'form-control',
+                    'placeholder' => 'Select Payment Method'
+                ]) }}
+            </div>
+
+            <div class="col-lg-3 col-md-6 col-12 form-group">
+                <label for="is_void">Void Invoices:</label>
+                {{ Form::select('is_void', ['1' => 'Yes', '0' => 'No'], request('is_void', old('is_void')), [
+                    'id' => 'is_void',
+                    'class' => 'form-control',
+                    'placeholder' => 'Search Void Invoices'
+                ]) }}
+            </div>
+
+            <div class="col-lg-3 col-md-6 col-12 form-group">
+                <label for="payment_status">Payment Status:</label>
+                {{ Form::select('payment_status', ['1' => 'Paid', '0' => 'Unpaid', '3' => 'Partial'], request('payment_status', old('payment_status')), [
+                    'id' => 'payment_status',
+                    'class' => 'form-control',
+                    'placeholder' => 'Select payment status'
+                ]) }}
+            </div>
+
+            <!-- Vehicle Registration Number -->
+            <div class="col-lg-3 col-md-6 col-12 form-group">
+                <label>Vehicle Registration Number:</label>
+                {{ Form::text('vehicle_reg_number_for_search', request('vehicle_reg_number_for_search', old('vehicle_reg_number_for_search')), [
+                    'class' => 'form-control',
+                    'placeholder' => 'Vehicle Reg No.' // Removed incorrect attribute name
+                ]) }}
+            </div>
         </div>
+        <div class="text-right">
+            <input type="submit" name="search" class="btn btn-primary" value="Search">
+            <!-- Optional: Add a Reset button -->
+            <a href="{{ url()->current() }}" class="btn btn-secondary">Reset</a>
+        </div>
+        {{ Form::close() }}
+    </div>
+</div>
 
         <div class="row">
             <!-- left column -->
@@ -185,14 +198,7 @@
                 </div>
             </div>
         </div>
-        <div class="bg-white p-2 mb-3 rounded border text-center">
-            <div class="col-8 m-auto">
-                <div class="row">
-                    <div class="col-6"><a class="btn btn-primary text-right btn-block text-center"
-                            href="{{ asset('/AutoCare/workshop/add') }}">Create New Workshop</a></div>
-                </div>
-            </div>
-        </div>
+       
         @php
             $paid_price = 0;
             $installmentPayment = 0;
@@ -204,203 +210,37 @@
             <div class="col-sm-12" id="HideForShowProduct">
                 <div class="card">
                     <div class="card-header">
-                        <i class="fa fa-align-justify"></i> Workshop Detail
+                        {{-- <i class="fa fa-align-justify"></i> Workshop Detail --}}
+            <a class="btn btn-primary text-right text-center"
+                            href="{{ asset('/AutoCare/workshop/add') }}">Create New Workshop</a>
+               
+        
                     </div>
                     <div class="card-body table-responsive"
                         style="font-size: 13px;padding-left:10px;vertical-align:middle;">
-                        <table id="workshopTable" class="table table-hover" style="font-size: 13px;">
+                        <table id="workshopTable" class="table table-hover">
                             <thead class="thead-dark">
                                 <tr>
-                                    <th style="white-space: nowrap">Workshop Date</th>
+                                    <th style="white-space: nowrap">Job Date</th>
                                     <th style="white-space: nowrap">Job Id</th>
-                                    <th style="white-space: nowrap" style="white-space: nowrap">Customer Name</th>
+                                    <th style="white-space: nowrap" style="white-space: nowrap">Name</th>
                                     <th style="white-space: nowrap">Mobile</th>
-                                    <th style="white-space: nowrap">Vehicle Reg. No</th>
-                                    <th style="white-space: nowrap">Payment Method</th>
-                                    <th style="white-space: nowrap">Amount Due</th>
-                                    <th style="white-space: nowrap">Grand Total</th>
-                                    <th style="white-space: nowrap">Payment Status</th>
+                                    <th style="white-space: nowrap">Reg. No</th>
+                                    <th style="white-space: nowrap">Pymt Method</th>
+                                    <th style="white-space: nowrap">Amnt Due</th>
+                                    <th style="white-space: nowrap">Total</th>
+                                    <th style="white-space: nowrap">Payment</th>
                                     <th style="white-space: nowrap">Origin</th>
                                     <th style="white-space: nowrap">Status</th>
-                                    <th style="white-space: nowrap">Invoice Convert</th>
+                                    <th style="white-space: nowrap">Invoice</th>
                                     <th align="right">Action</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                @foreach ($workshop as $key => $value)
-                                    @php
-                                        $due_in = isset($value->due_in) ? date('d/m/Y', strtotime($value->due_in)) : '';
-                                        $created_at = isset($value->created_at) ? date('d/m/Y H:i:s', strtotime($value->created_at)) : '';
-                                        $due_out = isset($value->due_out) ? date('d/m/Y', strtotime($value->due_out)) : '';
-                                        $workshop_date = isset($value->workshop_date) ? date('d/m/Y H:i:s', strtotime($value->workshop_date)) : '';
-                                    @endphp
-                                    <tr
-                                        class="{{ ($value->is_void ?? false) || ($value->invoice->is_void ?? false) ? 'table-danger' : '' }}">
-                                        <td>{{ $workshop_date }}</td>
-                                        <td>{{ $value->id }}</td>
-                                        <td>{{ $value->name }}</td>
-                                        <td>
-                                            @if (isset($value->mobile))
-                                                {{ $value->mobile }}
-                                            @endif
-                                        </td>
-                                        <td class="text-uppercase">{{ $value->vehicle_reg_number }}</td>
-                                        @php
-                                            $grandTotal += $value->grandTotal;
-                                        @endphp
-                                        <td>{{ strtoupper(str_replace('_', ' ', $value->payment_method)) }}</td>
-                                        <td>£{{ number_format($value->balance_price, 2, '.', '') }}</td>
-                                        <td>£{{ number_format($value->grandTotal, 2, '.', '') }}</td>
-                                        <td>
-                                            <span
-                                                class="{{ $value->payment_status == 1 ? 'Paid' : ($value->payment_status == 3 ? 'Partially' : 'Unpaid') }}">
-                                                {{ $value->payment_status == 1 ? 'Paid' : ($value->payment_status == 3 ? 'Partially' : 'Unpaid') }}
-                                            </span>
-                                        </td>
-                                        <td><span class="{{ $value->workshop_origin }}">{{ $value->workshop_origin }}</span>
-                                        </td>
-                                        <td><span class="{{ $value->status }}">{{ $value->status }}</span></td>
-                                        <td>
-                                            <span
-                                                class="{{ $value->is_converted_to_invoice == 1 ? 'invoice' : ($value->is_converted_to_invoice == 0 ? 'workshop' : 'workshop') }}">
-                                                {{ $value->is_converted_to_invoice == 1 ? 'invoice' : ($value->is_converted_to_invoice == 0 ? 'workshop' : 'workshop') }}
-                                            </span>
-                                        </td>
-                                        <td style="white-space: nowrap;" align="right">
-                                            <div class="btn-group" role="group">
-                                                <button id="btnGroupDrop{{ $value->id }}" type="button"
-                                                    class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown"
-                                                    aria-expanded="false">
-                                                    Actions
-                                                </button>
-                                                <ul class="dropdown-menu btngroup-dropdown"
-                                                    aria-labelledby="btnGroupDrop{{ $value->id }}">
-                                                    @if ($value->is_converted_to_invoice == 1)
-                                                        <li>
-                                                            <a href="{{ url('/') }}/AutoCare/workshop/addinvoice/{{ $value->id }}"
-                                                                class="dropdown-item btn btn-warning btn-sm">
-                                                                <i class="fa fa-pencil" aria-hidden="true"></i> Update Invoice
-                                                            </a>
-                                                        </li>
-                                                        <li>
-                                                            <a target="_blank"
-                                                                href="{{ url('/') }}/AutoCare/workshop/invoice/{{ $value->id }}"
-                                                                class="dropdown-item btn btn-primary btn-sm">
-                                                                <i class="fa fa-eye"></i> View Invoice
-                                                            </a>
-                                                        </li>
-                                                        <li>
-                                                            <button type="button" class="dropdown-item btn btn-info btn-sm"
-                                                                data-toggle="modal" data-target="#emailModal{{ $value->id }}">
-                                                                <i class="fa fa-envelope"></i> Email Invoice
-                                                            </button>
-                                                        </li>
-                                                        @if ($role_id == 1)
-                                                            <li>
-                                                                <a href="{{ route('invoice.preview', $value->id) }}" target="_blank"
-                                                                    class="dropdown-item btn btn-info btn-sm">
-                                                                    <i class="fa fa-eye"></i> Preview PDF
-                                                                </a>
-                                                            </li>
-                                                        @endif
-                                                        @if($value->is_void === 0)
-                                                            <li>
-                                                                <form action="{{ url('/AutoCare/workshop/void/' . $value->id) }}"
-                                                                    method="POST"
-                                                                    onsubmit="return confirm('Are you sure you want to void this workshop?');">
-                                                                    @csrf
-                                                                    @method('POST')
-                                                                    <button type="submit" class="dropdown-item btn text-danger btn-sm">
-                                                                        <i class="fa fa-remove"></i> Void Invoice
-                                                                    </button>
-                                                                </form>
-                                                            </li>
-                                                        @endif
-                                                    @else
-                                                        <li>
-                                                            <a href="{{ url('/') }}/AutoCare/workshop/addinvoice/{{ $value->id }}"
-                                                                class="dropdown-item btn btn-primary btn-sm">
-                                                                <i class="fa fa-upload"></i> Convert to Invoice
-                                                            </a>
-                                                        </li>
-                                                    @endif
-
-                                                    <li>
-                                                        <a data-toggle="modal" id="{{ $value->id }}"
-                                                            data-target="#workshopDiscount"
-                                                            data-balance-total="{{ $value->balance_price }}"
-                                                            class="dropdown-item btn btn-success openDiscountModelForWorkshop btn-sm">
-                                                            <i class="fa fa-money" aria-hidden="true"></i> Discount
-                                                        </a>
-                                                    </li>
-
-                                                    <li>
-                                                        <a data-toggle="modal" id="{{ $value->id }}"
-                                                            data-target="#workshopPayment"
-                                                            class="dropdown-item btn btn-success openPayentModelForWorkshop btn-sm"
-                                                            data-grand-total="{{ $value->balance_price }}">
-                                                            <i class="fa fa-money" aria-hidden="true"></i> Receive Payment
-                                                        </a>
-                                                    </li>
-
-                                                    <li>
-                                                        <a target="_blank"
-                                                            href="{{ url('/') }}/AutoCare/workshop/view/{{ $value->id }}"
-                                                            class="dropdown-item btn btn-primary btn-sm">
-                                                            <i class="fa fa-eye"></i> Job View
-                                                        </a>
-                                                    </li>
-
-                                                    @if ($value->is_workshop == 1)
-                                                        <li>
-                                                            <a target="_blank"
-                                                                href="{{ url('/') }}/AutoCare/workshop/payment_history/{{ $value->id }}"
-                                                                class="dropdown-item btn btn-danger btn-sm" title="Payment History">
-                                                                <i class="fa fa-eye"></i> Payment History
-                                                            </a>
-                                                        </li>
-                                                        @if($value->is_void === 0)
-                                                            <li>
-                                                                <a href="{{ url('/') }}/AutoCare/workshop/add/{{ $value->id }}"
-                                                                    class="dropdown-item btn btn-success btn-sm">
-                                                                    <i class="fa fa-edit"></i> Edit
-                                                                </a>
-                                                            </li>
-                                                        @endif
-                                                    @endif
-                                                    <li>
-                                                        <a href="#"
-                                                            class="dropdown-item btn btn-success btn-sm open-activity-log-modal"
-                                                            data-id="{{ $value->id }}">
-                                                            <i class="fa fa-eye" aria-hidden="true"></i> Activity Log
-                                                        </a>
-                                                    </li>
-
-                                                    @if ($role_id == 1)
-                                                        <li>
-                                                            <form action="{{ url('/AutoCare/workshop/trash/' . $value->id) }}"
-                                                                method="POST"
-                                                                onsubmit="return confirm('Are you sure you want to delete this workshop?');">
-                                                                @csrf
-                                                                @method('DELETE')
-                                                                <button type="submit" class="dropdown-item btn text-danger btn-sm">
-                                                                    <i class="fa fa-remove"></i> Delete
-                                                                </button>
-                                                            </form>
-                                                        </li>
-                                                    @endif
-                                                </ul>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    @include('AutoCare.workshop.invoice-email-modal', ['invoiceId' => $value->id])
-                                @endforeach
-                            </tbody>
                             <tfoot>
                                 <tr>
-                                    <th colspan="7" style="text-align:right">Total Grand Total:</th>
-                                    <th></th> <!-- GrandTotal column -->
-                                    <th colspan="5"></th>
+                                    <th colspan="6" style="text-align:right">Total:</th>
+                                    <th></th>
+                                    <th colspan="6"></th>
                                 </tr>
                             </tfoot>
 
@@ -1078,82 +918,190 @@
             });
         });
     </script>
-    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <!-- JavaScript to toggle icon and text -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const collapseElement = document.getElementById('workshopFilters');
+        const toggleButton = document.getElementById('filterToggleBtn');
+        const toggleIcon = document.getElementById('filterToggleIcon');
+        const toggleText = document.getElementById('filterToggleText');
 
-    <script>
-        $(document).ready(function () {
-            var table = $('#workshopTable').DataTable({
-                processing: true,
-                serverSide: true,
-                responsive: true,
-                lengthMenu: [
-                    [10, 25, 50, 100, -1],
-                    [10, 25, 50, 100, "All"]
-                ],
+        // Function to update button text and icon based on collapse state
+        function updateToggleButton(isVisible) {
+            if (isVisible) {
+                toggleIcon.classList.remove('fa-chevron-down');
+                toggleIcon.classList.add('fa-chevron-up');
+                // Optional: Change text
+                // toggleText.textContent = 'Hide Filters';
+            } else {
+                toggleIcon.classList.remove('fa-chevron-up');
+                toggleIcon.classList.add('fa-chevron-down');
+                // Optional: Change text
+                // toggleText.textContent = 'Show Filters';
+            }
+        }
 
-                ajax: {
-                    url: "{{ route('workshop.data') }}",
-                    data: function (d) {
-                        // Send filter parameters from search form if needed
-                        d.id = $('#filter_id').val();
-                        d.customer_id = $('#filter_customer_id').val();
-                        d.name = $('#filter_name').val();
-                        d.created_at_from = $('#filter_created_at_from').val();
-                        d.created_at_to = $('#filter_created_at_to').val();
-                        d.mobile = $('#filter_mobile').val();
-                        // ... add others if needed
-                    }
-                },
-                columns: [
-                    { data: 'workshop_date', name: 'workshop_date' },
-                    { data: 'id', name: 'id' },
-                    { data: 'name', name: 'name' },
-                    { data: 'mobile', name: 'mobile' },
-                    { data: 'vehicle_reg_number', name: 'vehicle_reg_number' },
-                    { data: 'payment_method', name: 'payment_method' },
-                    { data: 'balance_price', name: 'balance_price' },
-                    { data: 'grandTotal', name: 'grandTotal' },
-                    { data: 'payment_status', name: 'payment_status' },
-                    { data: 'workshop_origin', name: 'workshop_origin' },
-                    { data: 'status', name: 'status' },
-                    { data: 'is_converted_to_invoice', name: 'is_converted_to_invoice' },
-                    { data: 'actions', name: 'actions', orderable: false, searchable: false }
-                ],
-                footerCallback: function (row, data, start, end, display) {
-                    var api = this.api();
-
-                    // Remove formatting to get integer data for total
-                    var intVal = function (i) {
-                        return typeof i === 'string' ?
-                            i.replace(/[\£,]/g, '') * 1 :
-                            typeof i === 'number' ? i : 0;
-                    };
-
-                    // Total over all pages
-                    totalGrand = api
-                        .column(7) // column index for grandTotal
-                        .data()
-                        .reduce(function (a, b) {
-                            return intVal(a) + intVal(b);
-                        }, 0);
-
-                    // Update footer
-                    $(api.column(7).footer()).html('£' + totalGrand.toFixed(2));
-                }
-            });
-
-            // Optional: redraw table on filter change
-            $('#filterForm input, #filterForm select').on('change', function () {
-                table.draw();
-            });
+        // Listen for collapse events
+        collapseElement.addEventListener('show.bs.collapse', function () {
+            updateToggleButton(true);
         });
-    </script>
+
+        collapseElement.addEventListener('hide.bs.collapse', function () {
+            updateToggleButton(false);
+        });
+
+        // Set initial state based on whether it has the 'show' class
+        updateToggleButton(collapseElement.classList.contains('show'));
+    });
+</script>
+
+
+<script>
+$(document).ready(function () {
+    var table = $('#workshopTable').DataTable({
+        processing: true,
+        serverSide: true,
+        responsive: true,
+        // dom: 'Bflrtip', // Moved below for clarity with buttons
+        lengthMenu: [
+            [10, 25, 50, 100, -1],
+            [10, 25, 50, 100, "All"]
+        ],
+         // Configure DataTables Buttons
+         dom: 'Blfrtip', // Ensure 'B' is included for buttons
+         buttons: [
+             {
+                 extend: 'collection',
+                 text: 'Export',
+                 buttons: [
+                     'copy', 'csv', 'excel', 'pdf', 'print'
+                 ]
+             }
+             // You can add other buttons here if needed
+         ],
+        ajax: {
+            url: "{{ route('workshop.data') }}", // Ensure this route is correctly defined
+            data: function (d) {
+                // Dynamically get filter values from the *form fields* inside the collapsible section
+                // whenever the DataTable requests new data (search, pagination, sort, draw)
+
+                // IMPORTANT: Make sure the IDs used here (e.g., #id, #name) match the actual 'id' attributes
+                // of your form inputs in the Blade view.
+                // Example:
+                // If your input is {{ Form::text('id', ... ['id' => 'filter_job_id']) }}
+                // Then use $('#filter_job_id').val() here.
+
+                // Using the 'name' attributes as IDs (which seems to be the case from your Pasted_Text_1755171865541.txt)
+                // is generally fine, but accessing via '#id' is standard. Double-check your form input 'id's.
+
+                // Map form field values to query parameters expected by your controller
+                // Adjust the right-hand side selectors if your input 'id' attributes differ
+                d.id = $('input[name="id"]').val(); // Job/Workshop Id
+                d.name = $('input[name="name"]').val(); // Customer Name
+                d.mobile = $('input[name="mobile"]').val(); // Mobile Number
+                d.created_at_from = $('input[name="created_at_from"]').val(); // From Date
+                d.created_at_to = $('input[name="created_at_to"]').val(); // To Date
+                d.email = $('input[name="email"]').val(); // Email
+                d.origin = $('select[name="origin"]').val(); // Origin
+                d.convert_to_invoice = $('select[name="convert_to_invoice"]').val(); // Convert Invoice
+                d.status = $('select[name="status"]').val(); // Workshop Status
+                d.payment_method = $('select[name="payment_method"]').val(); // Payment Method
+                d.is_void = $('select[name="is_void"]').val(); // Void Invoices
+                d.payment_status = $('select[name="payment_status"]').val(); // Payment Status
+                d.vehicle_reg_number_for_search = $('input[name="vehicle_reg_number_for_search"]').val(); // Vehicle Reg No
+
+                // Note: If you add a 'Search' button specifically for filters (not relying on global search + draw),
+                // you would trigger table.draw() on its click event.
+                // For now, changes to global search or pagination will trigger this data function.
+                // You could also listen for changes on filter inputs and call table.draw() if you want
+                // filters applied immediately on change (might be heavy for date/typeahead fields).
+                /*
+                $('#workshopFilters input, #workshopFilters select').on('change', function() {
+                     // Debounce might be useful here for text inputs
+                     table.draw();
+                });
+                */
+            }
+        },
+        columns: [
+            // Make sure these 'name' values correspond to database columns or are handled in your query
+            // if they are computed/aliased.
+            { data: 'workshop_date_formatted', name: 'workshops.created_at' }, // Use formatted date from controller
+            { data: 'id', name: 'workshops.id' },
+            { data: 'customer_name', name: 'workshops.name' }, // Or join with customers table if needed
+            { data: 'mobile', name: 'workshops.mobile' },
+            { data: 'vehicle_reg', name: 'workshops.vehicle_reg_number' },
+            { data: 'payment_method_formatted', name: 'workshops.payment_method' },
+            { data: 'amount_due', name: 'workshops.balance_price', orderable: false, searchable: false }, // Formatted
+            { data: 'grand_total', name: 'workshops.grandTotal', orderable: false, searchable: false }, // Formatted
+            { data: 'payment_status_badge', name: 'workshops.payment_status', orderable: true, searchable: false }, // Badge
+            { data: 'origin_badge', name: 'workshops.workshop_origin', orderable: true, searchable: false }, // Badge
+            { data: 'status_badge', name: 'workshops.status', orderable: true, searchable: false }, // Badge
+            { data: 'invoice_convert_badge', name: 'workshops.is_converted_to_invoice', orderable: true, searchable: false }, // Badge
+            { data: 'actions', name: 'actions', orderable: false, searchable: false } // Action buttons
+        ],
+         // Optional: Add a footer callback for totals if needed (adjust column indices)
+        /*
+        footerCallback: function (row, data, start, end, display) {
+            var api = this.api();
+            // Assuming 'amount_due' is column index 6 and 'grand_total' is 7
+            var intVal = function (i) {
+                return typeof i === 'string' ?
+                    i.replace(/[\£,]/g, '') * 1 :
+                    typeof i === 'number' ?
+                    i : 0;
+            };
+            // Total over all pages for Amount Due
+            totalDue = api
+                .column(6) // Adjust index if column order changes
+                .data()
+                .reduce(function (a, b) {
+                    return intVal(a) + intVal(b);
+                }, 0);
+            // Total over all pages for Grand Total
+            totalGrand = api
+                .column(7) // Adjust index if column order changes
+                .data()
+                .reduce(function (a, b) {
+                    return intVal(a) + intVal(b);
+                }, 0);
+            // Update footer cells
+            $(api.column(6).footer()).html(
+                '£' + parseFloat(totalDue).toFixed(2)
+            );
+            $(api.column(7).footer()).html(
+                '£' + parseFloat(totalGrand).toFixed(2)
+            );
+        }
+        */
+    });
+
+    // Optional: If you want filters to apply immediately on change (be careful with text inputs)
+    // You might want to debounce this or only apply on a specific "Apply Filters" button click.
+    // For now, filters will apply when the table redraws (e.g., global search, pagination).
+    // Uncomment the lines below if you add an explicit filter apply button or want onChange (with debounce).
+    /*
+    $('#workshopFilters').on('change', 'input, select', function() {
+         // Simple immediate apply (might be too frequent)
+         // table.draw();
+
+         // Or use a debounce function for text inputs if applying on change
+         // Example debounce (basic):
+         clearTimeout(window.filterTimer);
+         window.filterTimer = setTimeout(function() {
+             table.draw();
+         }, 500); // Apply filter 500ms after the last change
+    });
+    */
+
+    // Example: If you add an explicit "Apply Filters" button inside the form
+    // <div class="text-right"><button type="button" id="applyFiltersBtn" class="btn btn-secondary">Apply Filters</button> ... </div>
+    // $('#applyFiltersBtn').on('click', function() {
+    //     table.draw(); // This will trigger the ajax.data function above
+    // });
+
+});
+</script>
 
 
 @endsection
