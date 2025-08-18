@@ -5,89 +5,137 @@
     @endphp
     <section class="container-fluid">
         <div class="bg-white p-3 mb-3">
-            {{ Form::open([
+            <!-- Toggle Button for Filters -->
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Filters</h5>
+                <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#workshopFilters" aria-expanded="true" aria-controls="workshopFilters"
+                    id="filterToggleBtn">
+                    <!-- Icons will be toggled by JS -->
+                    <span id="filterToggleText">Show Filters</span>
+                    <i id="filterToggleIcon" class="fa fa-chevron-up ms-1"></i>
+                </button>
+            </div>
+
+            <!-- Collapsible Filter Form -->
+            <div class="collapse" id="workshopFilters">
+                {{ Form::open([
         'url' => 'AutoCare/workshop/search-invoice',
         'files' => 'true',
         'enctype' => 'multipart/form-data',
         'autocomplete' => 'OFF'
     ]) }}
-            <div class="row">
-                <!-- Job/Workshop Id -->
-                <div class="col-lg-3 col-md-6 col-12 form-group">
-                    <label>Job/Workshop Id:</label>
-                    {{ Form::text('id', isset($id) ? $id : old('id'), [
+                <div class="row">
+                    <!-- Job/Workshop Id -->
+                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                        <label>Invoice Id:</label>
+                        {{ Form::text('id', request('id', old('id')), [
         'class' => 'form-control',
         'id' => 'id',
-        'placeholder' => 'Job Id'
+        'placeholder' => 'Invoice Id'
     ]) }}
-                </div>
+                    </div>
 
-                <!-- Customer Name -->
-                <div class="col-lg-3 col-md-6 col-12 form-group">
-                    <label>Customer Name:</label>
-                    {{ Form::text('name', isset($name) ? $name : old('name'), [
+                    <!-- Customer Name -->
+                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                        <label>Customer Name:</label>
+                        {{ Form::text('name', request('name', old('name')), [
         'class' => 'form-control',
         'name' => 'name',
         'placeholder' => 'Name'
     ]) }}
-                </div>
+                    </div>
 
-                <!-- Mobile Number -->
-                <div class="col-lg-3 col-md-6 col-12 form-group">
-                    <label>Mobile Number:</label>
-                    {{ Form::text('mobile', isset($mobile) ? $namobileme : old('mobile'), [
+                    <!-- Mobile Number -->
+                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                        <label>Mobile Number:</label>
+                        {{ Form::text('mobile', request('mobile', old('mobile')), [
         'class' => 'form-control',
-        'mobile' => 'mobile',
         'placeholder' => 'Mobile'
     ]) }}
-                </div>
+                    </div>
 
-                <!-- From Date -->
-                <div class="col-lg-3 col-md-6 col-12 form-group">
-                    <label>From Date:</label>
-                    {{ Form::date('created_at_to', isset($created_at_to) ? $created_at_to : old('created_at_to'), [
+                    <!-- From Date -->
+                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                        <label>From Date:</label>
+                        {{ Form::date('created_at_from', request('created_at_from', old('created_at_from')), [
         'class' => 'form-control',
-        'created_at_to' => 'created_at_to',
-        'placeholder' => 'created_at_to'
-    ]) }}
-                </div>
-
-                <!-- To Date -->
-                <div class="col-lg-3 col-md-6 col-12 form-group">
-                    <label>To Date:</label>
-                    {{ Form::date('created_at_from', isset($created_at_from) ? $created_at_from : old('created_at_from'), [
-        'class' => 'form-control',
-        'created_at_from' => 'created_at_from',
         'placeholder' => 'created_at_from'
     ]) }}
-                </div>
+                    </div>
 
-                <!-- Email -->
-                <div class="col-lg-3 col-md-6 col-12 form-group">
-                    <label>Email:</label>
-                    {{ Form::text('email', isset($email) ? $email : old('email'), [
+                    <!-- To Date -->
+                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                        <label>To Date:</label>
+                        {{ Form::date('created_at_to', request('created_at_to', old('created_at_to')), [
         'class' => 'form-control',
-        'email' => 'email',
+        'placeholder' => 'created_at_to'
+    ]) }}
+                    </div>
+
+                    <!-- Email -->
+                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                        <label>Email:</label>
+                        {{ Form::text('email', request('email', old('email')), [
+        'class' => 'form-control',
         'placeholder' => 'Email'
     ]) }}
-                </div>
+                    </div>
 
-                <!-- Vehicle Registration Number -->
-                <div class="col-lg-3 col-md-6 col-12 form-group">
-                    <label>Vehicle Registration Number:</label>
-                    {{ Form::text('vehicle_reg_number_for_search', isset($vehicle_reg_number_for_search) ? $vehicle_reg_number_for_search : old('vehicle_reg_number_for_search'), [
+
+                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                        <label for="status">Invoice Status:</label>
+                        {{ Form::select('status', ['booked' => 'Booked', 'completed' => 'Completed', 'failed' => 'Failed', 'pending' => 'Pending'], request('status', old('status')), [
+        'id' => 'status',
         'class' => 'form-control',
-        'vehicle_reg_number_for_search' => 'vehicle_reg_number_for_search',
+        'placeholder' => 'Select Invoice Status'
+    ]) }}
+                    </div>
+
+                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                        <label for="payment_method">Payment Method:</label>
+                        {{ Form::select('payment_method', ['pay_at_fitting_center' => 'Pay at Center', 'dojo' => 'dojo', 'global_payment' => 'Global Pay'], request('payment_method', old('payment_method')), [
+        'id' => 'payment_method',
+        'class' => 'form-control',
+        'placeholder' => 'Select Payment Method'
+    ]) }}
+                    </div>
+
+                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                        <label for="is_void">Void Invoices:</label>
+                        {{ Form::select('is_void', ['1' => 'Yes', '0' => 'No'], request('is_void', old('is_void')), [
+        'id' => 'is_void',
+        'class' => 'form-control',
+        'placeholder' => 'Search Void Invoices'
+    ]) }}
+                    </div>
+
+                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                        <label for="payment_status">Payment Status:</label>
+                        {{ Form::select('payment_status', ['1' => 'Paid', '0' => 'Unpaid', '3' => 'Partial'], request('payment_status', old('payment_status')), [
+        'id' => 'payment_status',
+        'class' => 'form-control',
+        'placeholder' => 'Select payment status'
+    ]) }}
+                    </div>
+
+                    <!-- Vehicle Registration Number -->
+                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                        <label>Vehicle Registration Number:</label>
+                        {{ Form::text('vehicle_reg_number_for_search', request('vehicle_reg_number_for_search', old('vehicle_reg_number_for_search')), [
+        'class' => 'form-control',
         'placeholder' => 'Vehicle Reg No.'
     ]) }}
+                    </div>
                 </div>
+                <div class="text-right">
+                    <input type="submit" name="search" class="btn btn-primary" value="Search">
+                    <!-- Optional: Add a Reset button -->
+                    <a href="{{ url()->current() }}" class="btn btn-secondary">Reset</a>
+                </div>
+                {{ Form::close() }}
             </div>
-            <div class="text-right">
-                <input type="submit" name="search" class="btn btn-primary" value="Search">
-            </div>
-            {{ Form::close() }}
         </div>
-
 
         <div class="row">
             <!-- left column -->
@@ -105,6 +153,21 @@
                             </ul>
                         @endif
 
+                        <!-- Notifications -->
+                        @if(session('success'))
+                            <div class="alert alert-success alert-dismissible fade show m-3" role="alert">
+                                {{ session('success') }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        @endif
+
+                        @if(session('error'))
+                            <div class="alert alert-danger alert-dismissible fade show m-3" role="alert">
+                                {{ session('error') }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        @endif
+
                         @if (session()->has('message.level'))
                             <div class="alert alert-{{ session('message.level') }} alert-dismissible"
                                 onload="javascript: Notify('You`ve got mail.', 'top-right', '5000', 'info', 'fa-envelope', true); return false;">
@@ -118,12 +181,6 @@
                 </div>
             </div>
         </div>
-        @php
-            $paidPrice = 0;
-            $discountPrice = 0;
-            $balancePrice = 0;
-            $grandTotal = 0;
-        @endphp
         <div class="row">
             <div class="col-sm-12" id="HideForShowProduct">
                 <div class="card">
@@ -147,166 +204,286 @@
                                 <span>£{{ $total_paid }}</span>
                             </div>
                         </div>
+                        <a class="btn btn-primary text-center float-right" href="{{ asset('/AutoCare/workshop/add') }}"><i
+                                class="fa fa-plus"></i> Create</a>
                     </div>
                     <div class="card-body table-responsive"
-                        style="font-size: 13px;padding-left:10px;vertical-align:middle;min-height:500px;">
-                        <table id="datable_1" class="table table-hover" style="font-size: 13px;">
+                        style="font-size: 13px;padding-left:10px;vertical-align:middle;">
+                        <table id="invoiceTable" class="table table-hover">
                             <thead class="thead-dark">
                                 <tr>
-                                    <th style="white-space: nowrap">Workshop Date</th>
+                                    <th style="white-space: nowrap">Job Date</th>
                                     <th style="white-space: nowrap">Job Id</th>
-                                    <th style="white-space: nowrap" style="white-space: nowrap">Customer Name</th>
+                                    <th style="white-space: nowrap">Name</th>
                                     <th style="white-space: nowrap">Mobile</th>
-                                    <th style="white-space: nowrap">Vehicle Reg. No</th>
-                                     <th style="white-space: nowrap">Grand Total</th>
-                                    <th style="white-space: nowrap">Paid Amount</th>
+                                    <th style="white-space: nowrap">Reg. No</th>
+                                    <th style="white-space: nowrap">Grand Total</th>
+                                    <th style="white-space: nowrap">Paid Price</th>
                                     <th style="white-space: nowrap">Discount</th>
-                                    <th style="white-space: nowrap">Amount Due</th>
-                                    <th style="white-space: nowrap">Payment Status</th>
+                                    <th style="white-space: nowrap">Due Amount</th>
+                                    <th style="white-space: nowrap">Payment</th>
                                     <th style="white-space: nowrap">Status</th>
-                                    <th>Action</th>
+                                    <th align="right">Action</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                @foreach ($workshop as $key => $value)
-                                    @php
-                                        // Format 'due_in' date
-                                        $due_in = isset($value['due_in']) ? date('d/m/Y', strtotime($value['due_in'])) : '';
-
-                                        // Format 'created_at' date
-                                        $created_at = isset($value['created_at']) ? date(
-                                            'd/m/Y H:i:s',
-                                            strtotime($value['created_at'])
-                                        ) : '';
-                                        // Format 'due_out' date
-                                        $due_out = isset($value['due_out']) ? date('d/m/Y', strtotime($value['due_out'])) : '';
-
-                                        // Format 'workshop_date' date
-                                        $workshop_date = isset($value['workshop_date']) ? date(
-                                            'd/m/Y H:i:s',
-                                            strtotime($value['workshop_date'])
-                                        ) : '';
-                                    @endphp
-                                    <tr>
-                                        <td>{{ $workshop_date }}</td>
-                                        <td>{{ $value['workshop_id'] }}</td>
-                                        <td>{{ $value['name'] }}</td>
-
-                                        <td>@php
-                                            if (isset($value['mobile'])) {
-                                                echo '' . (string) $value['mobile'];
-                                            }
-                                        @endphp
-                                        </td>
-
-                                        <td class="text-uppercase">{{ $value['vehicle_reg_number'] }}</td>
-
-                                        @php
-                                            $grandTotal += $value['grandTotal'];
-                                            $paidPrice += $value['paid_price'];
-                                            $discountPrice += $value['discount_price'];
-                                            $balancePrice += $value['balance_price'];
-                                        @endphp
-
-                                        <td>£{{ number_format($value['grandTotal'], 2, '.', '') }}</td>
-                                        <td>£{{ number_format($value['paid_price'], 2, '.', '') }}</td>
-                                        <td>£{{ number_format($value['discount_price'], 2, '.', '') }}</td>
-                                        <td>£{{ number_format($value['balance_price'], 2, '.', '') }}</td>
-                                        <td>
-                                            <span
-                                                class="
-                                                    {{ $value['payment_status'] == 1 ? 'Paid' : ($value['payment_status'] == 3 ? 'Partially' : 'Unpaid') }}">
-                                                {{ $value['payment_status'] == 1 ? 'Paid' : ($value['payment_status'] == 3 ? 'Partially' : 'Unpaid') }}
-                                            </span>
-                                        </td>
-
-                                        <td><span class="{{ $value['status'] }}">{{ $value['status'] }}</span></td>
-
-                                        <td style="white-space: nowrap">
-                                            <!-- @if ($value['is_workshop'] == 1)
-                                                                                                                                                                                                                                                                        <a href="{{ url('/') }}/AutoCare/workshop/add/{{ $value['id'] }}"
-                                                                                                                                                                                                                                                                            class="btn btn-success btn-sm"><i class="fa fa-wpexplorer"
-                                                                                                                                                                                                                                                                                aria-hidden="true"></i>Convert to invoice</i></a>
-                                                                                                                                                                                                                                                                    @endif -->
-
-                                            <!-- <a data-toggle="modal" id="{{ $value['id'] }}" data-target="#workshopDiscount"
-                                                                                                                                                                                                        class="btn btn-success openDiscountModelForWorkshop btn-sm"><i
-                                                                                                                                                                                                            class="fa fa-wpexplorer" aria-hidden="true"></i>Discount</i></a> -->
-
-                                            <!-- <a data-toggle="modal" id="{{ $value['id'] }}" data-target="#workshopPayment"
-                                                                                                                                                                                                        class="btn btn-success openPayentModelForWorkshop btn-sm"><i
-                                                                                                                                                                                                            class="fa fa-credit-card" aria-hidden="true"></i></a> -->
-
-                                            <a target="blank"
-                                                href="{{ url('/') }}/AutoCare/workshop/invoice/{{ $value['workshop_id'] }}"
-                                                class="btn btn-info btn-sm"><i class="fa fa-eye"></i></a>
-                                            <a href="{{ url('/') }}/AutoCare/workshop/add/{{ $value['workshop_id'] }}"
-                                                class="btn btn-success btn-sm"><i class="fa fa-edit"></i></a>
-
-
-                                            <!-- <a target="blank"
-                                                                                                                                                                                                        href="{{ url('/') }}/AutoCare/workshop/payment_history/{{ $value['id'] }}"
-                                                                                                                                                                                                        class="btn btn-danger btn-sm" title="Payment History"><i
-                                                                                                                                                                                                            class="fa fa-eye"></i></a> -->
-
-
-
-
-                                            <!-- @if ($value['is_workshop'] == 1)
-                                                                                                                                                                                                        <a href="{{ url('/') }}/AutoCare/workshop/add/{{ $value['id'] }}"
-                                                                                                                                                                                                            class="btn btn-success btn-sm"><i class="fa fa-edit"></i></a>
-                                                                                                                                                                                                    @else -->
-
-                                            <!-- <a data-toggle="modal" id="{{ $value['id'] }}" data-target="#myModal1"
-                                                                                                                                                                                                            class="btn btn-success openPayentModel btn-sm"><i class="fa fa-undo"
-                                                                                                                                                                                                                aria-hidden="true"></i></a>
-                                                                                                                                                                                                        <a href="{{ url('/') }}/AutoCare/sale/edit/{{ $value['id'] }}"
-                                                                                                                                                                                                            class="btn btn-success btn-sm"><i class="fa fa-edit"></i></a> -->
-                                            <!-- @endif -->
-
-                                            <!-- @if ($role_id == 1)
-                                                                                                                                                                                                        <a href="{{ url('/') }}/AutoCare/workshop/trash/{{ $value['id'] }} "
-                                                                                                                                                                                                            class="btn btn-danger btn-sm"
-                                                                                                                                                                                                            onclick="return confirm('Are you sure you want to delete this user?');"><i
-                                                                                                                                                                                                                class="fa fa-remove"></i></a>
-                                                                                                                                                                                                    @endif -->
-
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
                             <tfoot>
                                 <tr>
-                                    <td colspan="5">&nbsp;</td>
-                                    <td><b>£{{ number_format($grandTotal, 2, '.', '') }}</b></td>
-                                    <td><b>£{{ number_format($paidPrice, 2, '.', '') }}</b></td>
-                                    <td><b>£{{ number_format($discountPrice, 2, '.', '') }}</b></td>
-                                    <td><b>£{{ number_format($balancePrice, 2, '.', '') }}</b></td>
-                                    <td>&nbsp;</td>
-                                    <td>&nbsp;</td>
-                                    <td>&nbsp;</td>
+                                    <th colspan="5" style="text-align:right">Total:</th>
+                                    <th></th>
+                                    <th colspan="6"></th>
                                 </tr>
                             </tfoot>
                         </table>
-                        <div class="col-lg-12 text-center">
-
-                        </div>
-
                     </div>
                 </div>
             </div>
-            
         </div>
-        <div class="row">
+        <style>
+            #datable_1_info,
+            #datable_1_paginate {
+                display: none;
+            }
 
+            .pagination {
+                flex-wrap: wrap;
+            }
 
+            .page-item {
+                margin: 2px;
+            }
+
+            .dt-buttons {
+                margin-left: 200px;
+                padding: 0px 20px 25px 20px;
+            }
+        </style>
+
+        <!-- Modal for payment : start-->
+        <div class="modal fade" id="workshopPayment" role="dialog">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title">Customer Payment For Workshop ID: <span id="paymentWorkshopId"></span></h4>
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Payment Form -->
+                        <form id="formId" action="{{ url('/') }}/ajax/submitCustomerPaymentDetail" method="POST">
+                            {{ csrf_field() }}
+                            <input type="hidden" name="paymentLogId" value="">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Credit/Debit</th>
+                                        <th>Amount</th>
+                                        <th>Payment Date</th>
+                                        <th>Payment Type</th>
+                                        <th>Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @php
+                                        // Get current UK datetime formatted for datetime-local input
+                                        $ukNow = \Carbon\Carbon::now('Europe/London')->format('Y-m-d\TH:i');
+
+                                        // Determine the value to show for payment_date
+                                        $paymentDateValue = old('payment_dateForWorkshop', isset($log) ? $log->payment_date : $ukNow);
+                                    @endphp
+
+                                    <tr>
+                                        <td>
+                                            <select name="creditDebitForWorkshop" class="form-control">
+                                                <!-- <option value="0">Credit</option> -->
+                                                <option value="1" selected>Debit</option>
+                                            </select>
+                                            <input type="hidden" name="workshopIdForPayment">
+                                        </td>
+                                        <td>
+                                            <input type="number" class="form-control" step="any" name="amountForWorkshop"
+                                                value="{{ old('amountForWorkshop', isset($log) ? $log->amount : '') }}">
+                                        </td>
+                                        <td>
+                                            <input type="datetime-local" class="form-control" id="paymentDate"
+                                                name="payment_dateForWorkshop" value="{{ $paymentDateValue }}">
+                                        </td>
+                                        <td>
+                                            {{ Form::select('payment_typeForWorkshop', ['2' => 'By Card', '1' => 'By Cash', '3' => 'By Cheque'], old('payment_typeForWorkshop', isset($log) ? $log->payment_type : null), ['class' => 'form-control']) }}
+                                        </td>
+                                        <td>
+                                            {{ Form::textarea('commentsForWorkshop', old('commentsForWorkshop', isset($log) ? $log->comments : null), ['class' => 'form-control', 'id' => 'comments', 'style' => 'height: 40px;']) }}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td></td>
+                                        <td></td>
+                                        <td><input type="button" id="paymentForWorkshop" class="btn btn-sm btn-success"
+                                                value="Submit"></td>
+                                        <td><button type="reset" class="btn btn-sm btn-danger"><i class="fa fa-ban"></i>
+                                                Reset</button></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </form>
+
+                        <!-- Payment Logs Table -->
+                        <h5>Previous Payment Logs</h5>
+                        <table class="table" id="paymentLogsTable">
+                            <thead>
+                                <tr>
+                                    <th>Amount</th>
+                                    <th>Payment Date</th>
+                                    <th>Payment Type</th>
+                                    <th>Description</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Payment logs will be dynamically populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Modal for payment :end -->
+
+        <!-- Modal for Activity Log :start -->
+        <!-- Modal (outside the loop) -->
+        <div class="modal fade" id="activityModal" tabindex="-1" aria-labelledby="activityModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header align-items-center">
+                        <h5 class="modal-title" id="activityModalLabel">Workshop Activity Log</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="activity-log-content">
+                        <p>Loading...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Modal for Activity Log :end -->
+
+        <!-- Modal for discount : start-->
+        <div class="modal fade" id="workshopDiscount" role="dialog">
+            <div class="modal-dialog modal-sm">
+
+                <!-- Modal content-->
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Customer Discount For Workshop ID:<span id="discountWorkshopId"></span></h5>
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        {{ csrf_field() }}
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th align="center">Discount Type</th>
+                                    <th align="center">Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <!-- Dropdown for selecting discount type -->
+                                        <select class="form-control" id="discountType" name="discountType">
+                                            <option value="amount">Fixed Amount</option>
+                                            <option value="percentage">Percentage (%)</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <!-- Input field for discount value -->
+                                        <input type="number" class="form-control" step="any" id="discountValue"
+                                            name="discountValue" placeholder="Enter Value">
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="2" align="center">
+                                        <!-- Hidden input for workshop ID -->
+                                        <input type="hidden" name="workshopIdForDiscount" id="workshopIdForDiscount"
+                                            data-balance-total="">
+                                        <!-- Button to submit the discount -->
+                                        <input type="button" id="DiscountForWorkshop" class="btn btn-sm btn-success"
+                                            value="Add/Update Discount">
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Modal for discount :end -->
+
+        <!-- Email Modal -->
+        <!-- Email Modal -->
+        <!-- Reusable Email Modal -->
+        <div class="modal fade" id="emailModal" tabindex="-1" aria-labelledby="emailModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <form id="emailForm" action="{{ url('/AutoCare/workshop/send-invoice-email') }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="invoice_id" id="invoice_id">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="emailModalLabel">Send Invoice via Email</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+
+                        <div class="modal-body text-left">
+                            <div class="form-group mb-2">
+                                <label for="email_to">Email To</label>
+                                <input type="email" class="form-control" id="email_to" name="email_to" required>
+                            </div>
+
+                            <div class="form-group mb-2">
+                                <label for="email_cc">CC</label>
+                                <input type="email" class="form-control" id="email_cc" name="email_cc">
+                            </div>
+
+                            <div class="form-group mb-2">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" checked id="attach_pdf"
+                                        name="attach_pdf" value="1">
+                                    <label class="form-check-label p-0" for="attach_pdf">Attach Invoice PDF</label>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="email_body">Body</label>
+                                <textarea id="email_body" name="email_body"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">Send Email</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
 
+        <style>
+            .tox-statusbar__branding,
+            .tox-promotion {
+                display: none
+            }
+        </style>
 
 
-
+        <style>
+            .tox-statusbar__branding,
+            .tox-promotion {
+                display: none;
+            }
+        </style>
+        <!-- Email Modal end -->
     </section>
-
     <script src="{{ asset('alerts-boxes/js/sweetalert.min.js') }}"></script>
     <script type="text/javascript">
         $(document).ready(function () {
@@ -345,260 +522,481 @@
             })
 
             // for refresh : End
+            // Open Discount Modal and Set Values
+            $(document).on('click', '.openDiscountModelForWorkshop', function () {
+                var discountWorkshopId = $(this).attr('id'); // Get the workshop ID
+                var balancePrice = $(this).data('balance-total'); // Get the balance price
 
+                // Set the workshop ID and balance price in the modal
+                $('[name="workshopIdForDiscount"]').val(discountWorkshopId);
+                $('[name="workshopIdForDiscount"]').data('balance-total', balancePrice); // Store balance price in data attribute
+                $('[id="discountWorkshopId"]').html(discountWorkshopId); // Display workshop ID in the modal title
+            });
 
-            //For Disount : start
+            // Handle Discount Submission
+            // Handle Discount Submission
             $(document).on('click', '#DiscountForWorkshop', function () {
-                var amountForWorkshopDiscount = $('[name=amountForWorkshopDiscount]').val();
-                var workshopIdForDiscount = $('[name=workshopIdForDiscount]').val();
-                // var commentsForWorkshopDiscount=$('[name=commentsForWorkshopDiscount]').val();
+                const discountType = $('#discountType').val(); // 'amount' or 'percentage'
+                const discountValue = parseFloat($('#discountValue').val()); // Discount value entered by the user
+                const workshopIdForDiscount = $('[name=workshopIdForDiscount]').val();
+                const balancePrice = parseFloat($('[name=workshopIdForDiscount]').data('balance-total'));
 
-
-                if (amountForWorkshopDiscount == "") {
-                    swal("warning!", "Please enter Amount", "");
-                } else {
-                    $.ajax({
-                        type: "POST",
-                        url: "{{ url('/') }}/ajax/discountForWorkshop",
-                        data: {
-                            "_token": "{{ csrf_token() }}",
-                            amountForWorkshopDiscount: amountForWorkshopDiscount,
-                            workshopIdForDiscount: workshopIdForDiscount,
-                        },
-                        dataType: 'html',
-                        cache: false,
-                        success: function (data) {
-                            var workshopIdForDiscount = $('[name=workshopIdForDiscount]').val();
-                            if (data == 1) {
-                                swal("Good job!", " Discount  Successfully", "success");
-                                $('[name=amountForWorkshopDiscount]').val("");
-                                var newTab = window.open(
-                                    "{{ url('/') }}/AutoCare/workshop/view/" +
-                                    workshopIdForDiscount, "_blank");
-                                newTab.location;
-                                console.log("Worshop Detail Opened In New Tab");
-                            } else {
-                                swal("Somthing Wrong!", "OOHooooooooooo!!!!", "error");
-                                $('[name^=amountForWorkshop]').val("");
-                            }
-
-
-                        },
-                        error: function (data) {
-                            swal("Somthing Wrong!", "OOHooooooooooo!!!!", "error");
-                        }
-
-
-                    });
+                // Validate input
+                if (isNaN(discountValue) || discountValue < 0) {
+                    swal("Warning!", "Please enter a valid discount value.", "warning");
+                    return;
                 }
 
-            })
+                // Calculate the discount amount based on the type
+                let discountAmount = 0;
+
+                if (discountType === 'amount') {
+                    discountAmount = discountValue;
+                } else if (discountType === 'percentage') {
+                    discountAmount = (balancePrice * discountValue) / 100;
+                    const maxDiscountAmount = balancePrice;
+                    discountAmount = Math.min(discountAmount, maxDiscountAmount);
+                }
+
+                // Send the AJAX request with the discount details
+                $.ajax({
+                    type: "POST",
+                    url: "{{ url('/') }}/ajax/discountForWorkshop",
+                    data: {
+                        "_token": "{{ csrf_token() }}",
+                        workshopIdForDiscount: workshopIdForDiscount,
+                        discount_type: discountType,
+                        discount_value: discountValue,
+                        discount_amount: discountAmount,
+                    },
+                    dataType: 'json',
+                    cache: false,
+                    success: function (response) {
+                        if (response.success) {
+                            swal("Good job!", "Discount applied successfully", "success");
+                            $('#discountValue').val(""); location.reload();
+                        } else {
+                            swal("Something went wrong!", response.message || "An error occurred while applying the discount.", "error");
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        swal("Error!", "An unexpected error occurred: " + error, "error");
+                    }
+                });
+            });
 
             $(document).on('click', '.openDiscountModelForWorkshop', function () {
-                var discountWorkshopId = $(this).attr('id');
-                $('[name="workshopIdForDiscount"]').val(discountWorkshopId)
-                $('[id="discountWorkshopId"]').html(discountWorkshopId)
-            })
+                const discountWorkshopId = $(this).attr('id');
+                const balancePrice = parseFloat($(this).data('balance-total'));
+                // Fetch the existing discount details via AJAX
+                $.ajax({
+                    type: "GET",
+                    url: `/AutoCare/workshop/search/fetch-discount/${discountWorkshopId}`,
+                    success: function (response) {
+                        const { discount_type, discount_value } = response;
 
+                        // Populate the modal fields
+                        $('#discountType').val(discount_type || 'amount');
+                        $('#discountValue').val(discount_value || '');
 
-
+                        // Set hidden fields
+                        $('[name="workshopIdForDiscount"]').val(discountWorkshopId);
+                        $('[name="workshopIdForDiscount"]').data('balance-total', balancePrice);
+                        $('[id="discountWorkshopId"]').html(discountWorkshopId);
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching discount details:', error);
+                    }
+                });
+            });
             //For Disount : end
 
             $(document).on('click', '#paymentForWorkshop', function () {
                 var creditDebitForWorkshop = $('[name^=creditDebitForWorkshop]').val();
                 var workshopIdForPayment = $('[name^=workshopIdForPayment]').val();
                 var amountForWorkshop = $('[name^=amountForWorkshop]').val();
-                var payment_dateForWorkhop = $('[name^=payment_dateForWorkhop]').val();
                 var payment_typeForWorkshop = $('[name^=payment_typeForWorkshop]').val();
-                var payment_dateForWorkhop = $('[name^=payment_dateForWorkhop]').val();
+                var payment_dateForWorkshop = $('[name^=payment_dateForWorkshop]').val();
                 var commentsForWorkshop = $('[name^=commentsForWorkshop]').val();
-                if (amountForWorkshop == "") {
-                    swal("warning!", "Please enter Amount", "");
-                } else {
+                const paymentLogId = $('[name="paymentLogId"]').val();
+
+                if (paymentLogId) {
+                    // Update existing payment log
                     $.ajax({
                         type: "POST",
-                        url: "{{ url('/') }}/ajax/paymentForWorkshop",
+                        url: `/AutoCare/workshop/search/update-payment-log/${paymentLogId}`,
                         data: {
                             "_token": "{{ csrf_token() }}",
-                            creditDebitForWorkshop: creditDebitForWorkshop,
-                            workshopIdForPayment: workshopIdForPayment,
-                            amountForWorkshop: amountForWorkshop,
-                            payment_dateForWorkhop: payment_dateForWorkhop,
-                            payment_typeForWorkshop: payment_typeForWorkshop,
-                            payment_dateForWorkhop: payment_dateForWorkhop,
-                            commentsForWorkshop: commentsForWorkshop,
+                            amount: $('[name="amountForWorkshop"]').val(),
+                            payment_date: $('[name="payment_dateForWorkshop"]').val(),
+                            payment_type: $('[name="payment_typeForWorkshop"]').val(),
+                            comments: $('[name="commentsForWorkshop"]').val(),
                         },
-                        dataType: 'html',
-                        cache: false,
-                        success: function (data) {
-                            var workshopIdForPayment = $('[name^=workshopIdForPayment]').val();
-                            if (data == 1) {
-                                swal("Good job!", "Workshop Payment  Successfully", "success");
-                                $('[name=amountForWorkshop]').val("");
-                                var newTab = window.open(
-                                    "{{ url('/') }}/AutoCare/workshop/view/" +
-                                    workshopIdForPayment, "_blank");
-                                newTab.location;
-                                console.log("Worshop Detail Opened In New Tab");
-                            } else if (data == 0) {
-                                swal("Somthing Wrong!", "OOHooooooooooo!!!!", "error");
-                                // $('[name^=amountForWorkshop]').val("");
+                        success: function (response) {
+                            if (response.success) {
+                                swal("Good job!", "Payment log updated successfully.", "success");
+                                location.reload();
                             } else {
-                                swal("Somthing Wrong!", data, "error");
-                                // $('[name^=amountForWorkshop]').val("");
+                                swal("Error!", response.message, "error");
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            swal("Error!", "Failed to update payment log.", "error");
+                        }
+                    });
+                } else {
+                    if (amountForWorkshop == "") {
+                        swal("warning!", "Please enter Amount", "");
+                    } else {
+                        $.ajax({
+                            type: "POST",
+                            url: '{{ url('/') }}/ajax/paymentForWorkshop',
+                            data: {
+                                "_token": "{{ csrf_token() }}",
+                                creditDebitForWorkshop: creditDebitForWorkshop,
+                                workshopIdForPayment: workshopIdForPayment,
+                                amountForWorkshop: amountForWorkshop,
+                                payment_typeForWorkshop: payment_typeForWorkshop,
+                                payment_dateForWorkshop: payment_dateForWorkshop,
+                                commentsForWorkshop: commentsForWorkshop,
+                            },
+                            dataType: 'html',
+                            cache: false,
+                            success: function (data) {
+                                var workshopIdForPayment = $('[name^=workshopIdForPayment]').val();
+                                if (data == 1) {
+                                    swal("Good job!", "Workshop Payment  Successfully", "success");
+                                    $('[name=amountForWorkshop]').val("");
+                                    location.reload();
+                                    // var newTab = window.open(
+                                    //     "{{ url('/') }}/AutoCare/workshop/view/" +
+                                    //     workshopIdForPayment, "_blank");
+                                    // newTab.location;
+                                    // console.log("Worshop Detail Opened In New Tab");
+                                } else if (data == 0) {
+                                    swal("Somthing Wrong!", "OOHooooooooooo!!!!", "error");
+                                    // $('[name^=amountForWorkshop]').val("");
+                                } else {
+                                    swal("Somthing Wrong!", data, "error");
+                                    // $('[name^=amountForWorkshop]').val("");
+                                }
+
+
+                            },
+                            error: function (data) {
+                                swal("Somthing Wrong!", "OOHooooooooooo!!!!", "error");
                             }
 
 
-                        },
-                        error: function (data) {
-                            swal("Somthing Wrong!", "OOHooooooooooo!!!!", "error");
-                        }
-
-
-                    });
+                        });
+                    }
                 }
 
             })
 
             $(document).on('click', '.openPayentModelForWorkshop', function () {
                 var workshopId = $(this).attr('id');
+                const balance_price = this.getAttribute('data-grand-total');
                 $('[name="workshopIdForPayment"]').val(workshopId)
                 $('[id="paymentWorkshopId"]').html(workshopId)
+                $('[name="amountForWorkshop"]').val(balance_price)
             })
+            $(document).on('click', '.openPayentModelForWorkshop', function () {
+                var workshopId = $(this).attr('id');
+                const balance_price = this.getAttribute('data-grand-total');
 
+                // Populate hidden fields
+                $('[name="workshopIdForPayment"]').val(workshopId);
+                $('[id="paymentWorkshopId"]').html(workshopId);
+                $('[name="amountForWorkshop"]').val(balance_price);
 
-            $(document).on('click', '#closeProdultDetail', function () {
-                $('#HideForShowProduct2').hide();
-                $('#HideForShowProduct').show();
-                $('#productDetail').html("");
-            })
+                // Fetch payment logs
+                $.ajax({
+                    type: "GET",
+                    url: `/AutoCare/workshop/search/get-payment-logs/${workshopId}`,
+                    success: function (response) {
+                        const paymentLogsTable = $('#paymentLogsTable tbody');
+                        paymentLogsTable.empty(); // Clear existing rows
 
-            $(document).on('click', '.openPayentModelForProduct', function () {
-                var PurchaseId = $(this).attr('id');
-                $('[name="PurchaseId"]').val(PurchaseId)
+                        response.forEach(log => {
+                            const row = `
+                                                        <tr>
+                                                            <td>£${log.debit_amount}</td>
+                                                            <td>${log.payment_date}</td>
+                                                         <td>${log.payment_type_label}</td>
+                                                            <td>${log.comments || '-'}</td>
+                                                            <td>
+                                                                <button class="btn btn-sm btn-primary editPaymentLog" data-id="${log.id}">Edit</button>
+                                                                <button class="btn btn-sm btn-danger deletePaymentLog" data-id="${log.id}">Delete</button>
+                                                            </td>
+                                                        </tr>
+                                                    `;
+                            paymentLogsTable.append(row);
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching payment logs:', error);
+                    }
+                });
+            });
+            // Edit Payment Log
+            $(document).on('click', '.editPaymentLog', function () {
+                const paymentLogId = $(this).data('id');
+                // Fetch payment log details via AJAX
+                $.ajax({
+                    type: "GET",
+                    url: `/AutoCare/workshop/search/get-payment-log/${paymentLogId}`,
+                    success: function (log) {
+                        // console.log(log); 
+                        // Populate form fields with existing data
+                        $('[name="paymentLogId"]').val(paymentLogId);
+                        $('[name="amountForWorkshop"]').val(log.debit_amount);
+                        $('[name="payment_dateForWorkshop"]').val(log.payment_date);
+                        $('[name="payment_typeForWorkshop"]').val(log.payment_type);
+                        $('[name="commentsForWorkshop"]').val(log.comments);
+
+                        // Add a hidden field to track the log ID
+                        $('<input>').attr({
+                            type: 'hidden',
+                            name: 'paymentLogId',
+                            value: paymentLogId
+                        }).appendTo('#formId');
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching payment log details:', error);
+                    }
+                });
             });
 
-            $(document).on('click', '.openPayentModel', function () {
-                var workshopId = $(this).attr('id');
-                //  $('[name="PurchaseId"]').val(PurchaseId)
+            // Submit Updated Payment Log
 
-                $.ajax({
-                    type: "POST",
-                    url: "{{ url('/') }}/ajax/getWorkshopReport",
-                    data: {
-                        "_token": "{{ csrf_token() }}",
-                        workshopId: workshopId
-                    },
-                    dataType: 'html',
-                    cache: false,
-                    success: function (data) {
-                        $('#HideForShowProduct2').show();
-                        $('#HideForShowProduct').hide();
-                        workshop_Product = JSON.parse(data);
-                        for (index = 0; index < workshop_Product.length; ++index) {
-                            $('#productDetail').append("<tr>\
-                                                            <td>" + workshop_Product[index]['workshop_id'] + "</td>\
-                                                            <td>" + workshop_Product[index]['workshop_id'] + "</td>\
-                                                            <td>" + workshop_Product[index]['product_name'] + "</td>\
-                                                            <td>" + workshop_Product[index]['product_quantity'] + "</td>\
-                                                            <td>" + workshop_Product[index]['UnitExitPrice'] + "</td>\
-                                                            <td><a data-toggle=\"modal\" id=\"" + workshop_Product[index]['WorkshopProId'] + "\" data-target=\"#myModal\"  class=\"btn btn-success openPayentModelForProduct btn-sm\"><i class=\"fa fa-undo\" aria-hidden=\"true\"></i></a> </th>\
-                                                            </tr>");
 
-                            //  thisSelf.parent().parent().find('[name^=model_number]').append(
+            // Delete Payment Log
+            $(document).on('click', '.deletePaymentLog', function () {
+                const paymentLogId = $(this).data('id');
 
-                            // );  
+                swal({
+                    title: "Are you sure?",
+                    text: "Once deleted, you will not be able to recover this payment log!",
+                    icon: "warning",
+                    buttons: true,
+                    dangerMode: true,
+                }).then((willDelete) => {
+                    if (willDelete) {
+                        $.ajax({
+                            type: "DELETE",
+                            url: `/AutoCare/workshop/search/delete-payment-log/${paymentLogId}`,
+                            data: { "_token": "{{ csrf_token() }}" },
+                            success: function (response) {
+                                if (response.success) {
+                                    swal("Good job!", "Payment log deleted successfully.", "success");
+                                    location.reload();
+                                } else {
+                                    swal("Error!", response.message, "error");
+                                }
+                            },
+                            error: function (xhr, status, error) {
+                                swal("Error!", "Failed to delete payment log.", "error");
+                            }
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+    <script>
+        $(document).on('click', '.open-activity-log-modal', function (e) {
+            e.preventDefault();
+            let workshopId = $(this).data('id');
 
-                        }
-                    },
-                    error: function (data) {
-                        swal("Somthing Wrong!", "OOHooooooooooo!!!!", "error");
+            // Show loading state
+            $('#activity-log-content').html('<div class="text-center p-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2">Loading activity logs...</p></div>');
+            $('#activityModal').modal('show');
+
+            $.ajax({
+                url: `AutoCare/workshop/${workshopId}/activity-log`,
+                type: 'GET',
+                dataType: 'html',
+                timeout: 10000, // 10 seconds timeout
+                success: function (response) {
+                    $('#activity-log-content').html(response);
+                },
+                error: function (xhr, status, error) {
+                    console.error('Activity log error:', xhr, status, error);
+                    let errorMessage = 'Failed to load activity logs.';
+
+                    if (xhr.status === 404) {
+                        errorMessage = 'Workshop not found.';
+                    } else if (xhr.status === 500) {
+                        errorMessage = 'Server error occurred.';
+                    } else if (status === 'timeout') {
+                        errorMessage = 'Request timeout. Please try again.';
                     }
 
+                    $('#activity-log-content').html(`<div class="alert alert-danger mb-0"><i class="fas fa-exclamation-triangle me-2"></i>${errorMessage}</div>`);
+                }
+            });
+        });
+    </script>
+    <!-- JavaScript to toggle icon and text -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const collapseElement = document.getElementById('workshopFilters');
+            const toggleButton = document.getElementById('filterToggleBtn');
+            const toggleIcon = document.getElementById('filterToggleIcon');
+            const toggleText = document.getElementById('filterToggleText');
 
-                });
-
-
+            // Function to update button text and icon based on collapse state
+            function updateToggleButton(isVisible) {
+                if (isVisible) {
+                    toggleIcon.classList.remove('fa-chevron-down');
+                    toggleIcon.classList.add('fa-chevron-up');
+                } else {
+                    toggleIcon.classList.remove('fa-chevron-up');
+                    toggleIcon.classList.add('fa-chevron-down');
+                }
+            }
+            collapseElement.addEventListener('show.bs.collapse', function () {
+                updateToggleButton(true);
             });
 
+            collapseElement.addEventListener('hide.bs.collapse', function () {
+                updateToggleButton(false);
+            });
+            updateToggleButton(collapseElement.classList.contains('show'));
+        });
+    </script>
+    <script>
+        $(document).ready(function () {
+            var table = $('#invoiceTable').DataTable({
+                processing: true,
+                serverSide: true,
+                responsive: true,
+                lengthMenu: [
+                    [10, 25, 50, 100, -1],
+                    [10, 25, 50, 100, "All"]
+                ],
+                dom: 'Blfrtip',
+                buttons: ['csv', 'excel', 'pdf', 'print'],
+                ajax: {
+                    url: "{{ route('invoice.data') }}",
+                    data: function (d) {
+                        d.id = $('input[name="id"]').val();
+                        d.name = $('input[name="name"]').val();
+                        d.mobile = $('input[name="mobile"]').val();
+                        d.created_at_from = $('input[name="created_at_from"]').val();
+                        d.created_at_to = $('input[name="created_at_to"]').val();
+                        d.email = $('input[name="email"]').val();
+                        d.origin = $('select[name="origin"]').val();
+                        d.convert_to_invoice = $('select[name="convert_to_invoice"]').val();
+                        d.status = $('select[name="status"]').val();
+                        d.payment_method = $('select[name="payment_method"]').val();
+                        d.is_void = $('select[name="is_void"]').val();
+                        d.payment_status = $('select[name="payment_status"]').val();
+                        d.vehicle_reg_number_for_search = $('input[name="vehicle_reg_number_for_search"]').val();
+                    }
+                },
+                columns: [
+                    { data: 'workshop_date_formatted', name: 'invoices.created_at' },
+                    { data: 'workshop_id', name: 'invoices.workshop_id' },
+                    { data: 'customer_name', name: 'invoices.name' },
+                    { data: 'mobile', name: 'invoices.mobile' },
+                    { data: 'vehicle_reg', name: 'invoices.vehicle_reg_number' },
+                    { data: 'grand_total', name: 'invoices.grandTotal' },
+                    { data: 'paid_price', name: 'invoices.paid_price' },
+                    { data: 'discount', name: 'invoices.discount_price' },
+                    { data: 'amount_due', name: 'invoices.balance_price' },
+                    { data: 'payment_status_badge', name: null, orderable: true, searchable: true },
+                    { data: 'status_badge', name: 'invoices.status' },
+                    { data: 'actions', name: 'actions', orderable: false, searchable: false }
+                ],
 
-            $(document).ready(function () {
-
-                $(document).on("change", "[name^=brand]", function () {
-                    var thisSelf = $(this);
-                    var brand = $(this).val();
-                    $.ajax({
-                        type: "POST",
-                        url: "{{ url('/') }}/ajax/getModal",
-                        data: {
-                            "_token": "{{ csrf_token() }}",
-                            brand: brand,
-                        },
-                        dataType: 'html',
-                        cache: false,
-                        success: function (data) {
-                            modalData = JSON.parse(data);
-                            // console.log(modalData.id);
-                            // console.log(modalData.model_name);
-                            thisSelf.parent().parent().find('[name^=model_number]')
-                                .empty()
-                                .append(
-                                    '<option selected="selected" value="">-Select -</option>'
-                                );
-                            for (index = 0; index < modalData.length; ++index) {
-                                $('[name^=model_number]').append(
-                                    '<option value="' + modalData[index]['id'] +
-                                    '">' + modalData[index]['model_name'] +
-                                    '</option>'
-                                );
-                            }
-                        }
-                    });
-                });
-
-                $(document).on("click", "#payment", function () {
-
-                    var quantity = $('[name^=amount]').val();
-                    var PurchaseId = $('[name^=PurchaseId]').val();
-                    var comments = $('[name^=comments]').val();
-
-                    $.ajax({
-                        type: "POST",
-                        url: "{{ url('/') }}/ajax/submitSaleReturn",
-                        data: {
-                            "_token": "{{ csrf_token() }}",
-                            saleId: PurchaseId,
-                            quantity: quantity,
-                            comments: comments,
-                        },
-                        dataType: 'html',
-                        cache: false,
-                        success: function (data) {
-                            if (data == 1) {
-                                swal("Good job!",
-                                    "Purchase Returned Successfully . Now Quantity Has Been decremented",
-                                    "success");
-                                $('[name^=PurchaseId]').val("");
-                                $('[name^=comments]').val("");
-                            } else {
-                                swal("Somthing Wrong!", "OOHooooo!!!!!", "error");
-                            }
-                        },
-                        error: function (data) {
-                            swal("Somthing Wrong!", "OOHooooooooooo!!!!", "error");
-                        }
-
-
-                    });
-                });
-
+                footerCallback: function (row, data, start, end, display) {
+                    var api = this.api();
+                    var intVal = function (i) {
+                        return typeof i === 'string' ?
+                            i.replace(/[\£,]/g, '') * 1 :
+                            typeof i === 'number' ?
+                                i : 0;
+                    };
+                    totalGrand = api
+                        .column(5)
+                        .data()
+                        .reduce(function (a, b) {
+                            return intVal(a) + intVal(b);
+                        }, 0);
+                        $(api.column(5).footer()).html(
+                        '£' + parseFloat(totalGrand).toFixed(2)
+                    );
+                    totalPaid = api
+                        .column(6)
+                        .data()
+                        .reduce(function (a, b) {
+                            return intVal(a) + intVal(b);
+                        }, 0);
+                    
+                    $(api.column(6).footer()).html(
+                        '£' + parseFloat(totalPaid).toFixed(2)
+                    );
+                    totalDiscount = api
+                        .column(7)
+                        .data()
+                        .reduce(function (a, b) {
+                            return intVal(a) + intVal(b);
+                        }, 0);
+                    
+                    $(api.column(7).footer()).html(
+                        '£' + parseFloat(totalDiscount).toFixed(2)
+                    );
+                    totalDue = api
+                        .column(8)
+                        .data()
+                        .reduce(function (a, b) {
+                            return intVal(a) + intVal(b);
+                        }, 0);
+                    
+                    $(api.column(8).footer()).html(
+                        '£' + parseFloat(totalDue).toFixed(2)
+                    );
+                }
 
             });
         });
     </script>
-     <style>
-        .rounded {
-            padding: 0.5rem 1.5rem;
+    <script>
+        $(document).on('click', '.open-email-modal-btn', function () {
+            const invoiceId = $(this).data('workshop-id');
+            const email = $(this).data('workshop-email') || '';
+            const b64 = $(this).attr('data-email-body-b64') || '';
+            let emailBody = '';
+
+            try {
+                emailBody = atob(b64);
+            } catch (e) {
+                emailBody = '';
+            }
+
+            $('#invoice_id').val(invoiceId);
+            $('#email_to').val(email);
+
+            if (typeof tinymce !== 'undefined' && tinymce.get('email_body')) {
+                tinymce.get('email_body').setContent(emailBody);
+            } else {
+                $('#email_body').val(emailBody);
+            }
+
+            $('#emailModal').modal('show');
+        });
+
+        if (typeof tinymce !== 'undefined') {
+            $('#emailForm').on('submit', function () {
+                const ed = tinymce.get('email_body');
+                if (ed) {
+                    $('#email_body').val(ed.getContent());
+                }
+            });
         }
-    </style>
+    </script>
+
+
 @endsection

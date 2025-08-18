@@ -514,6 +514,7 @@ Route::middleware('auth:web')->group(function () {
     Route::get('/AutoCare/payment-record', 'PaymentRecordController@index');
     Route::get('AutoCare/workshop/{id}/activity-log', 'WorkshopController@getActivityLog')->name('workshop.activity-log');
     Route::get('/AutoCare/workshop/data', [WorkshopController::class, 'getWorkshopData'])->name('workshop.data');
+    Route::get('/AutoCare/invoice/data', [WorkshopController::class, 'getInvoiceData'])->name('invoice.data');
     
 
 

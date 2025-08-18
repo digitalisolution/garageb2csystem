@@ -4,155 +4,157 @@
         $role_id = Auth::user()->role_id;
     @endphp
     <section class="container-fluid">
-       <div class="bg-white p-3 mb-3">
-    <!-- Toggle Button for Filters -->
-    <div class="d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Filters</h5> <!-- Optional: Add a title -->
-        <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#workshopFilters" aria-expanded="true" aria-controls="workshopFilters" id="filterToggleBtn">
-            <!-- Icons will be toggled by JS -->
-            <span id="filterToggleText">Show Filters</span>
-            <i id="filterToggleIcon" class="fa fa-chevron-up ms-1"></i> <!-- Font Awesome Icon -->
-        </button>
-    </div>
-
-    <!-- Collapsible Filter Form -->
-    <!-- Show initially by adding 'show' class. Remove 'show' if you want it hidden by default -->
-    <div class="collapse" id="workshopFilters">
-        {{ Form::open([
-            'url' => 'AutoCare/workshop/search',
-            'files' => 'true',
-            'enctype' => 'multipart/form-data',
-            'autocomplete' => 'OFF'
-        ]) }}
-        <div class="row">
-            <!-- Job/Workshop Id -->
-            <div class="col-lg-3 col-md-6 col-12 form-group">
-                <label>Job/Workshop Id:</label>
-                {{ Form::text('id', request('id', old('id')), [ // Use request() helper for cleaner syntax
-                    'class' => 'form-control',
-                    'id' => 'id',
-                    'placeholder' => 'Job Id'
-                ]) }}
+        <div class="bg-white p-3 mb-3">
+            <!-- Toggle Button for Filters -->
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Filters</h5> <!-- Optional: Add a title -->
+                <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#workshopFilters" aria-expanded="true" aria-controls="workshopFilters"
+                    id="filterToggleBtn">
+                    <!-- Icons will be toggled by JS -->
+                    <span id="filterToggleText">Show Filters</span>
+                    <i id="filterToggleIcon" class="fa fa-chevron-up ms-1"></i> <!-- Font Awesome Icon -->
+                </button>
             </div>
 
-            <!-- Customer Name -->
-            <div class="col-lg-3 col-md-6 col-12 form-group">
-                <label>Customer Name:</label>
-                {{ Form::text('name', request('name', old('name')), [
-                    'class' => 'form-control',
-                    'name' => 'name', // This attribute is redundant if using Form::text
-                    'placeholder' => 'Name'
-                ]) }}
-            </div>
+            <!-- Collapsible Filter Form -->
+            <!-- Show initially by adding 'show' class. Remove 'show' if you want it hidden by default -->
+            <div class="collapse" id="workshopFilters">
+                {{ Form::open([
+        'url' => 'AutoCare/workshop/search',
+        'files' => 'true',
+        'enctype' => 'multipart/form-data',
+        'autocomplete' => 'OFF'
+    ]) }}
+                <div class="row">
+                    <!-- Job/Workshop Id -->
+                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                        <label>Job/Workshop Id:</label>
+                        {{ Form::text('id', request('id', old('id')), [ // Use request() helper for cleaner syntax
+        'class' => 'form-control',
+        'id' => 'id',
+        'placeholder' => 'Job Id'
+    ]) }}
+                    </div>
 
-            <!-- Mobile Number -->
-            <div class="col-lg-3 col-md-6 col-12 form-group">
-                <label>Mobile Number:</label>
-                {{ Form::text('mobile', request('mobile', old('mobile')), [ // Fixed variable name typo
-                    'class' => 'form-control',
-                    'placeholder' => 'Mobile' // Removed incorrect attribute name
-                ]) }}
-            </div>
+                    <!-- Customer Name -->
+                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                        <label>Customer Name:</label>
+                        {{ Form::text('name', request('name', old('name')), [
+        'class' => 'form-control',
+        'name' => 'name', // This attribute is redundant if using Form::text
+        'placeholder' => 'Name'
+    ]) }}
+                    </div>
 
-            <!-- From Date -->
-            <div class="col-lg-3 col-md-6 col-12 form-group">
-                <label>From Date:</label>
-                {{ Form::date('created_at_from', request('created_at_from', old('created_at_from')), [
-                    'class' => 'form-control',
-                    'placeholder' => 'created_at_from' // Removed incorrect attribute name
-                ]) }}
-            </div>
+                    <!-- Mobile Number -->
+                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                        <label>Mobile Number:</label>
+                        {{ Form::text('mobile', request('mobile', old('mobile')), [ // Fixed variable name typo
+        'class' => 'form-control',
+        'placeholder' => 'Mobile' // Removed incorrect attribute name
+    ]) }}
+                    </div>
 
-            <!-- To Date -->
-            <div class="col-lg-3 col-md-6 col-12 form-group">
-                <label>To Date:</label>
-                {{ Form::date('created_at_to', request('created_at_to', old('created_at_to')), [
-                    'class' => 'form-control',
-                    'placeholder' => 'created_at_to' // Removed incorrect attribute name
-                ]) }}
-            </div>
+                    <!-- From Date -->
+                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                        <label>From Date:</label>
+                        {{ Form::date('created_at_from', request('created_at_from', old('created_at_from')), [
+        'class' => 'form-control',
+        'placeholder' => 'created_at_from' // Removed incorrect attribute name
+    ]) }}
+                    </div>
 
-            <!-- Email -->
-            <div class="col-lg-3 col-md-6 col-12 form-group">
-                <label>Email:</label>
-                {{ Form::text('email', request('email', old('email')), [
-                    'class' => 'form-control',
-                    'placeholder' => 'Email' // Removed incorrect attribute name
-                ]) }}
-            </div>
+                    <!-- To Date -->
+                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                        <label>To Date:</label>
+                        {{ Form::date('created_at_to', request('created_at_to', old('created_at_to')), [
+        'class' => 'form-control',
+        'placeholder' => 'created_at_to' // Removed incorrect attribute name
+    ]) }}
+                    </div>
 
-            <div class="col-lg-3 col-md-6 col-12 form-group">
-                <label for="origin">Origin:</label>
-                {{ Form::select('origin', ['website' => 'Website', 'admin' => 'Admin'], request('origin', old('origin')), [
-                    'id' => 'origin',
-                    'class' => 'form-control',
-                    'placeholder' => 'Select Origin'
-                ]) }}
-            </div>
+                    <!-- Email -->
+                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                        <label>Email:</label>
+                        {{ Form::text('email', request('email', old('email')), [
+        'class' => 'form-control',
+        'placeholder' => 'Email' // Removed incorrect attribute name
+    ]) }}
+                    </div>
 
-            <!-- Invoice -->
-            <div class="col-lg-3 col-md-6 col-12 form-group">
-                <label for="convert_to_invoice">Convert Invoice:</label>
-                {{ Form::select('convert_to_invoice', ['1' => 'Invoice', '0' => 'Workshop'], request('convert_to_invoice', old('convert_to_invoice')), [
-                    'id' => 'convert_to_invoice',
-                    'class' => 'form-control',
-                    'placeholder' => 'Select Invoice Status'
-                ]) }}
-            </div>
+                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                        <label for="origin">Origin:</label>
+                        {{ Form::select('origin', ['website' => 'Website', 'admin' => 'Admin'], request('origin', old('origin')), [
+        'id' => 'origin',
+        'class' => 'form-control',
+        'placeholder' => 'Select Origin'
+    ]) }}
+                    </div>
 
-            <div class="col-lg-3 col-md-6 col-12 form-group">
-                <label for="status">Workshop Status:</label>
-                {{ Form::select('status', ['booked' => 'Booked', 'completed' => 'Completed', 'failed' => 'Failed', 'pending' => 'Pending'], request('status', old('status')), [
-                    'id' => 'status',
-                    'class' => 'form-control',
-                    'placeholder' => 'Select Workshop Status'
-                ]) }}
-            </div>
+                    <!-- Invoice -->
+                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                        <label for="convert_to_invoice">Convert Invoice:</label>
+                        {{ Form::select('convert_to_invoice', ['1' => 'Invoice', '0' => 'Workshop'], request('convert_to_invoice', old('convert_to_invoice')), [
+        'id' => 'convert_to_invoice',
+        'class' => 'form-control',
+        'placeholder' => 'Select Invoice Status'
+    ]) }}
+                    </div>
 
-            <div class="col-lg-3 col-md-6 col-12 form-group">
-                <label for="payment_method">Payment Method:</label>
-                {{ Form::select('payment_method', ['pay_at_fitting_center' => 'Pay at Center', 'dojo' => 'dojo', 'global_payment' => 'Global Pay'], request('payment_method', old('payment_method')), [
-                    'id' => 'payment_method',
-                    'class' => 'form-control',
-                    'placeholder' => 'Select Payment Method'
-                ]) }}
-            </div>
+                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                        <label for="status">Workshop Status:</label>
+                        {{ Form::select('status', ['booked' => 'Booked', 'completed' => 'Completed', 'failed' => 'Failed', 'pending' => 'Pending'], request('status', old('status')), [
+        'id' => 'status',
+        'class' => 'form-control',
+        'placeholder' => 'Select Workshop Status'
+    ]) }}
+                    </div>
 
-            <div class="col-lg-3 col-md-6 col-12 form-group">
-                <label for="is_void">Void Invoices:</label>
-                {{ Form::select('is_void', ['1' => 'Yes', '0' => 'No'], request('is_void', old('is_void')), [
-                    'id' => 'is_void',
-                    'class' => 'form-control',
-                    'placeholder' => 'Search Void Invoices'
-                ]) }}
-            </div>
+                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                        <label for="payment_method">Payment Method:</label>
+                        {{ Form::select('payment_method', ['pay_at_fitting_center' => 'Pay at Center', 'dojo' => 'dojo', 'global_payment' => 'Global Pay'], request('payment_method', old('payment_method')), [
+        'id' => 'payment_method',
+        'class' => 'form-control',
+        'placeholder' => 'Select Payment Method'
+    ]) }}
+                    </div>
 
-            <div class="col-lg-3 col-md-6 col-12 form-group">
-                <label for="payment_status">Payment Status:</label>
-                {{ Form::select('payment_status', ['1' => 'Paid', '0' => 'Unpaid', '3' => 'Partial'], request('payment_status', old('payment_status')), [
-                    'id' => 'payment_status',
-                    'class' => 'form-control',
-                    'placeholder' => 'Select payment status'
-                ]) }}
-            </div>
+                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                        <label for="is_void">Void Invoices:</label>
+                        {{ Form::select('is_void', ['1' => 'Yes', '0' => 'No'], request('is_void', old('is_void')), [
+        'id' => 'is_void',
+        'class' => 'form-control',
+        'placeholder' => 'Search Void Invoices'
+    ]) }}
+                    </div>
 
-            <!-- Vehicle Registration Number -->
-            <div class="col-lg-3 col-md-6 col-12 form-group">
-                <label>Vehicle Registration Number:</label>
-                {{ Form::text('vehicle_reg_number_for_search', request('vehicle_reg_number_for_search', old('vehicle_reg_number_for_search')), [
-                    'class' => 'form-control',
-                    'placeholder' => 'Vehicle Reg No.' // Removed incorrect attribute name
-                ]) }}
+                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                        <label for="payment_status">Payment Status:</label>
+                        {{ Form::select('payment_status', ['1' => 'Paid', '0' => 'Unpaid', '3' => 'Partial'], request('payment_status', old('payment_status')), [
+        'id' => 'payment_status',
+        'class' => 'form-control',
+        'placeholder' => 'Select payment status'
+    ]) }}
+                    </div>
+
+                    <!-- Vehicle Registration Number -->
+                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                        <label>Vehicle Registration Number:</label>
+                        {{ Form::text('vehicle_reg_number_for_search', request('vehicle_reg_number_for_search', old('vehicle_reg_number_for_search')), [
+        'class' => 'form-control',
+        'placeholder' => 'Vehicle Reg No.' // Removed incorrect attribute name
+    ]) }}
+                    </div>
+                </div>
+                <div class="text-right">
+                    <input type="submit" name="search" class="btn btn-primary" value="Search">
+                    <!-- Optional: Add a Reset button -->
+                    <a href="{{ url()->current() }}" class="btn btn-secondary">Reset</a>
+                </div>
+                {{ Form::close() }}
             </div>
         </div>
-        <div class="text-right">
-            <input type="submit" name="search" class="btn btn-primary" value="Search">
-            <!-- Optional: Add a Reset button -->
-            <a href="{{ url()->current() }}" class="btn btn-secondary">Reset</a>
-        </div>
-        {{ Form::close() }}
-    </div>
-</div>
 
         <div class="row">
             <!-- left column -->
@@ -204,10 +206,10 @@
                     <div class="card-header">
                         <div></div>
                         <i class="fa fa-align-justify"></i> Workshop Detail
-            <a class="btn btn-primary text-center float-right"
+                        <a class="btn btn-primary text-center float-right"
                             href="{{ asset('/AutoCare/workshop/add') }}">Create New Workshop</a>
-               
-        
+
+
                     </div>
                     <div class="card-body table-responsive"
                         style="font-size: 13px;padding-left:10px;vertical-align:middle;">
@@ -216,7 +218,7 @@
                                 <tr>
                                     <th style="white-space: nowrap">Job Date</th>
                                     <th style="white-space: nowrap">Job Id</th>
-                                    <th style="white-space: nowrap" style="white-space: nowrap">Name</th>
+                                    <th style="white-space: nowrap">Name</th>
                                     <th style="white-space: nowrap">Mobile</th>
                                     <th style="white-space: nowrap">Reg. No</th>
                                     <th style="white-space: nowrap">Pymt Method</th>
@@ -254,7 +256,8 @@
             .page-item {
                 margin: 2px;
             }
-            .dt-buttons{
+
+            .dt-buttons {
                 margin-left: 200px;
                 padding: 0px 20px 25px 20px;
             }
@@ -423,61 +426,68 @@
         <!-- Modal for discount :end -->
 
         <!-- Email Modal -->
-       <!-- Email Modal -->
-<!-- Reusable Email Modal -->
-<div class="modal fade" id="emailModal" tabindex="-1" aria-labelledby="emailModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <form id="emailForm" action="{{ url('/AutoCare/workshop/send-invoice-email') }}" method="POST">
-      @csrf
-      <input type="hidden" name="invoice_id" id="invoice_id">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="emailModalLabel">Send Invoice via Email</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
+        <!-- Email Modal -->
+        <!-- Reusable Email Modal -->
+        <div class="modal fade" id="emailModal" tabindex="-1" aria-labelledby="emailModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <form id="emailForm" action="{{ url('/AutoCare/workshop/send-invoice-email') }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="invoice_id" id="invoice_id">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="emailModalLabel">Send Invoice via Email</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
 
-        <div class="modal-body text-left">
-          <div class="form-group mb-2">
-            <label for="email_to">Email To</label>
-            <input type="email" class="form-control" id="email_to" name="email_to" required>
-          </div>
+                        <div class="modal-body text-left">
+                            <div class="form-group mb-2">
+                                <label for="email_to">Email To</label>
+                                <input type="email" class="form-control" id="email_to" name="email_to" required>
+                            </div>
 
-          <div class="form-group mb-2">
-            <label for="email_cc">CC</label>
-            <input type="email" class="form-control" id="email_cc" name="email_cc">
-          </div>
+                            <div class="form-group mb-2">
+                                <label for="email_cc">CC</label>
+                                <input type="email" class="form-control" id="email_cc" name="email_cc">
+                            </div>
 
-          <div class="form-group mb-2">
-            <div class="form-check">
-              <input type="checkbox" class="form-check-input" checked id="attach_pdf" name="attach_pdf" value="1">
-              <label class="form-check-label p-0" for="attach_pdf">Attach Invoice PDF</label>
+                            <div class="form-group mb-2">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" checked id="attach_pdf"
+                                        name="attach_pdf" value="1">
+                                    <label class="form-check-label p-0" for="attach_pdf">Attach Invoice PDF</label>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="email_body">Body</label>
+                                <textarea id="email_body" name="email_body"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">Send Email</button>
+                        </div>
+                    </div>
+                </form>
             </div>
-          </div>
-
-          <div class="form-group">
-            <label for="email_body">Body</label>
-            <textarea id="email_body" name="email_body"></textarea>
-          </div>
         </div>
 
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-          <button type="submit" class="btn btn-primary">Send Email</button>
-        </div>
-      </div>
-    </form>
-  </div>
-</div>
-
-<style>.tox-statusbar__branding,.tox-promotion{display:none}</style>
+        <style>
+            .tox-statusbar__branding,
+            .tox-promotion {
+                display: none
+            }
+        </style>
 
 
         <style>
-        .tox-statusbar__branding, .tox-promotion {
-        display: none;
-        }
+            .tox-statusbar__branding,
+            .tox-promotion {
+                display: none;
+            }
         </style>
- <!-- Email Modal end -->
+        <!-- Email Modal end -->
     </section>
     <script src="{{ asset('alerts-boxes/js/sweetalert.min.js') }}"></script>
     <script type="text/javascript">
@@ -571,7 +581,7 @@
                     success: function (response) {
                         if (response.success) {
                             swal("Good job!", "Discount applied successfully", "success");
-                            $('#discountValue').val("");                            location.reload();
+                            $('#discountValue').val(""); location.reload();
                         } else {
                             swal("Something went wrong!", response.message || "An error occurred while applying the discount.", "error");
                         }
@@ -593,7 +603,7 @@
                         const { discount_type, discount_value } = response;
 
                         // Populate the modal fields
-                        $('#discountType').val(discount_type || 'amount'); 
+                        $('#discountType').val(discount_type || 'amount');
                         $('#discountValue').val(discount_value || '');
 
                         // Set hidden fields
@@ -717,17 +727,17 @@
 
                         response.forEach(log => {
                             const row = `
-                                                    <tr>
-                                                        <td>£${log.debit_amount}</td>
-                                                        <td>${log.payment_date}</td>
-                                                     <td>${log.payment_type_label}</td>
-                                                        <td>${log.comments || '-'}</td>
-                                                        <td>
-                                                            <button class="btn btn-sm btn-primary editPaymentLog" data-id="${log.id}">Edit</button>
-                                                            <button class="btn btn-sm btn-danger deletePaymentLog" data-id="${log.id}">Delete</button>
-                                                        </td>
-                                                    </tr>
-                                                `;
+                                                        <tr>
+                                                            <td>£${log.debit_amount}</td>
+                                                            <td>${log.payment_date}</td>
+                                                         <td>${log.payment_type_label}</td>
+                                                            <td>${log.comments || '-'}</td>
+                                                            <td>
+                                                                <button class="btn btn-sm btn-primary editPaymentLog" data-id="${log.id}">Edit</button>
+                                                                <button class="btn btn-sm btn-danger deletePaymentLog" data-id="${log.id}">Delete</button>
+                                                            </td>
+                                                        </tr>
+                                                    `;
                             paymentLogsTable.append(row);
                         });
                     },
@@ -799,134 +809,6 @@
                     }
                 });
             });
-
-            $(document).on('click', '#closeProdultDetail', function () {
-                $('#HideForShowProduct2').hide();
-                $('#HideForShowProduct').show();
-                $('#productDetail').html("");
-            })
-
-            $(document).on('click', '.openPayentModelForProduct', function () {
-                var PurchaseId = $(this).attr('id');
-                $('[name="PurchaseId"]').val(PurchaseId)
-            });
-
-            $(document).on('click', '.openPayentModel', function () {
-                var workshopId = $(this).attr('id');
-                //  $('[name="PurchaseId"]').val(PurchaseId)
-
-                $.ajax({
-                    type: "POST",
-                    url: "{{ url('/') }}/ajax/getWorkshopReport",
-                    data: {
-                        "_token": "{{ csrf_token() }}",
-                        workshopId: workshopId
-                    },
-                    dataType: 'html',
-                    cache: false,
-                    success: function (data) {
-                        $('#HideForShowProduct2').show();
-                        $('#HideForShowProduct').hide();
-                        workshop_Product = JSON.parse(data);
-                        for (index = 0; index < workshop_Product.length; ++index) {
-                            $('#productDetail').append("<tr>\
-                                                <td>" + workshop_Product[index]['workshop_id'] + "</td>\
-                                                <td>" + workshop_Product[index]['workshop_id'] + "</td>\
-                                                <td>" + workshop_Product[index]['product_name'] + "</td>\
-                                                <td>" + workshop_Product[index]['product_quantity'] + "</td>\
-                                                <td>" + workshop_Product[index]['UnitExitPrice'] + "</td>\
-                                                <td><a data-toggle=\"modal\" id=\"" + workshop_Product[index]['WorkshopProId'] + "\" data-target=\"#myModal\"  class=\"btn btn-success openPayentModelForProduct btn-sm\"><i class=\"fa fa-undo\" aria-hidden=\"true\"></i></a> </th>\
-                                                </tr>");
-
-                            //  thisSelf.parent().parent().find('[name^=model_number]').append(
-
-                            // );  
-
-                        }
-                    },
-                    error: function (data) {
-                        swal("Somthing Wrong!", "OOHooooooooooo!!!!", "error");
-                    }
-
-
-                });
-
-
-            });
-
-
-            $(document).ready(function () {
-
-                $(document).on("change", "[name^=brand]", function () {
-                    var thisSelf = $(this);
-                    var brand = $(this).val();
-                    $.ajax({
-                        type: "POST",
-                        url: "{{ url('/') }}/ajax/getModal",
-                        data: {
-                            "_token": "{{ csrf_token() }}",
-                            brand: brand,
-                        },
-                        dataType: 'html',
-                        cache: false,
-                        success: function (data) {
-                            modalData = JSON.parse(data);
-                            // console.log(modalData.id);
-                            // console.log(modalData.model_name);
-                            thisSelf.parent().parent().find('[name^=model_number]')
-                                .empty()
-                                .append(
-                                    '<option selected="selected" value="">-Select -</option>'
-                                );
-                            for (index = 0; index < modalData.length; ++index) {
-                                $('[name^=model_number]').append(
-                                    '<option value="' + modalData[index]['id'] +
-                                    '">' + modalData[index]['model_name'] +
-                                    '</option>'
-                                );
-                            }
-                        }
-                    });
-                });
-
-                $(document).on("click", "#payment", function () {
-
-                    var quantity = $('[name^=amount]').val();
-                    var PurchaseId = $('[name^=PurchaseId]').val();
-                    var comments = $('[name^=comments]').val();
-
-                    $.ajax({
-                        type: "POST",
-                        url: "{{ url('/') }}/ajax/submitSaleReturn",
-                        data: {
-                            "_token": "{{ csrf_token() }}",
-                            saleId: PurchaseId,
-                            quantity: quantity,
-                            comments: comments,
-                        },
-                        dataType: 'html',
-                        cache: false,
-                        success: function (data) {
-                            if (data == 1) {
-                                swal("Good job!",
-                                    "Purchase Returned Successfully . Now Quantity Has Been decremented",
-                                    "success");
-                                $('[name^=PurchaseId]').val("");
-                                $('[name^=comments]').val("");
-                            } else {
-                                swal("Somthing Wrong!", "OOHooooo!!!!!", "error");
-                            }
-                        },
-                        error: function (data) {
-                            swal("Somthing Wrong!", "OOHooooooooooo!!!!", "error");
-                        }
-
-
-                    });
-                });
-
-
-            });
         });
     </script>
     <script>
@@ -976,17 +858,11 @@
                 if (isVisible) {
                     toggleIcon.classList.remove('fa-chevron-down');
                     toggleIcon.classList.add('fa-chevron-up');
-                    // Optional: Change text
-                    // toggleText.textContent = 'Hide Filters';
                 } else {
                     toggleIcon.classList.remove('fa-chevron-up');
                     toggleIcon.classList.add('fa-chevron-down');
-                    // Optional: Change text
-                    // toggleText.textContent = 'Show Filters';
                 }
             }
-
-            // Listen for collapse events
             collapseElement.addEventListener('show.bs.collapse', function () {
                 updateToggleButton(true);
             });
@@ -994,139 +870,119 @@
             collapseElement.addEventListener('hide.bs.collapse', function () {
                 updateToggleButton(false);
             });
-
-            // Set initial state based on whether it has the 'show' class
             updateToggleButton(collapseElement.classList.contains('show'));
         });
     </script>
     <script>
-    $(document).ready(function () {
-        var table = $('#workshopTable').DataTable({
-            processing: true,
-            serverSide: true,
-            responsive: true,
-            // dom: 'Bflrtip', // Moved below for clarity with buttons
-            lengthMenu: [
-                [10, 25, 50, 100, -1],
-                [10, 25, 50, 100, "All"]
-            ],
-            // Configure DataTables Buttons
-            dom: 'Blfrtip', // Ensure 'B' is included for buttons
-            buttons: ['csv', 'excel', 'pdf', 'print'],
-            ajax: {
-                url: "{{ route('workshop.data') }}", // Ensure this route is correctly defined
-                data: function (d) {
-                    d.id = $('input[name="id"]').val();
-                    d.name = $('input[name="name"]').val();
-                    d.mobile = $('input[name="mobile"]').val();
-                    d.created_at_from = $('input[name="created_at_from"]').val();
-                    d.created_at_to = $('input[name="created_at_to"]').val();
-                    d.email = $('input[name="email"]').val();
-                    d.origin = $('select[name="origin"]').val();
-                    d.convert_to_invoice = $('select[name="convert_to_invoice"]').val();
-                    d.status = $('select[name="status"]').val();
-                    d.payment_method = $('select[name="payment_method"]').val();
-                    d.is_void = $('select[name="is_void"]').val();
-                    d.payment_status = $('select[name="payment_status"]').val();
-                    d.vehicle_reg_number_for_search = $('input[name="vehicle_reg_number_for_search"]').val();
+        $(document).ready(function () {
+            var table = $('#workshopTable').DataTable({
+                processing: true,
+                serverSide: true,
+                responsive: true,
+                lengthMenu: [
+                    [10, 25, 50, 100, -1],
+                    [10, 25, 50, 100, "All"]
+                ],
+                dom: 'Blfrtip',
+                buttons: ['csv', 'excel', 'pdf', 'print'],
+                ajax: {
+                    url: "{{ route('workshop.data') }}",
+                    data: function (d) {
+                        d.id = $('input[name="id"]').val();
+                        d.name = $('input[name="name"]').val();
+                        d.mobile = $('input[name="mobile"]').val();
+                        d.created_at_from = $('input[name="created_at_from"]').val();
+                        d.created_at_to = $('input[name="created_at_to"]').val();
+                        d.email = $('input[name="email"]').val();
+                        d.origin = $('select[name="origin"]').val();
+                        d.convert_to_invoice = $('select[name="convert_to_invoice"]').val();
+                        d.status = $('select[name="status"]').val();
+                        d.payment_method = $('select[name="payment_method"]').val();
+                        d.is_void = $('select[name="is_void"]').val();
+                        d.payment_status = $('select[name="payment_status"]').val();
+                        d.vehicle_reg_number_for_search = $('input[name="vehicle_reg_number_for_search"]').val();
+                    }
+                },
+                columns: [
+                    { data: 'workshop_date_formatted', name: 'workshops.created_at' },
+                    { data: 'id', name: 'workshops.id' },
+                    { data: 'customer_name', name: 'workshops.name' },
+                    { data: 'mobile', name: 'workshops.mobile' },
+                    { data: 'vehicle_reg', name: 'workshops.vehicle_reg_number' },
+                    { data: 'payment_method_formatted', name: 'workshops.payment_method' },
+                    { data: 'amount_due', name: 'workshops.balance_price' },
+                    { data: 'grand_total', name: 'workshops.grandTotal' },
+                    { data: 'payment_status_badge', name: null, orderable: true, searchable: true },
+                    { data: 'origin_badge', name: 'workshops.workshop_origin' },
+                    { data: 'status_badge', name: 'workshops.status' },
+                    { data: 'invoice_convert_badge', name: null, orderable: true, searchable: true },
+                    { data: 'actions', name: 'actions', orderable: false, searchable: false }
+                ],
+
+                footerCallback: function (row, data, start, end, display) {
+                    var api = this.api();
+                    var intVal = function (i) {
+                        return typeof i === 'string' ?
+                            i.replace(/[\£,]/g, '') * 1 :
+                            typeof i === 'number' ?
+                                i : 0;
+                    };
+                    totalDue = api
+                        .column(6)
+                        .data()
+                        .reduce(function (a, b) {
+                            return intVal(a) + intVal(b);
+                        }, 0);
+                    totalGrand = api
+                        .column(7)
+                        .data()
+                        .reduce(function (a, b) {
+                            return intVal(a) + intVal(b);
+                        }, 0);
+                    $(api.column(6).footer()).html(
+                        '£' + parseFloat(totalDue).toFixed(2)
+                    );
+                    $(api.column(7).footer()).html(
+                        '£' + parseFloat(totalGrand).toFixed(2)
+                    );
                 }
-            },
-            columns: [
-                // Make sure these 'name' values correspond to database columns or are handled in your query
-                // if they are computed/aliased.
-                { data: 'workshop_date_formatted', name: 'workshops.created_at' },
-                { data: 'id', name: 'workshops.id' },
-                { data: 'customer_name', name: 'workshops.name' },
-                { data: 'mobile', name: 'workshops.mobile' },
-                { data: 'vehicle_reg', name: 'workshops.vehicle_reg_number' },
-                { data: 'payment_method_formatted', name: 'workshops.payment_method' },
-                { data: 'amount_due', name: 'workshops.balance_price', orderable: false, searchable: false },
-                { data: 'grand_total', name: 'workshops.grandTotal', orderable: false, searchable: false },
-                { data: 'payment_status_badge', name: 'workshops.payment_status', orderable: true, searchable: false },
-                { data: 'origin_badge', name: 'workshops.workshop_origin', orderable: true, searchable: false },
-                { data: 'status_badge', name: 'workshops.status', orderable: true, searchable: false },
-                { data: 'invoice_convert_badge', name: 'workshops.is_converted_to_invoice', orderable: true, searchable: false },
-                { data: 'actions', name: 'actions', orderable: false, searchable: false }
-            ],
-            
-            footerCallback: function (row, data, start, end, display) {
-                var api = this.api();
-                // Assuming 'amount_due' is column index 6 and 'grand_total' is 7
-                var intVal = function (i) {
-                    return typeof i === 'string' ?
-                        i.replace(/[\£,]/g, '') * 1 :
-                        typeof i === 'number' ?
-                        i : 0;
-                };
-                // Total over all pages for Amount Due
-                totalDue = api
-                    .column(6)
-                    .data()
-                    .reduce(function (a, b) {
-                        return intVal(a) + intVal(b);
-                    }, 0);
-                // Total over all pages for Grand Total
-                totalGrand = api
-                    .column(7)
-                    .data()
-                    .reduce(function (a, b) {
-                        return intVal(a) + intVal(b);
-                    }, 0);
-                // Update footer cells
-                $(api.column(6).footer()).html(
-                    '£' + parseFloat(totalDue).toFixed(2)
-                );
-                $(api.column(7).footer()).html(
-                    '£' + parseFloat(totalGrand).toFixed(2)
-                );
-            }
-            
+
+            });
         });
-    });
     </script>
-<script>
-  // If you’re on Bootstrap 5 (recommended):
-  const showBs5Modal = (id) => {
-    const el = document.getElementById(id);
-    const modal = bootstrap.Modal.getOrCreateInstance(el);
-    modal.show();
-  };
+    <script>
+        $(document).on('click', '.open-email-modal-btn', function () {
+            const invoiceId = $(this).data('workshop-id');
+            const email = $(this).data('workshop-email') || '';
+            const b64 = $(this).attr('data-email-body-b64') || '';
+            let emailBody = '';
 
-  // Delegated event (works after DataTables redraw)
-  $(document).on('click', '.open-email-modal-btn', function () {
-    const invoiceId = $(this).data('workshop-id');
-    const email = $(this).data('workshop-email') || '';
-    const b64 = $(this).attr('data-email-body-b64') || '';
-    let emailBody = '';
+            try {
+                emailBody = atob(b64);
+            } catch (e) {
+                emailBody = '';
+            }
 
-    try { emailBody = atob(b64); } catch(e) { emailBody = ''; }
+            $('#invoice_id').val(invoiceId);
+            $('#email_to').val(email);
 
-    // Fill the modal fields
-    $('#invoice_id').val(invoiceId);
-    $('#email_to').val(email);
+            if (typeof tinymce !== 'undefined' && tinymce.get('email_body')) {
+                tinymce.get('email_body').setContent(emailBody);
+            } else {
+                $('#email_body').val(emailBody);
+            }
 
-    // If using TinyMCE:
-    if (typeof tinymce !== 'undefined' && tinymce.get('email_body')) {
-      tinymce.get('email_body').setContent(emailBody);
-    } else {
-      // Plain textarea or other editor
-      $('#email_body').val(emailBody);
-    }
+            $('#emailModal').modal('show');
+        });
 
-    // Show modal (Bootstrap 5)
-    showBs5Modal('emailModal');
-  });
-
-  // Optional: keep TinyMCE in sync if users type into the editor
-  // (only needed if your form submission reads the textarea value directly)
-  if (typeof tinymce !== 'undefined') {
-    document.getElementById('emailForm')?.addEventListener('submit', function(){
-      const ed = tinymce.get('email_body');
-      if (ed) { $('#email_body').val(ed.getContent()); }
-    });
-  }
-</script>
-
-
+        if (typeof tinymce !== 'undefined') {
+            $('#emailForm').on('submit', function () {
+                const ed = tinymce.get('email_body');
+                if (ed) {
+                    $('#email_body').val(ed.getContent());
+                }
+            });
+        }
+    </script>
 
 @endsection

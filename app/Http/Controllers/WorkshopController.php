@@ -796,7 +796,6 @@ class WorkshopController extends Controller
         return view('AutoCare.workshop.search', $viewData, $formAutoFillup);
     }
 
-
     public function getWorkshopData(Request $request)
     {
         // Build the base query
@@ -941,13 +940,13 @@ class WorkshopController extends Controller
                 $class = ($workshop->is_converted_to_invoice == 1) ? 'invoice' : 'workshop';
                 return "<span class='{$class}'>{$text}</span>";
             })
-            
+
             // Actions Column (Crucial Part)
             ->addColumn('actions', function ($workshop) {
                 $emailBody = getDefaultEmailBody($workshop) ?? '';
                 $roleId = auth()->user()->role_id ?? 0; // Get role ID for actions
                 $isVoid = ($workshop->is_void ?? false); // || ($workshop->invoice_is_void ?? false); if joined
-
+    
                 $actions = '<div class="btn-group" role="group">
                                 <button id="btnGroupDrop' . $workshop->id . '" type="button"
                                     class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown"
@@ -988,7 +987,7 @@ class WorkshopController extends Controller
                                         </a>
                                     </li>';
                     }
-                    if (!$isVoid) { 
+                    if (!$isVoid) {
                         $actions .= '<li>
                                         <form action="' . url('/AutoCare/workshop/void/' . $workshop->id) . '"
                                             method="POST"
@@ -1073,15 +1072,465 @@ class WorkshopController extends Controller
                 $actions .= '</ul></div>';
                 return $actions;
             })
+            // Payment Status custom search
+            ->filterColumn('payment_status_badge', function ($query, $keyword) {
+                $keyword = strtolower(trim($keyword));
+
+                if ($keyword === 'paid') {
+                    $query->where('workshops.payment_status', 1);
+                } elseif ($keyword === 'unpaid') {
+                    $query->where('workshops.payment_status', 0);
+                } elseif ($keyword === 'partially') {
+                    $query->where('workshops.payment_status', 3);
+                } else {
+                    // Allow fuzzy search on labels
+                    $query->whereRaw("
+            CASE 
+              WHEN workshops.payment_status = 1 THEN 'paid'
+              WHEN workshops.payment_status = 0 THEN 'unpaid'
+              WHEN workshops.payment_status = 3 THEN 'partially'
+              ELSE 'unknown'
+            END LIKE ?", ["%{$keyword}%"]);
+                }
+            })
+
+            // Invoice Convert custom search
+            ->filterColumn('invoice_convert_badge', function ($query, $keyword) {
+                $keyword = strtolower(trim($keyword));
+
+                if ($keyword === 'invoice') {
+                    $query->where('workshops.is_converted_to_invoice', 1);
+                } elseif ($keyword === 'workshop') {
+                    $query->where('workshops.is_converted_to_invoice', 0);
+                } else {
+                    $query->whereRaw("
+            CASE 
+              WHEN workshops.is_converted_to_invoice = 1 THEN 'invoice'
+              WHEN workshops.is_converted_to_invoice = 0 THEN 'workshop'
+              ELSE 'unknown'
+            END LIKE ?", ["%{$keyword}%"]);
+                }
+            })
+
             ->setRowClass(function ($workshop) {
                 $isVoid = ($workshop->is_void ?? false);
                 return $isVoid ? 'table-danger' : '';
             })
             ->rawColumns([
-                'workshop_date_formatted', 'customer_name', 'vehicle_reg',
-                'payment_method_formatted', 'amount_due', 'grand_total',
-                'payment_status_badge', 'origin_badge', 'status_badge',
-                'invoice_convert_badge', 'actions'
+                'workshop_date_formatted',
+                'customer_name',
+                'vehicle_reg',
+                'payment_method_formatted',
+                'amount_due',
+                'grand_total',
+                'payment_status_badge',
+                'origin_badge',
+                'status_badge',
+                'invoice_convert_badge',
+                'actions'
+            ])
+            ->make(true);
+    }
+
+
+    public function viewSearchInvoice(Request $request)
+    {
+        $viewData['header_link'] = HeaderLink::where("menu_id", '3')
+            ->select("link_title", "link_name")
+            ->orderBy('id', 'desc')
+            ->get();
+
+        $viewData['customerNameSelect'] = Customer::pluck('customer_name', 'id');
+
+        // Always build query based on request query parameters
+        $invoiceQuery = DB::table('invoices')->whereNull('deleted_at');
+
+        // Apply filters from request (both GET and POST)
+        if ($request->filled('id')) {
+            $invoiceQuery->where('workshop_id', $request->id);
+        }
+        if ($request->filled('customer_id')) {
+            $invoiceQuery->where('customer_id', $request->customer_id);
+        }
+        if ($request->filled('name')) {
+            $searchTerm = '%' . $request->name . '%';
+            $invoiceQuery->where(function ($query) use ($searchTerm) {
+                $query->where('name', 'like', $searchTerm)
+                    ->orWhere('company_name', 'like', $searchTerm);
+            });
+        }
+        if ($request->filled('created_at_from')) {
+            $invoiceQuery->whereDate('created_at', '>=', $request->created_at_from);
+        }
+        if ($request->filled('created_at_to')) {
+            $invoiceQuery->whereDate('created_at', '<=', $request->created_at_to);
+        }
+        if ($request->filled('mobile')) {
+            $invoiceQuery->where('mobile', 'like', '%' . $request->mobile . '%');
+        }
+        if ($request->filled('email')) {
+            $invoiceQuery->where('email', 'like', '%' . $request->email . '%');
+        }
+        if ($request->filled('origin')) {
+            $invoiceQuery->where('workshop_origin', 'like', '%' . $request->origin . '%');
+        }
+        if ($request->filled('status')) {
+            $invoiceQuery->where('status', 'like', '%' . $request->status . '%');
+        }
+        if ($request->filled('payment_method')) {
+            $invoiceQuery->where('payment_method', 'like', '%' . $request->payment_method . '%');
+        }
+        if ($request->filled('is_void')) {
+            $invoiceQuery->where('is_void', $request->is_void);
+        }
+        if ($request->filled('payment_status')) {
+            $invoiceQuery->where('payment_status', 'like', '%' . $request->payment_status . '%');
+        }
+        if ($request->filled('vehicle_reg_number_for_search')) {
+            $invoiceQuery->where('vehicle_reg_number', 'like', '%' . $request->vehicle_reg_number_for_search . '%');
+        }
+        if ($request->filled('year')) {
+            $invoiceQuery->where('year', $request->year);
+        }
+
+        // Sorting
+        $invoiceQuery->orderBy('id', 'desc');
+        $now = \Carbon\Carbon::now();
+        // Clone the query before paginate
+        $totals = (clone $invoiceQuery)
+            ->selectRaw('SUM(CASE WHEN due_out IS NOT NULL AND due_out < ? AND balance_price > 0 THEN balance_price ELSE 0 END) as total_overdue', [$now])
+            ->selectRaw('
+        SUM(paid_price) as total_paid,
+        SUM(balance_price) as total_balance,
+        SUM(discount_price) as total_discount
+        ')
+            ->first();
+
+        $viewData['total_paid'] = $totals->total_paid ?? 0;
+        $viewData['total_balance'] = $totals->total_balance ?? 0;
+        $viewData['total_discount'] = $totals->total_discount ?? 0;
+        $viewData['total_overdue'] = $totals->total_overdue ?? 0;
+
+
+        // Paginate
+        $invoiceResults = $invoiceQuery->paginate(10)->appends($request->except('page'));
+
+        // Pass data to view
+        $viewData['workshop'] = $invoiceResults;
+
+        // Set title
+        $viewData['pageTitle'] = 'Invoice Details';
+
+        // If POST, get form input for repopulating fields
+        $formAutoFillup = $request->isMethod('post') ? $request->all() : $request->query();
+
+        return view('AutoCare.workshop.search-invoice', $viewData, $formAutoFillup);
+    }
+
+    public function getInvoiceData(Request $request)
+    {
+        // Build the base query
+        // Join with invoices if you need invoice.is_void for the void badge or filtering
+        $invoiceQuery = DB::table('invoices')
+            ->select(
+                'invoices.workshop_id',
+                'invoices.created_at as workshop_date',
+                'invoices.name',
+                'invoices.email',
+                'invoices.mobile',
+                'invoices.vehicle_reg_number',
+                'invoices.payment_method',
+                'invoices.grandTotal',
+                'invoices.paid_price',
+                'invoices.discount_price',
+                'invoices.balance_price',
+                'invoices.payment_status',
+                'invoices.workshop_origin',
+                'invoices.status',
+                'invoices.is_void'
+            )
+            ->whereNull('invoices.deleted_at');
+
+
+        if ($request->filled('id')) {
+            $invoiceQuery->where('invoices.workshop_id', $request->id);
+        }
+
+        if ($request->filled('name')) {
+            $searchTerm = '%' . $request->name . '%';
+            $invoiceQuery->where(function ($query) use ($searchTerm) {
+                $query->where('invoices.name', 'like', $searchTerm)
+                    ->orWhere('invoices.company_name', 'like', $searchTerm);
+            });
+        }
+
+        if ($request->filled('mobile')) {
+            $invoiceQuery->where('invoices.mobile', 'like', '%' . $request->mobile . '%');
+        }
+
+        if ($request->filled('created_at_from')) {
+            $invoiceQuery->whereDate('invoices.created_at', '>=', $request->created_at_from);
+        }
+
+        if ($request->filled('created_at_to')) {
+            $invoiceQuery->whereDate('invoices.created_at', '<=', $request->created_at_to);
+        }
+
+        if ($request->filled('email')) {
+            $invoiceQuery->where('invoices.email', 'like', '%' . $request->email . '%');
+        }
+
+        if ($request->filled('origin')) {
+            $invoiceQuery->where('invoices.workshop_origin', $request->origin);
+        }
+
+        if ($request->filled('status')) {
+            $invoiceQuery->where('invoices.status', $request->status);
+        }
+
+        if ($request->filled('payment_method')) {
+            $invoiceQuery->where('invoices.payment_method', $request->payment_method);
+        }
+
+        if ($request->filled('is_void')) {
+            $invoiceQuery->where('invoices.is_void', $request->is_void);
+        }
+
+        if ($request->filled('payment_status')) {
+            $invoiceQuery->where('invoices.payment_status', $request->payment_status);
+        }
+
+        if ($request->filled('vehicle_reg_number_for_search')) {
+            $invoiceQuery->where('invoices.vehicle_reg_number', 'like', '%' . $request->vehicle_reg_number_for_search . '%');
+        }
+
+        $invoiceQuery->orderBy('invoices.workshop_id', 'desc');
+
+        // --- Process with DataTables ---
+        return DataTables::of($invoiceQuery)
+            // Format Date
+            ->editColumn('workshop_date_formatted', function ($invoice) {
+                return isset($invoice->workshop_date) ? date('d/m/Y H:i:s', strtotime($invoice->workshop_date)) : '';
+            })
+            // Customer Name (if just taking from invoices)
+            ->addColumn('customer_name', function ($invoice) {
+                return $invoice->name ?? '';
+            })
+            // Vehicle Reg (uppercase)
+            ->addColumn('vehicle_reg', function ($invoice) {
+                return strtoupper($invoice->vehicle_reg_number ?? '');
+            })
+            // Payment Method (formatted)
+            ->addColumn('payment_method_formatted', function ($invoice) {
+                return strtoupper(str_replace('_', ' ', $invoice->payment_method ?? ''));
+            })
+            // Amount Due (formatted)
+            ->addColumn('amount_due', function ($invoice) {
+                return '£' . number_format($invoice->balance_price ?? 0, 2, '.', '');
+            })
+            ->addColumn('discount', function ($invoice) {
+                return '£' . number_format($invoice->discount_price ?? 0, 2, '.', '');
+            })
+            ->addColumn('paid_price', function ($invoice) {
+                return '£' . number_format($invoice->paid_price ?? 0, 2, '.', '');
+            })
+            // Grand Total (formatted)
+            ->addColumn('grand_total', function ($invoice) {
+                return '£' . number_format($invoice->grandTotal ?? 0, 2, '.', '');
+            })
+            // Payment Status Badge
+            ->addColumn('payment_status_badge', function ($invoice) {
+                $statusClass = '';
+                $statusText = '';
+                switch ($invoice->payment_status) {
+                    case 1:
+                        $statusClass = 'Paid';
+                        $statusText = 'Paid';
+                        break;
+                    case 3:
+                        $statusClass = 'Partially';
+                        $statusText = 'Partially';
+                        break;
+                    default: // case 0 or null/other
+                        $statusClass = 'Unpaid';
+                        $statusText = 'Unpaid';
+                }
+                return "<span class='{$statusClass}'>{$statusText}</span>";
+            })
+            // Origin Badge
+            ->addColumn('origin_badge', function ($invoice) {
+                // Ensure workshop_origin is safe for CSS class or escape output
+                return "<span class='" . e($invoice->workshop_origin) . "'>" . e($invoice->workshop_origin) . "</span>";
+            })
+            // Status Badge
+            ->addColumn('status_badge', function ($invoice) {
+                // Ensure status is safe for CSS class or escape output
+                return "<span class='" . e($invoice->status) . "'>" . e($invoice->status) . "</span>";
+            })
+
+            // Actions Column (Crucial Part)
+            ->addColumn('actions', function ($invoice) {
+                $emailBody = getDefaultEmailBody($invoice) ?? '';
+                $roleId = auth()->user()->role_id ?? 0;
+                $isVoid = ($invoice->is_void ?? false);
+
+                $actions = '<div class="btn-group" role="group">
+                                <button id="btnGroupDrop' . $invoice->workshop_id . '" type="button"
+                                    class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown"
+                                    aria-expanded="false">
+                                    Actions
+                                </button>
+                                <ul class="dropdown-menu btngroup-dropdown"
+                                    aria-labelledby="btnGroupDrop' . $invoice->workshop_id . '">';
+
+                $actions .= '<li>
+                                    <a href="' . url('/') . '/AutoCare/workshop/addinvoice/' . $invoice->workshop_id . '"
+                                        class="dropdown-item btn btn-warning btn-sm">
+                                        <i class="fa fa-pencil" aria-hidden="true"></i> Update Invoice
+                                    </a>
+                                </li>
+                                <li>
+                                    <a target="_blank"
+                                        href="' . url('/') . '/AutoCare/workshop/invoice/' . $invoice->workshop_id . '"
+                                        class="dropdown-item btn btn-primary btn-sm">
+                                        <i class="fa fa-eye"></i> View Invoice
+                                    </a>
+                                </li>
+                            <li>
+    <button type="button"
+        class="dropdown-item btn btn-info btn-sm open-email-modal-btn"
+        data-workshop-id="' . e($invoice->workshop_id) . '"
+        data-workshop-email="' . e($invoice->email ?? '') . '"
+        data-email-body-b64="' . e(base64_encode($emailBody)) . '">
+        <i class="fa fa-envelope"></i> Email Invoice
+    </button>
+</li>';
+                if ($roleId == 1) {
+                    $actions .= '<li>
+                                        <a href="' . route('invoice.preview', $invoice->workshop_id) . '" target="_blank"
+                                            class="dropdown-item btn btn-info btn-sm">
+                                            <i class="fa fa-eye"></i> Preview PDF
+                                        </a>
+                                    </li>';
+                }
+                if (!$isVoid) {
+                    $actions .= '<li>
+                                        <form action="' . url('/AutoCare/workshop/void/' . $invoice->workshop_id) . '"
+                                            method="POST"
+                                            onsubmit="return confirm(\'Are you sure you want to void this workshop?\');">
+                                            ' . csrf_field() . '
+                                            ' . method_field('POST') . '
+                                            <button type="submit" class="dropdown-item btn text-danger btn-sm">
+                                                <i class="fa fa-remove"></i> Void Invoice
+                                            </button>
+                                        </form>
+                                    </li>';
+                }
+
+                $actions .= '<li>
+                                <a data-toggle="modal" id="' . $invoice->workshop_id . '"
+                                    data-target="#workshopDiscount"
+                                    data-balance-total="' . ($invoice->balance_price ?? 0) . '"
+                                    class="dropdown-item btn btn-success openDiscountModelForWorkshop btn-sm">
+                                    <i class="fa fa-money" aria-hidden="true"></i> Discount
+                                </a>
+                            </li>
+                            <li>
+                                <a data-toggle="modal" id="' . $invoice->workshop_id . '"
+                                    data-target="#workshopPayment"
+                                    class="dropdown-item btn btn-success openPayentModelForWorkshop btn-sm"
+                                    data-grand-total="' . ($invoice->balance_price ?? 0) . '">
+                                    <i class="fa fa-money" aria-hidden="true"></i> Receive Payment
+                                </a>
+                            </li>
+                            <li>
+                                <a target="_blank"
+                                    href="' . url('/') . '/AutoCare/workshop/view/' . $invoice->workshop_id . '"
+                                    class="dropdown-item btn btn-primary btn-sm">
+                                    <i class="fa fa-eye"></i> Job View
+                                </a>
+                            </li>';
+                if ($invoice->payment_status == 1) {
+                    $actions .= '<li>
+                                    <a target="_blank"
+                                        href="' . url('/') . '/AutoCare/workshop/payment_history/' . $invoice->workshop_id . '"
+                                        class="dropdown-item btn btn-danger btn-sm" title="Payment History">
+                                        <i class="fa fa-eye"></i> Payment History
+                                    </a>
+                                </li>';
+                    if (!$isVoid) {
+                        $actions .= '<li>
+                                        <a href="' . url('/') . '/AutoCare/workshop/add/' . $invoice->workshop_id . '"
+                                            class="dropdown-item btn btn-success btn-sm">
+                                            <i class="fa fa-edit"></i> Edit
+                                        </a>
+                                    </li>';
+                    }
+                }
+                $actions .= '<li>
+                                <a href="#"
+                                    class="dropdown-item btn btn-success btn-sm open-activity-log-modal"
+                                    data-id="' . $invoice->workshop_id . '">
+                                    <i class="fa fa-eye" aria-hidden="true"></i> Activity Log
+                                </a>
+                            </li>';
+                if ($roleId == 1) {
+                    $actions .= '<li>
+                                    <form action="' . url('/AutoCare/workshop/trash/' . $invoice->workshop_id) . '"
+                                        method="POST"
+                                        onsubmit="return confirm(\'Are you sure you want to delete this workshop?\');">
+                                        ' . csrf_field() . '
+                                        ' . method_field('DELETE') . '
+                                        <button type="submit" class="dropdown-item btn text-danger btn-sm">
+                                            <i class="fa fa-remove"></i> Delete
+                                        </button>
+                                    </form>
+                                </li>';
+                }
+                $actions .= '</ul></div>';
+                return $actions;
+            })
+            // Payment Status custom search
+            ->filterColumn('payment_status_badge', function ($query, $keyword) {
+                $keyword = strtolower(trim($keyword));
+
+                if ($keyword === 'paid') {
+                    $query->where('invoices.payment_status', 1);
+                } elseif ($keyword === 'unpaid') {
+                    $query->where('invoices.payment_status', 0);
+                } elseif ($keyword === 'partially') {
+                    $query->where('invoices.payment_status', 3);
+                } else {
+                    // Allow fuzzy search on labels
+                    $query->whereRaw("
+            CASE 
+              WHEN invoices.payment_status = 1 THEN 'paid'
+              WHEN invoices.payment_status = 0 THEN 'unpaid'
+              WHEN invoices.payment_status = 3 THEN 'partially'
+              ELSE 'unknown'
+            END LIKE ?", ["%{$keyword}%"]);
+                }
+            })
+
+
+
+            ->setRowClass(function ($invoice) {
+                $isVoid = ($invoice->is_void ?? false);
+                return $isVoid ? 'table-danger' : '';
+            })
+            ->rawColumns([
+                'workshop_date_formatted',
+                'customer_name',
+                'vehicle_reg',
+                'payment_method_formatted',
+                'amount_due',
+                'discount',
+                'paid_price',
+                'grand_total',
+                'payment_status_badge',
+                'origin_badge',
+                'status_badge',
+                'actions'
             ])
             ->make(true);
     }
@@ -1113,112 +1562,7 @@ class WorkshopController extends Controller
             return response()->json(['error' => 'Failed to load activity logs'], 500);
         }
     }
-    public function viewSearchInvoice(Request $request)
-    {
-        $viewData['header_link'] = HeaderLink::where("menu_id", '3')
-            ->select("link_title", "link_name")
-            ->orderBy('id', 'desc')
-            ->get();
 
-        $viewData['customerNameSelect'] = Customer::pluck('customer_name', 'id');
-        $now = \Carbon\Carbon::now();
-
-        if ($request->isMethod('post')) {
-            $viewData['pageTitle'] = 'Add Party';
-            $workshop = DB::table('invoices');
-            $workshop->where('invoices.is_void', 0);
-            $workshop->whereNull('invoices.deleted_at');
-
-            $getFormAutoFillup = $request->all();
-
-            // Apply filters
-            if ($request->filled('id')) {
-                $workshop->where('invoices.workshop_id', '=', $request->id);
-            }
-            if ($request->filled('name')) {
-                $workshop->where('name', 'like', '%' . $request->name . '%');
-            }
-            if ($request->filled('customer_id')) {
-                $workshop->where('invoices.customer_id', 'like', '%' . $request->customer_id . '%');
-            }
-            if ($request->filled('created_at_from')) {
-                $workshop->whereDate('invoices.created_at', '>=', $request->created_at_from);
-            }
-            if ($request->filled('created_at_to')) {
-                $workshop->whereDate('invoices.created_at', '<=', $request->created_at_to);
-            }
-            if ($request->filled('mobile')) {
-                $workshop->where('invoices.mobile', 'like', '%' . $request->mobile . '%');
-            }
-            if ($request->filled('email')) {
-                $workshop->where('invoices.email', 'like', '%' . $request->email . '%');
-            }
-            if ($request->filled('vehicle_reg_number_for_search')) {
-                $workshop->where('invoices.vehicle_reg_number', 'like', '%' . $request->vehicle_reg_number_for_search . '%');
-            }
-            if ($request->filled('year')) {
-                $workshop->where('invoices.year', '=', $request->year);
-            }
-
-            $workshop->orderBy('workshop_id', 'desc');
-            $workshopData = $workshop->get();
-            $viewData['workshop'] = json_decode(json_encode($workshopData), true);
-            $totals = DB::table('invoices')
-                ->where('invoices.is_void', 0)
-                ->whereNull('invoices.deleted_at')
-                ->when($request->filled('id'), fn($q) => $q->where('invoices.workshop_id', '=', $request->id))
-                ->when($request->filled('name'), fn($q) => $q->where('name', 'like', '%' . $request->name . '%'))
-                ->when($request->filled('customer_id'), fn($q) => $q->where('invoices.customer_id', 'like', '%' . $request->customer_id . '%'))
-                ->when($request->filled('created_at_from'), fn($q) => $q->whereDate('invoices.created_at', '>=', $request->created_at_from))
-                ->when($request->filled('created_at_to'), fn($q) => $q->whereDate('invoices.created_at', '<=', $request->created_at_to))
-                ->when($request->filled('mobile'), fn($q) => $q->where('invoices.mobile', 'like', '%' . $request->mobile . '%'))
-                ->when($request->filled('email'), fn($q) => $q->where('invoices.email', 'like', '%' . $request->email . '%'))
-                ->when($request->filled('vehicle_reg_number_for_search'), fn($q) => $q->where('invoices.vehicle_reg_number', 'like', '%' . $request->vehicle_reg_number_for_search . '%'))
-                ->when($request->filled('year'), fn($q) => $q->where('invoices.year', '=', $request->year))
-                ->selectRaw('SUM(CASE WHEN due_out IS NOT NULL AND due_out < ? AND balance_price > 0 THEN balance_price ELSE 0 END) as total_overdue', [$now])
-                ->selectRaw('
-                SUM(paid_price) as total_paid,
-                SUM(balance_price) as total_balance,
-                SUM(discount_price) as total_discount
-            ')
-                ->first();
-
-            $viewData['total_paid'] = $totals->total_paid ?? 0;
-            $viewData['total_balance'] = $totals->total_balance ?? 0;
-            $viewData['total_overdue'] = $totals->total_overdue ?? 0;
-            $viewData['total_discount'] = $totals->total_discount ?? 0;
-
-            return view('AutoCare.workshop.search-invoice', $viewData)
-                ->with($getFormAutoFillup);
-
-        } else {
-            $viewData['pageTitle'] = 'Workshop Details';
-            $workshop = DB::table('invoices')
-                ->where('invoices.is_void', 0)
-                ->whereNull('invoices.deleted_at')
-                ->orderBy('invoices.workshop_id', 'desc')
-                ->get();
-            $viewData['workshop'] = json_decode(json_encode($workshop), true);
-
-            $totals = DB::table('invoices')
-                ->where('invoices.is_void', 0)
-                ->whereNull('invoices.deleted_at')
-                ->selectRaw('SUM(CASE WHEN due_out IS NOT NULL AND due_out < ? AND balance_price > 0 THEN balance_price ELSE 0 END) as total_overdue', [$now])
-                ->selectRaw('
-                SUM(paid_price) as total_paid,
-                SUM(balance_price) as total_balance,
-                 SUM(discount_price) as total_discount
-            ')
-                ->first();
-
-            $viewData['total_paid'] = $totals->total_paid ?? 0;
-            $viewData['total_balance'] = $totals->total_balance ?? 0;
-            $viewData['total_overdue'] = $totals->total_overdue ?? 0;
-            $viewData['total_discount'] = $totals->total_discount ?? 0;
-
-            return view('AutoCare.workshop.search-invoice', $viewData);
-        }
-    }
     public function viewpaymenthistory($id)
     {
         // Check if the job_id exists in payment_histories
@@ -1252,9 +1596,6 @@ class WorkshopController extends Controller
                 'customer_debit_logs.payment_type'
             )
             ->get();
-
-        // Debug the output
-        // dd($all_view);
 
         // Convert to an array
         $viewData['AdminSaleView'] = json_decode(json_encode($all_view), true);
@@ -1314,9 +1655,9 @@ class WorkshopController extends Controller
             }
 
             DB::table('stock_history')
-            ->where('ref_type', 'INV')
-            ->where('ref_id', $workshop->id)
-            ->delete();
+                ->where('ref_type', 'INV')
+                ->where('ref_id', $workshop->id)
+                ->delete();
 
             DB::commit();
 
