@@ -73,31 +73,12 @@
     ]) }}
                     </div>
 
-                    <!-- Email -->
-                    <div class="col-lg-3 col-md-6 col-12 form-group">
-                        <label>Email:</label>
-                        {{ Form::text('email', request('email', old('email')), [
-        'class' => 'form-control',
-        'placeholder' => 'Email'
-    ]) }}
-                    </div>
-
-
                     <div class="col-lg-3 col-md-6 col-12 form-group">
                         <label for="status">Invoice Status:</label>
                         {{ Form::select('status', ['booked' => 'Booked', 'completed' => 'Completed', 'failed' => 'Failed', 'pending' => 'Pending'], request('status', old('status')), [
         'id' => 'status',
         'class' => 'form-control',
         'placeholder' => 'Select Invoice Status'
-    ]) }}
-                    </div>
-
-                    <div class="col-lg-3 col-md-6 col-12 form-group">
-                        <label for="payment_method">Payment Method:</label>
-                        {{ Form::select('payment_method', ['pay_at_fitting_center' => 'Pay at Center', 'dojo' => 'dojo', 'global_payment' => 'Global Pay'], request('payment_method', old('payment_method')), [
-        'id' => 'payment_method',
-        'class' => 'form-control',
-        'placeholder' => 'Select Payment Method'
     ]) }}
                     </div>
 
@@ -230,7 +211,10 @@
                                 <tr>
                                     <th colspan="5" style="text-align:right">Total:</th>
                                     <th></th>
-                                    <th colspan="6"></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th colspan="3"></th>
                                 </tr>
                             </tfoot>
                         </table>

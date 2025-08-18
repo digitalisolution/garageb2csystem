@@ -1370,7 +1370,7 @@ class WorkshopController extends Controller
 
             // Actions Column (Crucial Part)
             ->addColumn('actions', function ($invoice) {
-                $emailBody = getDefaultEmailBody($invoice) ?? '';
+                $emailBody = getInvoiceEmailBody($invoice) ?? '';
                 $roleId = auth()->user()->role_id ?? 0;
                 $isVoid = ($invoice->is_void ?? false);
 
