@@ -6,7 +6,7 @@
     <section class="container-fluid">
        <div class="bg-white p-3 mb-3">
     <!-- Toggle Button for Filters -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Filters</h5> <!-- Optional: Add a title -->
         <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#workshopFilters" aria-expanded="true" aria-controls="workshopFilters" id="filterToggleBtn">
             <!-- Icons will be toggled by JS -->
@@ -198,20 +198,13 @@
                 </div>
             </div>
         </div>
-       
-        @php
-            $paid_price = 0;
-            $installmentPayment = 0;
-            $discount_price = 0;
-            $balance_price = 0;
-            $grandTotal = 0;
-        @endphp
         <div class="row">
             <div class="col-sm-12" id="HideForShowProduct">
                 <div class="card">
                     <div class="card-header">
-                        {{-- <i class="fa fa-align-justify"></i> Workshop Detail --}}
-            <a class="btn btn-primary text-right text-center"
+                        <div></div>
+                        <i class="fa fa-align-justify"></i> Workshop Detail
+            <a class="btn btn-primary text-center float-right"
                             href="{{ asset('/AutoCare/workshop/add') }}">Create New Workshop</a>
                
         
@@ -243,7 +236,6 @@
                                     <th colspan="6"></th>
                                 </tr>
                             </tfoot>
-
                         </table>
                     </div>
                 </div>
@@ -261,6 +253,10 @@
 
             .page-item {
                 margin: 2px;
+            }
+            .dt-buttons{
+                margin-left: 200px;
+                padding: 0px 20px 25px 20px;
             }
         </style>
 
@@ -370,7 +366,6 @@
                 </div>
             </div>
         </div>
-
         <!-- Modal for Activity Log :end -->
 
         <!-- Modal for discount : start-->
@@ -428,10 +423,62 @@
         <!-- Modal for discount :end -->
 
         <!-- Email Modal -->
+       <!-- Email Modal -->
+<!-- Reusable Email Modal -->
+<div class="modal fade" id="emailModal" tabindex="-1" aria-labelledby="emailModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="emailForm" action="{{ url('/AutoCare/workshop/send-invoice-email') }}" method="POST">
+      @csrf
+      <input type="hidden" name="invoice_id" id="invoice_id">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="emailModalLabel">Send Invoice via Email</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body text-left">
+          <div class="form-group mb-2">
+            <label for="email_to">Email To</label>
+            <input type="email" class="form-control" id="email_to" name="email_to" required>
+          </div>
+
+          <div class="form-group mb-2">
+            <label for="email_cc">CC</label>
+            <input type="email" class="form-control" id="email_cc" name="email_cc">
+          </div>
+
+          <div class="form-group mb-2">
+            <div class="form-check">
+              <input type="checkbox" class="form-check-input" checked id="attach_pdf" name="attach_pdf" value="1">
+              <label class="form-check-label p-0" for="attach_pdf">Attach Invoice PDF</label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="email_body">Body</label>
+            <textarea id="email_body" name="email_body"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-primary">Send Email</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>.tox-statusbar__branding,.tox-promotion{display:none}</style>
+
+
+        <style>
+        .tox-statusbar__branding, .tox-promotion {
+        display: none;
+        }
+        </style>
+ <!-- Email Modal end -->
     </section>
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
-    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
     <script src="{{ asset('alerts-boxes/js/sweetalert.min.js') }}"></script>
     <script type="text/javascript">
         $(document).ready(function () {
@@ -524,8 +571,7 @@
                     success: function (response) {
                         if (response.success) {
                             swal("Good job!", "Discount applied successfully", "success");
-                            $('#discountValue').val(""); // Clear the input field
-                            location.reload();
+                            $('#discountValue').val("");                            location.reload();
                         } else {
                             swal("Something went wrong!", response.message || "An error occurred while applying the discount.", "error");
                         }
@@ -537,24 +583,23 @@
             });
 
             $(document).on('click', '.openDiscountModelForWorkshop', function () {
-                const discountWorkshopId = $(this).attr('id'); // Get the workshop ID
-                const balancePrice = parseFloat($(this).data('balance-total')); // Get the balance price
-
+                const discountWorkshopId = $(this).attr('id');
+                const balancePrice = parseFloat($(this).data('balance-total'));
                 // Fetch the existing discount details via AJAX
                 $.ajax({
                     type: "GET",
-                    url: `/AutoCare/workshop/search/fetch-discount/${discountWorkshopId}`, // Endpoint to fetch discount details
+                    url: `/AutoCare/workshop/search/fetch-discount/${discountWorkshopId}`,
                     success: function (response) {
                         const { discount_type, discount_value } = response;
 
                         // Populate the modal fields
-                        $('#discountType').val(discount_type || 'amount'); // Default to 'amount' if no discount exists
-                        $('#discountValue').val(discount_value || ''); // Pre-fill the discount value
+                        $('#discountType').val(discount_type || 'amount'); 
+                        $('#discountValue').val(discount_value || '');
 
                         // Set hidden fields
                         $('[name="workshopIdForDiscount"]').val(discountWorkshopId);
                         $('[name="workshopIdForDiscount"]').data('balance-total', balancePrice);
-                        $('[id="discountWorkshopId"]').html(discountWorkshopId); // Display workshop ID in the modal title
+                        $('[id="discountWorkshopId"]').html(discountWorkshopId);
                     },
                     error: function (xhr, status, error) {
                         console.error('Error fetching discount details:', error);
@@ -919,189 +964,169 @@
         });
     </script>
     <!-- JavaScript to toggle icon and text -->
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const collapseElement = document.getElementById('workshopFilters');
-        const toggleButton = document.getElementById('filterToggleBtn');
-        const toggleIcon = document.getElementById('filterToggleIcon');
-        const toggleText = document.getElementById('filterToggleText');
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const collapseElement = document.getElementById('workshopFilters');
+            const toggleButton = document.getElementById('filterToggleBtn');
+            const toggleIcon = document.getElementById('filterToggleIcon');
+            const toggleText = document.getElementById('filterToggleText');
 
-        // Function to update button text and icon based on collapse state
-        function updateToggleButton(isVisible) {
-            if (isVisible) {
-                toggleIcon.classList.remove('fa-chevron-down');
-                toggleIcon.classList.add('fa-chevron-up');
-                // Optional: Change text
-                // toggleText.textContent = 'Hide Filters';
-            } else {
-                toggleIcon.classList.remove('fa-chevron-up');
-                toggleIcon.classList.add('fa-chevron-down');
-                // Optional: Change text
-                // toggleText.textContent = 'Show Filters';
+            // Function to update button text and icon based on collapse state
+            function updateToggleButton(isVisible) {
+                if (isVisible) {
+                    toggleIcon.classList.remove('fa-chevron-down');
+                    toggleIcon.classList.add('fa-chevron-up');
+                    // Optional: Change text
+                    // toggleText.textContent = 'Hide Filters';
+                } else {
+                    toggleIcon.classList.remove('fa-chevron-up');
+                    toggleIcon.classList.add('fa-chevron-down');
+                    // Optional: Change text
+                    // toggleText.textContent = 'Show Filters';
+                }
             }
-        }
 
-        // Listen for collapse events
-        collapseElement.addEventListener('show.bs.collapse', function () {
-            updateToggleButton(true);
+            // Listen for collapse events
+            collapseElement.addEventListener('show.bs.collapse', function () {
+                updateToggleButton(true);
+            });
+
+            collapseElement.addEventListener('hide.bs.collapse', function () {
+                updateToggleButton(false);
+            });
+
+            // Set initial state based on whether it has the 'show' class
+            updateToggleButton(collapseElement.classList.contains('show'));
         });
-
-        collapseElement.addEventListener('hide.bs.collapse', function () {
-            updateToggleButton(false);
+    </script>
+    <script>
+    $(document).ready(function () {
+        var table = $('#workshopTable').DataTable({
+            processing: true,
+            serverSide: true,
+            responsive: true,
+            // dom: 'Bflrtip', // Moved below for clarity with buttons
+            lengthMenu: [
+                [10, 25, 50, 100, -1],
+                [10, 25, 50, 100, "All"]
+            ],
+            // Configure DataTables Buttons
+            dom: 'Blfrtip', // Ensure 'B' is included for buttons
+            buttons: ['csv', 'excel', 'pdf', 'print'],
+            ajax: {
+                url: "{{ route('workshop.data') }}", // Ensure this route is correctly defined
+                data: function (d) {
+                    d.id = $('input[name="id"]').val();
+                    d.name = $('input[name="name"]').val();
+                    d.mobile = $('input[name="mobile"]').val();
+                    d.created_at_from = $('input[name="created_at_from"]').val();
+                    d.created_at_to = $('input[name="created_at_to"]').val();
+                    d.email = $('input[name="email"]').val();
+                    d.origin = $('select[name="origin"]').val();
+                    d.convert_to_invoice = $('select[name="convert_to_invoice"]').val();
+                    d.status = $('select[name="status"]').val();
+                    d.payment_method = $('select[name="payment_method"]').val();
+                    d.is_void = $('select[name="is_void"]').val();
+                    d.payment_status = $('select[name="payment_status"]').val();
+                    d.vehicle_reg_number_for_search = $('input[name="vehicle_reg_number_for_search"]').val();
+                }
+            },
+            columns: [
+                // Make sure these 'name' values correspond to database columns or are handled in your query
+                // if they are computed/aliased.
+                { data: 'workshop_date_formatted', name: 'workshops.created_at' },
+                { data: 'id', name: 'workshops.id' },
+                { data: 'customer_name', name: 'workshops.name' },
+                { data: 'mobile', name: 'workshops.mobile' },
+                { data: 'vehicle_reg', name: 'workshops.vehicle_reg_number' },
+                { data: 'payment_method_formatted', name: 'workshops.payment_method' },
+                { data: 'amount_due', name: 'workshops.balance_price', orderable: false, searchable: false },
+                { data: 'grand_total', name: 'workshops.grandTotal', orderable: false, searchable: false },
+                { data: 'payment_status_badge', name: 'workshops.payment_status', orderable: true, searchable: false },
+                { data: 'origin_badge', name: 'workshops.workshop_origin', orderable: true, searchable: false },
+                { data: 'status_badge', name: 'workshops.status', orderable: true, searchable: false },
+                { data: 'invoice_convert_badge', name: 'workshops.is_converted_to_invoice', orderable: true, searchable: false },
+                { data: 'actions', name: 'actions', orderable: false, searchable: false }
+            ],
+            
+            footerCallback: function (row, data, start, end, display) {
+                var api = this.api();
+                // Assuming 'amount_due' is column index 6 and 'grand_total' is 7
+                var intVal = function (i) {
+                    return typeof i === 'string' ?
+                        i.replace(/[\£,]/g, '') * 1 :
+                        typeof i === 'number' ?
+                        i : 0;
+                };
+                // Total over all pages for Amount Due
+                totalDue = api
+                    .column(6)
+                    .data()
+                    .reduce(function (a, b) {
+                        return intVal(a) + intVal(b);
+                    }, 0);
+                // Total over all pages for Grand Total
+                totalGrand = api
+                    .column(7)
+                    .data()
+                    .reduce(function (a, b) {
+                        return intVal(a) + intVal(b);
+                    }, 0);
+                // Update footer cells
+                $(api.column(6).footer()).html(
+                    '£' + parseFloat(totalDue).toFixed(2)
+                );
+                $(api.column(7).footer()).html(
+                    '£' + parseFloat(totalGrand).toFixed(2)
+                );
+            }
+            
         });
-
-        // Set initial state based on whether it has the 'show' class
-        updateToggleButton(collapseElement.classList.contains('show'));
     });
+    </script>
+<script>
+  // If you’re on Bootstrap 5 (recommended):
+  const showBs5Modal = (id) => {
+    const el = document.getElementById(id);
+    const modal = bootstrap.Modal.getOrCreateInstance(el);
+    modal.show();
+  };
+
+  // Delegated event (works after DataTables redraw)
+  $(document).on('click', '.open-email-modal-btn', function () {
+    const invoiceId = $(this).data('workshop-id');
+    const email = $(this).data('workshop-email') || '';
+    const b64 = $(this).attr('data-email-body-b64') || '';
+    let emailBody = '';
+
+    try { emailBody = atob(b64); } catch(e) { emailBody = ''; }
+
+    // Fill the modal fields
+    $('#invoice_id').val(invoiceId);
+    $('#email_to').val(email);
+
+    // If using TinyMCE:
+    if (typeof tinymce !== 'undefined' && tinymce.get('email_body')) {
+      tinymce.get('email_body').setContent(emailBody);
+    } else {
+      // Plain textarea or other editor
+      $('#email_body').val(emailBody);
+    }
+
+    // Show modal (Bootstrap 5)
+    showBs5Modal('emailModal');
+  });
+
+  // Optional: keep TinyMCE in sync if users type into the editor
+  // (only needed if your form submission reads the textarea value directly)
+  if (typeof tinymce !== 'undefined') {
+    document.getElementById('emailForm')?.addEventListener('submit', function(){
+      const ed = tinymce.get('email_body');
+      if (ed) { $('#email_body').val(ed.getContent()); }
+    });
+  }
 </script>
 
-
-<script>
-$(document).ready(function () {
-    var table = $('#workshopTable').DataTable({
-        processing: true,
-        serverSide: true,
-        responsive: true,
-        // dom: 'Bflrtip', // Moved below for clarity with buttons
-        lengthMenu: [
-            [10, 25, 50, 100, -1],
-            [10, 25, 50, 100, "All"]
-        ],
-         // Configure DataTables Buttons
-         dom: 'Blfrtip', // Ensure 'B' is included for buttons
-         buttons: [
-             {
-                 extend: 'collection',
-                 text: 'Export',
-                 buttons: [
-                     'copy', 'csv', 'excel', 'pdf', 'print'
-                 ]
-             }
-             // You can add other buttons here if needed
-         ],
-        ajax: {
-            url: "{{ route('workshop.data') }}", // Ensure this route is correctly defined
-            data: function (d) {
-                // Dynamically get filter values from the *form fields* inside the collapsible section
-                // whenever the DataTable requests new data (search, pagination, sort, draw)
-
-                // IMPORTANT: Make sure the IDs used here (e.g., #id, #name) match the actual 'id' attributes
-                // of your form inputs in the Blade view.
-                // Example:
-                // If your input is {{ Form::text('id', ... ['id' => 'filter_job_id']) }}
-                // Then use $('#filter_job_id').val() here.
-
-                // Using the 'name' attributes as IDs (which seems to be the case from your Pasted_Text_1755171865541.txt)
-                // is generally fine, but accessing via '#id' is standard. Double-check your form input 'id's.
-
-                // Map form field values to query parameters expected by your controller
-                // Adjust the right-hand side selectors if your input 'id' attributes differ
-                d.id = $('input[name="id"]').val(); // Job/Workshop Id
-                d.name = $('input[name="name"]').val(); // Customer Name
-                d.mobile = $('input[name="mobile"]').val(); // Mobile Number
-                d.created_at_from = $('input[name="created_at_from"]').val(); // From Date
-                d.created_at_to = $('input[name="created_at_to"]').val(); // To Date
-                d.email = $('input[name="email"]').val(); // Email
-                d.origin = $('select[name="origin"]').val(); // Origin
-                d.convert_to_invoice = $('select[name="convert_to_invoice"]').val(); // Convert Invoice
-                d.status = $('select[name="status"]').val(); // Workshop Status
-                d.payment_method = $('select[name="payment_method"]').val(); // Payment Method
-                d.is_void = $('select[name="is_void"]').val(); // Void Invoices
-                d.payment_status = $('select[name="payment_status"]').val(); // Payment Status
-                d.vehicle_reg_number_for_search = $('input[name="vehicle_reg_number_for_search"]').val(); // Vehicle Reg No
-
-                // Note: If you add a 'Search' button specifically for filters (not relying on global search + draw),
-                // you would trigger table.draw() on its click event.
-                // For now, changes to global search or pagination will trigger this data function.
-                // You could also listen for changes on filter inputs and call table.draw() if you want
-                // filters applied immediately on change (might be heavy for date/typeahead fields).
-                /*
-                $('#workshopFilters input, #workshopFilters select').on('change', function() {
-                     // Debounce might be useful here for text inputs
-                     table.draw();
-                });
-                */
-            }
-        },
-        columns: [
-            // Make sure these 'name' values correspond to database columns or are handled in your query
-            // if they are computed/aliased.
-            { data: 'workshop_date_formatted', name: 'workshops.created_at' }, // Use formatted date from controller
-            { data: 'id', name: 'workshops.id' },
-            { data: 'customer_name', name: 'workshops.name' }, // Or join with customers table if needed
-            { data: 'mobile', name: 'workshops.mobile' },
-            { data: 'vehicle_reg', name: 'workshops.vehicle_reg_number' },
-            { data: 'payment_method_formatted', name: 'workshops.payment_method' },
-            { data: 'amount_due', name: 'workshops.balance_price', orderable: false, searchable: false }, // Formatted
-            { data: 'grand_total', name: 'workshops.grandTotal', orderable: false, searchable: false }, // Formatted
-            { data: 'payment_status_badge', name: 'workshops.payment_status', orderable: true, searchable: false }, // Badge
-            { data: 'origin_badge', name: 'workshops.workshop_origin', orderable: true, searchable: false }, // Badge
-            { data: 'status_badge', name: 'workshops.status', orderable: true, searchable: false }, // Badge
-            { data: 'invoice_convert_badge', name: 'workshops.is_converted_to_invoice', orderable: true, searchable: false }, // Badge
-            { data: 'actions', name: 'actions', orderable: false, searchable: false } // Action buttons
-        ],
-         // Optional: Add a footer callback for totals if needed (adjust column indices)
-        /*
-        footerCallback: function (row, data, start, end, display) {
-            var api = this.api();
-            // Assuming 'amount_due' is column index 6 and 'grand_total' is 7
-            var intVal = function (i) {
-                return typeof i === 'string' ?
-                    i.replace(/[\£,]/g, '') * 1 :
-                    typeof i === 'number' ?
-                    i : 0;
-            };
-            // Total over all pages for Amount Due
-            totalDue = api
-                .column(6) // Adjust index if column order changes
-                .data()
-                .reduce(function (a, b) {
-                    return intVal(a) + intVal(b);
-                }, 0);
-            // Total over all pages for Grand Total
-            totalGrand = api
-                .column(7) // Adjust index if column order changes
-                .data()
-                .reduce(function (a, b) {
-                    return intVal(a) + intVal(b);
-                }, 0);
-            // Update footer cells
-            $(api.column(6).footer()).html(
-                '£' + parseFloat(totalDue).toFixed(2)
-            );
-            $(api.column(7).footer()).html(
-                '£' + parseFloat(totalGrand).toFixed(2)
-            );
-        }
-        */
-    });
-
-    // Optional: If you want filters to apply immediately on change (be careful with text inputs)
-    // You might want to debounce this or only apply on a specific "Apply Filters" button click.
-    // For now, filters will apply when the table redraws (e.g., global search, pagination).
-    // Uncomment the lines below if you add an explicit filter apply button or want onChange (with debounce).
-    /*
-    $('#workshopFilters').on('change', 'input, select', function() {
-         // Simple immediate apply (might be too frequent)
-         // table.draw();
-
-         // Or use a debounce function for text inputs if applying on change
-         // Example debounce (basic):
-         clearTimeout(window.filterTimer);
-         window.filterTimer = setTimeout(function() {
-             table.draw();
-         }, 500); // Apply filter 500ms after the last change
-    });
-    */
-
-    // Example: If you add an explicit "Apply Filters" button inside the form
-    // <div class="text-right"><button type="button" id="applyFiltersBtn" class="btn btn-secondary">Apply Filters</button> ... </div>
-    // $('#applyFiltersBtn').on('click', function() {
-    //     table.draw(); // This will trigger the ajax.data function above
-    // });
-
-});
-</script>
 
 
 @endsection
