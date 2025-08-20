@@ -531,7 +531,7 @@ if ($request->has('vehicle_reg_number') && $request->vehicle_reg_number != null)
                 $existingWorkshop->update(array_merge(
                     $estimateData,
                     [
-                        'estimate_origin' => 'Estimate',
+                        'workshop_origin' => 'Estimate',
                         'updated_at' => now(),
                     ]
                 ));
@@ -549,9 +549,10 @@ if ($request->has('vehicle_reg_number') && $request->vehicle_reg_number != null)
         $newWorkshop = Workshop::create(array_merge(
             $estimateData,
             [
-                'estimate_origin' => 'Estimate', // static value
+                'workshop_origin' => 'Estimate', // static value
                 'created_at' => now(),
                 'updated_at' => now(),
+                'workshop_date' =>now()
             ]
         ));
 

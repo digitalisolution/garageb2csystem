@@ -204,7 +204,6 @@
             <div class="col-sm-12" id="HideForShowProduct">
                 <div class="card">
                     <div class="card-header">
-                        <div></div>
                         <i class="fa fa-align-justify"></i> Workshop Detail
                         <a class="btn btn-primary text-center float-right"
                             href="{{ asset('/AutoCare/workshop/add') }}">Create New Workshop</a>

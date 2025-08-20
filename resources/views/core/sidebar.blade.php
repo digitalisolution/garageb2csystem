@@ -89,6 +89,7 @@
                             </li>
                         </ul>
                     </li>
+                    @if ($role_id == 1)
                     <li class="nav-item nav-dropdown">
                         <a class="nav-link nav-dropdown-toggle" href="javascript:void(0);"><i class="fa fa-tag"></i>Brands
                             Pages</a>
@@ -98,7 +99,6 @@
                             </li>
                         </ul>
                     </li>
-                    @if ($role_id == 1)
                             <li class="nav-item nav-dropdown">
                                 <a class="nav-link nav-dropdown-toggle" href="javascript:void(0);"><i class="fa fa-line-chart"
                                         aria-hidden="true"></i>
@@ -119,7 +119,7 @@
                                     </li>
                                 </ul>
                             </li>
-                    @endif
+                    
 
                     <li class="nav-item nav-dropdown">
                         <a class="nav-link nav-dropdown-toggle" href="javascript:void(0);"><i class="fa fa-money"
@@ -138,6 +138,7 @@
                             </li>
                         </ul>
                     </li>
+                    @endif
                      <li class="nav-item nav-dropdown">
                         <a class="nav-link nav-dropdown-toggle" href="javascript:void(0);"><i class="fa fa-money"
                                 aria-hidden="true"></i>Reports</a>
@@ -147,6 +148,7 @@
                             </li>
                         </ul>
                     </li>
+                    
                 @endif
                 @if(get_option('sidebar_service_module') == 1)
                     @if($role_id == 1 || $role_id == 4 || $role_id == 5)
