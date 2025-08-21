@@ -11,8 +11,10 @@ use App\Models\RegionCounty;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use App\Models\MetaSettings;
+use App\Models\GarageDetails;
 use App\Http\Requests\LoginFormRequest;
 use App\Services\EmailValidationService;
+use Illuminate\Support\Facades\Mail;
 use App\Http\Requests\RegisterFormRequest;
 
 
@@ -34,67 +36,6 @@ class CustomerAuthController extends Controller
         return view('customer.register', compact('counties'));
     }
 
-    // public function customerRegister(Request $request)
-    // {
-    //     $request->validate([
-    //         'customer_name' => 'required|string|min:2|max:50',
-    //         'customer_last_name' => 'nullable|string|min:2|max:50',
-    //         'customer_email' => 'required|string|email|max:255|unique:customers,customer_email',
-    //         'customer_contact_number' => 'required|string|min:10|max:15',
-    //         'password' => 'required|string|min:8|confirmed',
-    //         'company_name' => 'required|string|max:100',
-    //         'billing_address_country' => 'required|string',
-    //         'billing_address_street' => 'required|string|max:100',
-    //         'billing_address_city' => 'required|string|max:50',
-    //         'billing_address_postcode' => 'required|string|max:10',
-    //         'billing_address_county' => 'required|string',
-    //     ]);
-    //     $recaptchaSettings = MetaSettings::whereIn('name', ['google_recaptcha_site_key', 'google_recaptcha_secret_key', 'google_recaptcha_status'])
-    //     ->pluck('content', 'name');
-
-    // $siteKey = $recaptchaSettings['google_recaptcha_site_key'] ?? null;
-    // $secretKey = $recaptchaSettings['google_recaptcha_secret_key'] ?? null;
-    // $recaptchaStatus = $recaptchaSettings['google_recaptcha_status'] ?? 'inactive';
-    // if ($recaptchaStatus === 'active') {
-    //     $rules['g-recaptcha-response'] = 'required';
-    // }
-
-    // // Validate input
-    // $validated = $request->validate($rules, [
-    //     'g-recaptcha-response.required' => 'Please complete the reCAPTCHA to submit the form.'
-    // ]);
-
-    // // If reCAPTCHA is active, verify response with Google
-    // if ($recaptchaStatus === 'active') {
-    //     $recaptchaResponse = $request->input('g-recaptcha-response');
-
-    //     $response = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
-    //         'secret' => $secretKey,
-    //         'response' => $recaptchaResponse
-    //     ]);
-
-    //     $recaptchaData = $response->json();
-
-    //     if (!$recaptchaData['success']) {
-    //         return back()->withErrors(['g-recaptcha-response' => 'Google reCAPTCHA verification failed. Please try again.'])->withInput();
-    //     }
-    // }
-    // $validationResult = $this->emailValidationService->validateEmail($request->email);
-    //     if (!$validationResult['status']) {
-    //         return back()->withErrors(['email' => $validationResult['message']])->withInput();
-    //     }
-
-    //     $validatedData = $request->all();
-    //     $validatedData['password'] = Hash::make($validatedData['password']);
-    //     $validatedData['remember_token'] = Str::random(60);
-
-    //     $customer = Customer::create($validatedData);
-    //     Auth::guard('customer')->login($customer, true);
-
-    //     return redirect()->route('home');
-    // }
-
-   
 
     public function customerRegister(RegisterFormRequest $request)
     {  
@@ -121,10 +62,69 @@ class CustomerAuthController extends Controller
     
         $validatedData['password'] = Hash::make($validatedData['password']);
         $validatedData['remember_token'] = Str::random(60);
-    
+        // Add customer IP
+        $ipAddress = $this->getClientIp($request);
+        $validatedData['ip_address'] = $ipAddress ?? 'Unknown';
+
+        //$emailData['ip_address'] = $ipAddress ?? 'Unknown';
+
         // Create customer and log them in
         $customer = Customer::create($validatedData);
         Auth::guard('customer')->login($customer, true);
+
+        try {
+            $garage = GarageDetails::first();
+            if (!$garage || !$garage->email) {
+                return redirect()->back()->with('error', 'Garage details are not configured properly.');
+            }
+            // Get garage & admin emails from .env or fallback
+            $garageEmail = $garage->email;
+            $adminEmail = env('ADMIN_NOTIFICATION_EMAIL', 'info@digitalideasltd.co.uk');
+
+            // Prepare data to pass to email templates
+            $emailData = [
+                'name' => $validatedData['customer_name'],
+                'last_name' => $validatedData['customer_last_name'] ?? '',
+                'email' => $validatedData['customer_email'],
+                'phone' => $validatedData['customer_contact_number'],
+                'address_street' => $validatedData['billing_address_street'],
+                'address_city' => $validatedData['billing_address_city'],
+                'address_postcode' => $validatedData['billing_address_postcode'],
+                'address_county' => $validatedData['billing_address_county'],
+                'address_country' => $validatedData['billing_address_country'],
+                'ip_address' => $validatedData['ip_address'], // 🔹 Include IP in email data
+                'registered_at' => now()->format('d/m/Y H:i:s')
+            ];
+
+            // Send to customer
+            Mail::send('emails.customer_registration_confirmation', $emailData, function ($message) use ($emailData) {
+                $message->to($emailData['email'])
+                        ->from(env('MAIL_FROM_ADDRESS'), env('MAIL_FROM_NAME'))
+                        ->subject("Welcome to Our Garage Service");
+            });
+
+            // Send to garage owner
+            Mail::send('emails.garage_new_customer_notification', $emailData, function ($message) use ($emailData, $garageEmail) {
+                $message->to($garageEmail)
+                        ->from(env('MAIL_FROM_ADDRESS'), env('MAIL_FROM_NAME'))
+                        ->replyTo($emailData['email'], $emailData['name'])
+                        ->subject("New Customer Registered: {$emailData['name']} {$emailData['last_name']}");
+            });
+
+            // Send to admin
+            Mail::send('emails.garage_new_customer_notification', $emailData, function ($message) use ($emailData, $adminEmail) {
+                $message->to($adminEmail)
+                        ->from(env('MAIL_FROM_ADDRESS'))
+                        ->replyTo($emailData['email'], $emailData['name'])
+                        ->subject("New Customer Registration (Admin Copy)");
+            });
+
+        } catch (\Exception $e) {
+            \Log::error("Failed to send registration email(s): " . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'data' => $emailData
+            ]);
+        }
     
         return redirect()->route('home')->with('success', 'Registration successful!');
     }
@@ -204,6 +204,38 @@ class CustomerAuthController extends Controller
         $request->session()->regenerateToken();
         return redirect('/');
     }
+
+    protected function getClientIp(Request $request)
+{
+    $headers = [
+        'CF-Connecting-IP',    // Cloudflare
+        'X-Forwarded-For',     // Proxies/load balancers
+        'X-Real-IP',           // Nginx
+    ];
+
+    foreach ($headers as $header) {
+        if ($request->headers->has($header)) {
+            $ips = explode(',', $request->headers->get($header));
+
+            foreach ($ips as $ip) {
+                $ip = trim($ip);
+                if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+                    return $ip; // ✅ return first valid IPv4
+                }
+            }
+        }
+    }
+
+    // Fallback: check Laravel’s request->ip()
+    $ip = $request->ip();
+    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+        return $ip;
+    }
+
+    return null; // no IPv4 found
+}
+
+
 
 
 }

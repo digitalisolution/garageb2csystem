@@ -116,9 +116,11 @@ Route::post('/calendar/book', [CalendarController::class, 'book']);
 
 Route::get('/dojo/make-payment', [DojoController::class, 'makePaymentWebsite'])->name('dojo.make-payment');
 Route::get('/dojo/callback', [DojoController::class, 'callback'])->name('dojo.callback');
-Route::post('/payment-assist/create', [PaymentAssistController::class, 'create'])->name('paymentassist.create');
-Route::post('/payment-assist/callback', [PaymentAssistController::class, 'callback'])->name('paymentassist.callback');
-Route::get('/payment-assist/{id}', [PaymentAssistController::class, 'show'])->name('paymentassist.show');
+Route::prefix('payment-assist')->name('paymentassist.')->group(function () {
+    Route::get('/pay', [PaymentAssistController::class, 'showPaymentPage'])->name('pay');
+    Route::post('/initiate', [PaymentAssistController::class, 'initiatePayment'])->name('initiate');
+    Route::match(['GET', 'POST'], '/callback/{invoiceid}', [PaymentAssistController::class, 'handleCallback'])->name('callback');
+});
 
 
 
@@ -226,6 +228,7 @@ Route::middleware('verify.token')->group(function () {
 // })->name('contact');
 
 Route::get('/checkout/ordersuccess', [CheckoutController::class, 'orderSuccess'])->name('checkout.ordersuccess');
+Route::get('/checkout/orderfailure', [CheckoutController::class, 'orderFailure'])->name('checkout.orderfailure');
 // Route::get('/checkout/ordersuccess', function () {
 //     return include_dynamic_view('ordersuccess');
 // })->name('checkout.ordersuccess');

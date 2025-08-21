@@ -62,8 +62,8 @@ class CheckoutController extends Controller
         PaymentAssistService $paymentAssistService,
         EmailValidationService $emailValidationService,
         ApiOrderingService $apiOrderingService,
-        UpdateOrderQtyService $updateOrderQtyService)
-    {
+        UpdateOrderQtyService $updateOrderQtyService
+    ) {
         $this->dojoService = $dojoService;
         $this->paymentAssistService = $paymentAssistService;
         $this->emailValidationService = $emailValidationService;
@@ -501,12 +501,15 @@ class CheckoutController extends Controller
                 ]);
             }
             if ($validated['payment_method'] && $validated['payment_method'] === 'paymentassist') {
-                return $this->paymentAssistService->processPaymentWebsite([
-                    'workshop_id' => $workshop->id,
+                $secret = get_option('paymentmethod_paymentassist_Secret_key') ?? null;
+                $hash = hash_hmac('sha256', $workshop->id . '|' . $workshop->grandTotal, $secret);
+
+                return redirect()->route('paymentassist.pay', [
+                    'jobid' => $workshop->id,
+                    'hash' => $hash,
                     'total' => $workshop->grandTotal,
                 ]);
             }
-
             if (isset($validated['payment_method']) && $validated['payment_method'] === 'pay_at_fitting_center') {
                 if ($workshop->status !== 'failed') {
                     $this->processOrder($validated, $workshop, $workshop->id);
@@ -664,7 +667,7 @@ class CheckoutController extends Controller
                         'customer_contact_number' => $validated['phone_number'] ?? $existingCustomer->customer_contact_number,
                         'customer_address' => $validated['address'] ?? $existingCustomer->customer_address,
                         'shipping_address_city' => $validated['city'] ?? $existingCustomer->shipping_address_city,
-                        'postcode' => $validated['postcode'] ?? $existingCustomer->shipping_address_postcode,
+                        'shipping_address_postcode' => $validated['postcode'] ?? $existingCustomer->shipping_address_postcode,
                         'shipping_address_county' => $validated['county'] ?? $existingCustomer->shipping_address_county,
                         'shipping_address_country' => $validated['country'] ?? $existingCustomer->shipping_address_country,
                         'company_name' => $validated['company_name'] ?? $existingCustomer->company_name,
