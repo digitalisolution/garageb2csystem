@@ -16,13 +16,13 @@ class PaymentAssistService
 
     public function __construct()
     {
-        $this->apiKey = config('services.paymentassist.api_key');
-        $this->secret = config('services.paymentassist.secret');
-        $testMode = config('services.paymentassist.test_mode', true);
+        $this->apiKey = get_option('paymentmethod_paymentassist_api_key') ?? null;
+        $this->secret = get_option('paymentmethod_paymentassist_Secret_key') ?? null;
+        $testMode = get_option('paymentmethod_paymentassist_test_mode_enabled') ?? null;
 
         $this->apiUrl = $testMode
-            ? rtrim(config('services.paymentassist.demo_url'), ' /')
-            : rtrim(config('services.paymentassist.live_url'), ' /');
+            ? rtrim('https://api.demo.payassi.st')
+            : rtrim('https://api.v1.payment-assist.co.uk');
     }
 
     /**

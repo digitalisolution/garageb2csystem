@@ -341,7 +341,7 @@
                                                 <div class="panel-heading" id="method-three">
                                                     <h4 class="panel-title">
                                                         <a data-bs-toggle="collapse" href="#method3">
-                                                            Pay at Card(BNPL) <i class="fa fa-credit-card pull-right"></i>
+                                                            Pay at Card({{ get_option('paymentmethod_paymentassist_label')  }}) <i class="fa fa-credit-card pull-right"></i>
                                                         </a>
                                                     </h4>
                                                 </div>

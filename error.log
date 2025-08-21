@@ -1,2 +1,15 @@
 [Thu Aug 21 00:00:04.707159 2025] [ssl:warn] [pid 2587707] AH01909: digitalideasltd.in:443:0 server certificate does NOT include an ID which matches the server name
 [Thu Aug 21 00:00:04.708980 2025] [ssl:warn] [pid 2587707] AH01909: digitalideasltd.co.uk:443:0 server certificate does NOT include an ID which matches the server name
+[Thu Aug 21 05:33:07.124589 2025] [ssl:warn] [pid 2587707] AH01909: digitalideasltd.in:443:0 server certificate does NOT include an ID which matches the server name
+[Thu Aug 21 05:33:07.126332 2025] [ssl:warn] [pid 2587707] AH01909: digitalideasltd.co.uk:443:0 server certificate does NOT include an ID which matches the server name
+[Thu Aug 21 05:33:11.480609 2025] [ssl:warn] [pid 2587707] AH01909: digitalideasltd.in:443:0 server certificate does NOT include an ID which matches the server name
+[Thu Aug 21 05:33:11.482215 2025] [ssl:warn] [pid 2587707] AH01909: digitalideasltd.co.uk:443:0 server certificate does NOT include an ID which matches the server name
+[Thu Aug 21 05:33:13.809462 2025] [ssl:warn] [pid 2587707] AH01909: digitalideasltd.in:443:0 server certificate does NOT include an ID which matches the server name
+[Thu Aug 21 05:33:13.811147 2025] [ssl:warn] [pid 2587707] AH01909: digitalideasltd.co.uk:443:0 server certificate does NOT include an ID which matches the server name
+[Thu Aug 21 05:33:18.154487 2025] [ssl:warn] [pid 2587707] AH01909: digitalideasltd.in:443:0 server certificate does NOT include an ID which matches the server name
+[Thu Aug 21 05:33:18.156133 2025] [ssl:warn] [pid 2587707] AH01909: digitalideasltd.co.uk:443:0 server certificate does NOT include an ID which matches the server name
+[Thu Aug 21 05:33:19.906250 2025] [ssl:warn] [pid 2587707] AH01909: digitalideasltd.in:443:0 server certificate does NOT include an ID which matches the server name
+[Thu Aug 21 05:33:19.907909 2025] [ssl:warn] [pid 2587707] AH01909: digitalideasltd.co.uk:443:0 server certificate does NOT include an ID which matches the server name
+[Thu Aug 21 05:33:24.256752 2025] [ssl:warn] [pid 2587707] AH01909: digitalideasltd.in:443:0 server certificate does NOT include an ID which matches the server name
+[Thu Aug 21 05:33:24.258387 2025] [ssl:warn] [pid 2587707] AH01909: digitalideasltd.co.uk:443:0 server certificate does NOT include an ID which matches the server name
+[Thu Aug 21 05:48:25.025096 2025] [autoindex:error] [pid 2981241] [client 172.71.178.40:23860] AH01276: Cannot serve directory /var/www/demositegarage/public/uploads/: No matching DirectoryIndex (index.html,index.cgi,index.pl,index.php,index.xhtml,index.htm) found, and server-generated directory index forbidden by Options directive, referer: binance.com
