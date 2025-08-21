@@ -336,6 +336,27 @@
                                                 </div>
                                             </div>
                                         @endif
+                                         @if(get_option('paymentmethod_paymentassist_active') == '1')
+                                            <div class="panel payment-accordion">
+                                                <div class="panel-heading" id="method-three">
+                                                    <h4 class="panel-title">
+                                                        <a data-bs-toggle="collapse" href="#method3">
+                                                            Pay at Card(BNPL) <i class="fa fa-credit-card pull-right"></i>
+                                                        </a>
+                                                    </h4>
+                                                </div>
+                                                <div id="method3" class="panel-collapse collapse show" data-bs-parent="#accordion">
+                                                    <div class="panel-body">
+                                                        <div class="payment-mode">
+                                                            <label>
+                                                                <input type="radio" name="payment_method" value="paymentassist" required checked>
+                                                                Credit/Debit Card
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endif
 
                                     </div>
                                 </div>

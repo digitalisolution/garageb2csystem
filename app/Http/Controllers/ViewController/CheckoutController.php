@@ -29,6 +29,7 @@ use App\Models\VehicleDetail;
 use App\Models\Countries;
 use Illuminate\Support\Facades\Session;
 use App\Services\DojoService;
+use App\Services\PaymentAssistService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Controller;
@@ -42,6 +43,7 @@ class CheckoutController extends Controller
 
 
     protected $dojoService;
+    protected $paymentAssistService;
     protected $emailValidationService;
     protected $apiOrderingService;
     protected $updateOrderQtyService;
@@ -50,13 +52,20 @@ class CheckoutController extends Controller
      * Constructor to inject dependencies.
      *
      * @param DojoService $dojoService
+     * @param PaymentAssistService $paymentAssistService
      * @param EmailValidationService $emailValidationService
      * @param ApiOrderingService $apiOrderingService
      * @param UpdateOrderQtyService $updateOrderQtyService
      */
-    public function __construct(DojoService $dojoService, EmailValidationService $emailValidationService, ApiOrderingService $apiOrderingService, UpdateOrderQtyService $updateOrderQtyService)
+    public function __construct(
+        DojoService $dojoService,
+        PaymentAssistService $paymentAssistService,
+        EmailValidationService $emailValidationService,
+        ApiOrderingService $apiOrderingService,
+        UpdateOrderQtyService $updateOrderQtyService)
     {
         $this->dojoService = $dojoService;
+        $this->paymentAssistService = $paymentAssistService;
         $this->emailValidationService = $emailValidationService;
         $this->apiOrderingService = $apiOrderingService;
         $this->updateOrderQtyService = $updateOrderQtyService;
@@ -487,6 +496,12 @@ class CheckoutController extends Controller
 
             if ($validated['payment_method'] && $validated['payment_method'] === 'dojo') {
                 return $this->dojoService->processPaymentWebsite([
+                    'workshop_id' => $workshop->id,
+                    'total' => $workshop->grandTotal,
+                ]);
+            }
+            if ($validated['payment_method'] && $validated['payment_method'] === 'paymentassist') {
+                return $this->paymentAssistService->processPaymentWebsite([
                     'workshop_id' => $workshop->id,
                     'total' => $workshop->grandTotal,
                 ]);

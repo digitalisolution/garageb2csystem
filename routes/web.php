@@ -15,6 +15,7 @@ use App\Http\Controllers\WorkshopController;
 use App\Http\Controllers\EstimateController;
 use App\Http\Controllers\CalendarSettingController;
 use App\Http\Controllers\Gateways\DojoController;
+use App\Http\Controllers\Gateways\PaymentAssistController;
 use App\Http\Controllers\ClickTrackingController;
 use App\Http\Controllers\HeaderMenuController;
 use App\Http\Controllers\PluginController;
@@ -115,6 +116,11 @@ Route::post('/calendar/book', [CalendarController::class, 'book']);
 
 Route::get('/dojo/make-payment', [DojoController::class, 'makePaymentWebsite'])->name('dojo.make-payment');
 Route::get('/dojo/callback', [DojoController::class, 'callback'])->name('dojo.callback');
+Route::post('/payment-assist/create', [PaymentAssistController::class, 'create'])->name('paymentassist.create');
+Route::post('/payment-assist/callback', [PaymentAssistController::class, 'callback'])->name('paymentassist.callback');
+Route::get('/payment-assist/{id}', [PaymentAssistController::class, 'show'])->name('paymentassist.show');
+
+
 
 //appointment
 // Route::get('/appointment', [AppointmentController::class, 'create'])->name('appointment.create');
