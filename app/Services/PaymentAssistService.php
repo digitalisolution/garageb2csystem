@@ -9,6 +9,8 @@ use App\Models\PaymentRecord;
 use App\Models\PaymentHistory;
 use App\Models\CustomerDebitLog;
 use Illuminate\Support\Facades\Session;
+use App\Services\ApiOrderingService;
+use App\Services\UpdateOrderQtyService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
@@ -22,14 +24,17 @@ class PaymentAssistService
     private string $apiUrl;
     private string $userAgent = 'Payment Assist Laravel Client';
     private string $version = 'v1.0.0';
+    protected $apiOrderingService;
+    protected $updateOrderQtyService;
 
-    public function __construct()
+    public function __construct(ApiOrderingService $apiOrderingService,UpdateOrderQtyService $updateOrderQtyService)
     {
         $this->apiKey = get_option('paymentmethod_paymentassist_api_key') ?? null;
         $this->secret = get_option('paymentmethod_paymentassist_Secret_key') ?? null;
         $testMode = get_option('paymentmethod_paymentassist_test_mode_enabled') ?? null;
-
         $this->apiUrl = $testMode ? rtrim('https://api.demo.payassi.st') : rtrim('https://api.demo.payassi.st');
+        $this->apiOrderingService = $apiOrderingService;
+        $this->updateOrderQtyService = $updateOrderQtyService;
     }
 
     /**
@@ -71,8 +76,8 @@ class PaymentAssistService
 
         try {
             $response = Http::withOptions([
-                'verify' => false, // Consider enabling SSL verification in production
-            ])->withUserAgent($this->userAgent . ' ' . $this->version)->{$method}($url, $params);
+                        'verify' => false,
+                    ])->withUserAgent($this->userAgent . ' ' . $this->version)->{$method}($url, $params);
 
             // Log the request and response for debugging
             Log::debug("PaymentAssist Request: {$method} {$url}", ['params' => $params]);
@@ -82,11 +87,11 @@ class PaymentAssistService
                 return $response->json();
             } else {
                 Log::error("PaymentAssist API Error: Status {$response->status()}", ['body' => $response->body()]);
-                return null; // Or throw an exception based on your error handling strategy
+                return null;
             }
         } catch (\Exception $e) {
             Log::error("PaymentAssist Request Exception: " . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
-            return null; // Or throw an exception
+            return null;
         }
     }
 
@@ -117,7 +122,7 @@ class PaymentAssistService
     public function beginPayment(array $paymentData): ?array
     {
         // Amount should be in pence/cents
-        $amountInPence = bcmul((string)($paymentData['amount'] ?? 0), '100', 0); // Use bcmath for precision
+        $amountInPence = bcmul((string) ($paymentData['amount'] ?? 0), '100', 0); // Use bcmath for precision
 
         $params = [
             'order_id' => $paymentData['order_id'] ?? Str::uuid(), // Generate a unique ID if not provided
@@ -154,12 +159,12 @@ class PaymentAssistService
     /**
      * Record the payment in the system after PaymentAssist callback
      *
-     * @param array $data ['workshopid', 'transactionid', 'status']
+     * @param array $data ['workshop_id', 'transactionid', 'status']
      * @return array ['payment_record_id' => int, 'payment_status' => 'success|failed']
      */
     public function addPaymentWebsite(array $data): array
     {
-        $workshopId = $data['workshopid'] ?? null;
+        $workshopId = $data['workshop_id'] ?? null;
         $transactionId = $data['transactionid'] ?? null;
         $status = $data['status'] ?? null;
 
@@ -177,56 +182,47 @@ class PaymentAssistService
         // Only process if payment completed
         if ($status === 'completed') {
             try {
-                // 1. Record Payment
                 $paymentRecord = PaymentRecord::create([
-                    'workshop_id'     => $workshopId,
-                    'amount'          => $workshop->grandTotal ?? 0,
-                    'payment_method'  => 'paymentassist',
-                    'transaction_id'  => $transactionId,
-                    'status'          => 'completed',
-                    'date'            => Carbon::now()->format('Y-m-d'),
-                    'daterecorded'    => Carbon::now()->format('Y-m-d H:i:s'),
+                    'workshop_id' => $workshopId,
+                    'amount' => $workshop->grandTotal ?? 0,
+                    'paymentmode' => 'paymentassist',
+                    'transactionid' => $transactionId,
+                    'note' => 'completed',
+                    'date' => Carbon::now()->format('Y-m-d'),
+                    'daterecorded' => Carbon::now()->format('Y-m-d H:i:s'),
                 ]);
-
-                // 2. Update Workshop
                 $workshop->update([
                     'payment_status' => 1,
-                    'paid_price'     => ($workshop->paid_price ?? 0) + ($workshop->grandTotal ?? 0),
-                    'balance_price'  => 0,
-                    'status'         => 'booked', // or 'completed' if appropriate
+                    'paid_price' => ($workshop->paid_price ?? 0) + ($workshop->grandTotal ?? 0),
+                    'balance_price' => 0,
+                    'status' => 'booked',
                 ]);
 
-                // 3. Record PaymentHistory
                 $paymentHistory = PaymentHistory::create([
-                    'job_id'        => $workshopId,
-                    'payment_date'  => Carbon::now()->format('Y-m-d'),
-                    'payment_amount'=> $workshop->grandTotal ?? 0,
+                    'job_id' => $workshopId,
+                    'payment_date' => Carbon::now()->format('Y-m-d'),
+                    'payment_amount' => $workshop->grandTotal ?? 0,
                 ]);
 
-                // 4. Record CustomerDebitLog
                 CustomerDebitLog::create([
-                    'customer_id'         => $workshop->customer_id,
-                    'workshop_id'         => $workshopId,
-                    'payment_history_id'  => $paymentHistory->id ?? null,
-                    'created_at'          => Carbon::now()->format('Y-m-d H:i:s'),
-                    'debit_amount'        => $workshop->grandTotal ?? 0,
-                    'is_debit'            => 1,
-                    'comments'            => 'Online Payment via PaymentAssist',
-                    'payment_type'        => 2, // 2 = online payment
+                    'customer_id' => $workshop->customer_id,
+                    'workshop_id' => $workshopId,
+                    'payment_history_id' => $paymentHistory->id ?? null,
+                    'created_at' => Carbon::now()->format('Y-m-d H:i:s'),
+                    'debit_amount' => $workshop->grandTotal ?? 0,
+                    'is_debit' => 1,
+                    'comments' => 'Online Payment via PaymentAssist',
+                    'payment_type' => 2,
                 ]);
 
-                // 5. Send emails
-                $this->sendOrderConfirmationEmail($workshop);
+                $this->apiOrderingService->processApiOrder($workshopId);
+                $this->updateOrderQtyService->updateStockQty($workshopId);
 
-                // 6. Clear session (except login_customer)
-                foreach (Session::all() as $key => $value) {
-                    if (str_starts_with($key, 'login_customer_')) continue;
-                    Session::forget($key);
-                }
+                $this->sendOrderConfirmationEmail($workshop);
 
                 return [
                     'payment_record_id' => $paymentRecord->id,
-                    'payment_status'    => 'success',
+                    'payment_status' => 'success',
                 ];
             } catch (\Exception $e) {
                 Log::error("PaymentAssist: Failed to save payment for Workshop ID {$workshopId}", [
@@ -237,7 +233,6 @@ class PaymentAssistService
             }
         }
 
-        // Payment not completed
         Log::info("PaymentAssist: Payment not completed for Workshop ID {$workshopId}", $data);
         return ['payment_record_id' => 0, 'payment_status' => 'failed'];
     }
@@ -248,23 +243,37 @@ class PaymentAssistService
     protected function sendOrderConfirmationEmail(Workshop $workshop)
     {
         try {
-            $customerEmail = $workshop->customer->email ?? $workshop->email ?? null;
+            // Customer details
+            $customer = [
+                'customer_name' => $workshop->name,
+                'email' => $workshop->email,
+            ];
+
+            // Retrieve garage details
             $garage = \App\Models\GarageDetails::first();
+            $garageEmail = $garage->email;
+            $garageName = $garage ? $garage->garage_name : config('mail.from.name');
 
-            if ($customerEmail) {
-                Mail::to($customerEmail)->send(new SendMailToCustomer($workshop->id, ['customer_name' => $workshop->name], $garage));
-            }
+            // Email subject based on payment status
+            $subject = $workshop->payment_status === 1 ? "Order Confirmation - Payment Successful" : "Order Confirmation - Payment Failed";
 
+            // Send email to the customer
+            Mail::to($customer['email'])->send(new SendMailToCustomer($workshop->id, $customer, $garage));
+
+            // Send email to the owner
             $ownerEmail = 'info@digitalideasltd.co.uk';
-            Mail::to($ownerEmail)->send(new OrderToGarage($workshop->id, ['customer_name' => $workshop->name], $garage));
+            Mail::to($ownerEmail)->send(new OrderToGarage($workshop->id, $customer, $garage));
 
-            if ($garage && $garage->email) {
-                Mail::to($garage->email)->send(new OrderToGarage($workshop->id, ['customer_name' => $workshop->name], $garage));
+            // Send email to the garage
+            if ($garageEmail) {
+                Mail::to($garageEmail)->send(new OrderToGarage($workshop->id, $customer, $garage));
+            } else {
+                Log::warning('Garage email not found.', ['email' => $garageEmail]);
             }
         } catch (\Exception $e) {
-            Log::error("PaymentAssist: Error sending confirmation emails", [
-                'exception' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+            Log::error('Error during email submission.', [
+                'error_message' => $e->getMessage(),
+                'error_trace' => $e->getTraceAsString(),
             ]);
         }
     }

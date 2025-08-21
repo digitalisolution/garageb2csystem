@@ -182,7 +182,7 @@ class DojoService
     
             // Retrieve garage details
             $garage = \App\Models\GarageDetails::first();
-            $garageEmail = $this->getGarageEmail();
+            $garageEmail = $garage->email;
             $garageName = $garage ? $garage->garage_name : config('mail.from.name');
     
             // Email subject based on payment status
@@ -208,23 +208,5 @@ class DojoService
             ]);
         }
     }
-    private function getGarageEmail()
-    {
-        try {
-            $garage = \App\Models\GarageDetails::first();
-            if ($garage) {
-                // Log::info('Garage fetched in getGarageEmail:', ['garage' => $garage->toArray()]);
-            } else {
-                // Log::warning('No garage found in getGarageEmail.');
-            }
 
-            return $garage ? $garage->email : null;
-        } catch (\Exception $e) {
-            Log::error('Error in getGarageEmail:', [
-                'error_message' => $e->getMessage(),
-                'error_trace' => $e->getTraceAsString(),
-            ]);
-            return null;
-        }
-    }
 }

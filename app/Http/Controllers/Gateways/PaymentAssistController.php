@@ -218,7 +218,7 @@ class PaymentAssistController extends Controller
     $paRef         = $statusResponse['data']['pa_ref'] ?? null;
 
     $data = [
-        'workshopid'    => $workshopId,
+        'workshop_id'    => $workshopId,
         'transactionid' => $paRef,
         'status'        => $paymentStatus,
     ];
