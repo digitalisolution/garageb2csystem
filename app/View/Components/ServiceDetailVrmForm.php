@@ -4,7 +4,7 @@ namespace App\View\Components;
 
 use Illuminate\View\Component;
 
-class ServiceVrmForm extends ViewComponent
+class ServiceDetailVrmForm extends ViewComponent
 {
     /**
      * Create a new component instance.

@@ -104,7 +104,7 @@ class DojoService
                     'payment_history_id' => $paymentHistory->id ?? null,
                     'created_at' => Carbon::now('Europe/London')->format('Y-m-d H:i:s'),
                     'debit_amount' => $workshop->grandTotal,
-                    'is_debit' => 1, // 0 = Credit, 1 = Debit
+                    'is_debit' => 1,
                     'comments' => 'Online Payment via Dojo',
                     'payment_type' => 2,
                 ]);

@@ -64,9 +64,7 @@ class CustomerAuthController extends Controller
         $validatedData['remember_token'] = Str::random(60);
         // Add customer IP
         $ipAddress = $this->getClientIp($request);
-        $validatedData['ip_address'] = $ipAddress ?? 'Unknown';
-
-        //$emailData['ip_address'] = $ipAddress ?? 'Unknown';
+        $validatedData['ip_address'] = $ipAddress;
 
         // Create customer and log them in
         $customer = Customer::create($validatedData);
@@ -206,36 +204,40 @@ class CustomerAuthController extends Controller
     }
 
     protected function getClientIp(Request $request)
-{
-    $headers = [
-        'CF-Connecting-IP',    // Cloudflare
-        'X-Forwarded-For',     // Proxies/load balancers
-        'X-Real-IP',           // Nginx
-    ];
+    {
+        // 1. Check Cloudflare header
+        if ($request->headers->has('CF-Connecting-IP')) {
+            $ip = trim($request->headers->get('CF-Connecting-IP'));
+            if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                return $ip;
+            }
+        }
 
-    foreach ($headers as $header) {
-        if ($request->headers->has($header)) {
-            $ips = explode(',', $request->headers->get($header));
-
+        // 2. Check X-Forwarded-For header (may have multiple IPs)
+        if ($request->headers->has('X-Forwarded-For')) {
+            $ips = explode(',', $request->headers->get('X-Forwarded-For'));
             foreach ($ips as $ip) {
                 $ip = trim($ip);
-                if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
-                    return $ip; // ✅ return first valid IPv4
+                if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                    return $ip; // first valid IP (IPv4 or IPv6)
                 }
             }
         }
+
+        // 3. Default Laravel detection
+
+        $ip = $request->ip();
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+            return $ip;
+        } elseif (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+            // Check if IPv4-mapped IPv6 (::ffff:...)
+            if (strpos($ip, '::ffff:') === 0) {
+                return substr($ip, 7);
+            }
+            return $ip; // IPv6 fallback
+        }
+
     }
-
-    // Fallback: check Laravel’s request->ip()
-    $ip = $request->ip();
-    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
-        return $ip;
-    }
-
-    return null; // no IPv4 found
-}
-
-
 
 
 }

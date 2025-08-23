@@ -20,7 +20,7 @@ class SitemapController extends Controller
         $tyreBrandList = tyre_brands::whereIn('brand_id', TyresProduct::distinct()->pluck('tyre_brand_id'))->select('brand_id', 'name', 'slug')->get();
         //dd($tyreBrandList);
 
-        $servicesList = \DB::table('car_services')->where('status', 1)->get();
+        $servicesList = \DB::table('car_services')->where('status', 1)->where('exclude_sitemap', 0)->get();
         //echo "<pre>"; print_r($tyreBrandOptions);
         $data = [
             'title' => 'sitemap',

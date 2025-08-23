@@ -11,7 +11,7 @@ class ServiceController extends Controller
     public function index()
     {
         try {
-            $services = CarService::orderBy('sort_order', 'asc')->get();
+            $services = CarService::orderBy('service_id', 'asc')->get();
             return view('AutoCare.services.index', compact('services'));
         } catch (\Throwable $e) {
             \Log::error("Error creating service: " . $e->getMessage());

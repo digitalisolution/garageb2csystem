@@ -4,7 +4,7 @@ namespace App\View\Components;
 
 use Illuminate\View\Component;
 
-class serviceVrmModal extends ViewComponent
+class ServiceVrmModal extends ViewComponent
 {
     /**
      * Create a new component instance.

@@ -1,5 +1,7 @@
 <?php
-// app/Http/Controllers/OTPController.php
+
+namespace App\Http\Controllers;
+
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Support\Carbon;
