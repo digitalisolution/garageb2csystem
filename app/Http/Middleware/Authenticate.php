@@ -21,10 +21,11 @@ class Authenticate extends Middleware
     
             if ($guard === 'auth:customer') {
                 return route('customer.login');
+            }elseif ($guard === 'auth:garage') {
+                return route('garage.login');
             } elseif ($guard === 'auth:web') {
                 return route('webmaster.login');
             }
-    
             return route('customer.login');
         }
     }

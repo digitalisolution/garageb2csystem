@@ -57,4 +57,18 @@ return [
         ],
     ],
 
+//     'revolut' => [
+//     'base_url' => env('REVOLUT_BASE_URL'),
+//     'secret' => env('REVOLUT_SECRET'),
+//     'webhook_secret' => env('REVOLUT_WEBHOOK_SECRET'),
+// ],
+// 'revolut_business' => [
+//     'client_id' => env('REVOLUT_BUSINESS_CLIENT_ID'),
+//     'private_key_path' => env('REVOLUT_BUSINESS_PRIVATE_KEY_PATH'),
+//     'redirect_uri' => env('REVOLUT_BUSINESS_REDIRECT_URI'),
+//     'base_url' => env('REVOLUT_BUSINESS_BASE_URL'),
+//     'sandbox' => env('REVOLUT_BUSINESS_SANDBOX', true),
+// ],
+
+
 ];

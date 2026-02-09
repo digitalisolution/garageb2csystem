@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
+use App\Models\Garage;
 use App\Models\WorkshopTyre;
 use App\Models\CustomerDebitLog;
 use App\Models\Invoice;
+use App\Models\HeaderLink;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Response;
@@ -17,16 +19,19 @@ class ReportsController extends Controller
     // Show the Reports Dashboard
     public function manage()
     {
-        return view('AutoCare.reports.customerReports');
+        $viewData['header_link'] = HeaderLink::where("menu_id", '16')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+        $viewData['garages'] = Garage::orderBy('garage_name')->get();
+        return view('AutoCare.reports.customerReports', $viewData);
     }
 
     // Fetch Reports Based on Filters
     public function fetchReports(Request $request)
     {
-        $reportType = $request->input('report_type'); // e.g., 'customer', 'invoice', 'tyre', 'payment'
-        $timeDuration = $request->input('time_duration'); // e.g., 'today', 'week', 'month', 'year'
-        $startDate = $request->input('start_date'); // Custom start date (optional)
-        $endDate = $request->input('end_date'); // Custom end date (optional)
+        $reportType = $request->input('report_type');
+        $timeDuration = $request->input('time_duration');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $garageId = $request->input('garage_id');
 
         // Calculate date range
         try {
@@ -37,17 +42,23 @@ class ReportsController extends Controller
 
         try {
             switch ($reportType) {
+                case 'garage':
+                    $data = $this->getGarageReports($dateRange, $garageId);
+                    break;
                 case 'customer':
-                    $data = $this->getCustomerReports($dateRange);
+                    $data = $this->getCustomerReports($dateRange, $garageId);
                     break;
                 case 'invoice':
-                    $data = $this->getInvoiceReports($dateRange);
+                    $data = $this->getInvoiceReports($dateRange, $garageId);
                     break;
                 case 'tyre':
-                    $data = $this->getTyreReports($dateRange);
+                    $data = $this->getTyreReports($dateRange, $garageId);
+                    break;
+                case 'apc':
+                    $data = $this->getApcReports($dateRange, $garageId);
                     break;
                 case 'payment':
-                    $data = $this->getPaymentReports($dateRange);
+                    $data = $this->getPaymentReports($dateRange, $garageId);
                     break;
                 default:
                     return response()->json(['success' => false, 'message' => 'Invalid report type']);
@@ -88,20 +99,28 @@ class ReportsController extends Controller
 
 
     // Customer Reports
-    private function getCustomerReports($dateRange)
+    private function getCustomerReports($dateRange, $garageId = null)
     {
         return Customer::whereBetween('customers.created_at', $dateRange)
-            ->leftJoin('invoices', function ($join) use ($dateRange) {
+            ->leftJoin('invoices', function ($join) use ($dateRange, $garageId) {
                 $join->on('customers.id', '=', 'invoices.customer_id')
                     ->whereBetween('invoices.created_at', $dateRange)
                     ->where('invoices.is_void', 0);
+
+                if ($garageId) {
+                    $join->where('invoices.garage_id', $garageId);
+                }
             })
+
             ->select(
-                'customers.id as customer_id',
-                'customers.customer_name',
-                'customers.customer_email',
-                DB::raw("DATE(customers.created_at) as created_date"),
-                DB::raw('COUNT(invoices.id) as total_invoices'),
+                //'customers.id as customer_id',
+                //'customers.customer_name',
+                //'customers.customer_email',
+                DB::raw("COALESCE(customers.id) as `customer id`"),
+                DB::raw("COALESCE(customers.customer_name) as `customer name`"),
+                DB::raw("COALESCE(customers.customer_email) as `customer email`"),
+                DB::raw("DATE(customers.created_at) as `created date`"),
+                DB::raw('COUNT(invoices.id) as `total invoices`'),
                 DB::raw('ROUND(COALESCE(SUM(invoices.grandTotal), 0), 2) as total_invoice_amt'),
                 DB::raw('ROUND(COALESCE(SUM(invoices.balance_price), 0), 2) as total_due_amt')
             )
@@ -109,8 +128,36 @@ class ReportsController extends Controller
             ->get();
     }
 
+    private function getGarageReports($dateRange, $garageId = null)
+    {
+        $query = Garage::leftJoin('invoices', function ($join) use ($dateRange) {
+            $join->on('garages.id', '=', 'invoices.garage_id')
+                ->whereBetween('invoices.created_at', $dateRange)
+                ->where('invoices.is_void', 0);
+        })
+            ->select(
+                //'garages.id as garage_id',
+                //'garages.garage_name',
+                //'garages.garage_email',
+                DB::raw("COALESCE(garages.id) as `garage id`"),
+                DB::raw("COALESCE(garages.garage_name) as `garage name`"),
+                DB::raw("COALESCE(garages.garage_email) as `garage email`"),
+                DB::raw("DATE(garages.created_at) as `created date`"),
+                DB::raw('COUNT(invoices.id) as `total invoices`'),
+                DB::raw('ROUND(COALESCE(SUM(invoices.grandTotal), 0), 2) as `total invoice amt`'),
+                DB::raw('ROUND(COALESCE(SUM(invoices.balance_price), 0), 2) as `total due amt`')
+            )
+            ->groupBy('garages.id', 'garages.garage_name', 'garages.garage_email', 'garages.created_at');
+
+        if ($garageId) {
+            $query->where('garages.id', $garageId); 
+        }
+
+        return $query->get();
+    }
+
     // Invoice Reports
-    private function getInvoiceReports($dateRange)
+    private function getInvoiceReports($dateRange, $garageId = null)
     {
         return Invoice::select(
             'invoices.workshop_id as id',
@@ -140,12 +187,15 @@ class ReportsController extends Controller
             'invoices.due_out',
         )
             ->leftJoin('workshops as w', 'invoices.workshop_id', '=', 'w.id')
-            ->leftJoin('customer_debit_logs as cdl', function ($join) {
+            ->leftJoin('customer_debit_logs as cdl', function ($join) use ($dateRange) {
                 $join->on('cdl.workshop_id', '=', 'w.id')
-                    ->where('w.is_converted_to_invoice', 1);
+                    ->whereBetween('cdl.payment_date', $dateRange);
             })
             ->whereBetween('invoices.created_at', $dateRange)
             ->where('invoices.is_void', 0)
+            ->when($garageId, function ($q) use ($garageId) {
+                $q->where('invoices.garage_id', $garageId);
+            })
             ->groupBy(
                 'invoices.workshop_id',
                 'invoices.name',
@@ -162,13 +212,14 @@ class ReportsController extends Controller
             ->get();
     }
 
-
-
     // Tyre Reports
-    private function getTyreReports($dateRange)
+    private function getTyreReports($dateRange, $garageId = null)
     {
         return WorkshopTyre::whereBetween('workshop_tyres.created_at', $dateRange)
             ->where('workshop_tyres.ref_type', 'workshop')
+            ->when($garageId, function ($q) use ($garageId) {
+                $q->where('workshops.garage_id', $garageId);
+            })
             ->join('workshops', function ($join) {
                 $join->on('workshop_tyres.workshop_id', '=', 'workshops.id')
                     ->where('workshops.is_converted_to_invoice', 1)
@@ -176,28 +227,98 @@ class ReportsController extends Controller
             })
             ->join('customers', 'workshops.customer_id', '=', 'customers.id')
             ->select(
-                'customers.id as customer_id',
-                'customers.customer_name',
-                'workshop_tyres.workshop_id as invoice_id',
-                DB::raw("DATE(workshop_tyres.created_at) as created_date"),
+                // 'customers.id as cst_id',
+                'customers.customer_name as Cst.Name',
+                'workshop_tyres.workshop_id as inv_id',
+                'workshop_tyres.product_ean as ean',
+                'workshop_tyres.supplier as supplier',
+                DB::raw("COALESCE(workshop_tyres.fitting_type) as `order type`"),
+                DB::raw("DATE(workshop_tyres.created_at) as `created date`"),
                 'workshop_tyres.description',
                 DB::raw('ROUND(COALESCE(workshop_tyres.cost_price , 0), 2) as cost_price'),
                 DB::raw('ROUND(COALESCE(workshop_tyres.margin_rate , 0), 2) as unit_price'),
                 DB::raw('ROUND(COALESCE(workshop_tyres.price , 0), 2) as total_amt'),
-                DB::raw('SUM(workshop_tyres.quantity) as total_quantity')
+                DB::raw('SUM(workshop_tyres.quantity) as total_qty')
             )
-            ->groupBy('customers.id', 'customers.customer_name', 'workshop_tyres.workshop_id', 'workshop_tyres.description', 'workshop_tyres.cost_price', 'workshop_tyres.margin_rate', 'workshop_tyres.price', 'workshop_tyres.created_at') // Group by customer and tyre size
+            ->groupBy('customers.id', 'customers.customer_name', 'workshop_tyres.workshop_id', 'workshop_tyres.product_ean', 'workshop_tyres.supplier', 'workshop_tyres.description', 'workshop_tyres.fitting_type', 'workshop_tyres.cost_price', 'workshop_tyres.margin_rate', 'workshop_tyres.price', 'workshop_tyres.created_at') // Group by customer and tyre size
             ->get();
 
     }
 
-    private function getPaymentReports($dateRange)
+    private function getApcReports($dateRange, $garageId = null)
+    {
+        return WorkshopTyre::whereBetween('workshop_tyres.created_at', $dateRange)
+            ->where('workshop_tyres.ref_type', 'workshop')
+            ->where('workshop_tyres.fitting_type', 'mailorder')
+            ->when($garageId, function ($q) use ($garageId) {
+                $q->where('workshops.garage_id', $garageId);
+            })
+            ->join('workshops', function ($join) {
+                $join->on('workshop_tyres.workshop_id', '=', 'workshops.id')
+                    ->where('workshops.is_void', 0);
+            })
+            ->join('customers', 'workshops.customer_id', '=', 'customers.id')
+            ->select(
+                DB::raw("CONCAT(workshop_tyres.workshop_id) as `order no.`"),
+                DB::raw("DATE(workshop_tyres.created_at) as `created date`"),
+                DB::raw("COALESCE(workshops.name, '') as `first name`"),
+                DB::raw("COALESCE(workshops.last_name, '') as `last name`"),
+                'workshops.mobile as phone',
+                'workshops.email as email',
+                DB::raw("COALESCE(workshops.address) as address"),
+                DB::raw("COALESCE(workshops.city) as `Town / City`"),
+                DB::raw("COALESCE(workshops.county) as county"),
+                DB::raw("COALESCE(workshops.zone) as postcode"),
+                DB::raw("COALESCE(workshops.country) as country"),
+                'workshop_tyres.product_ean as ean',
+                'workshop_tyres.product_sku as sku',
+                'workshop_tyres.description',
+                DB::raw("COALESCE(workshop_tyres.tyre_weight, '10') as weight"),
+                DB::raw("COALESCE(workshop_tyres.fitting_type) as `order type`"),
+                'workshop_tyres.shipping_postcode as postcode',
+                DB::raw('SUM(workshop_tyres.quantity) as quantity'),
+                DB::raw("COALESCE(workshops.notes, '') as notes"),
+            )
+
+            ->groupBy(
+                'customers.id',
+                'workshops.workshop_origin',
+                'workshops.vehicle_reg_number',
+                'workshops.payment_method',
+                'workshops.notes',
+                'workshops.name',
+                'workshops.last_name',
+                'workshops.mobile',
+                'workshops.email',
+                'workshops.address',
+                'workshops.city',
+                'workshops.zone',
+                'workshops.county',
+                'workshops.country',
+                'workshop_tyres.workshop_id',
+                'workshop_tyres.product_ean',
+                'workshop_tyres.product_sku',
+                'workshop_tyres.supplier',
+                'workshop_tyres.description',
+                'workshop_tyres.fitting_type',
+                'workshop_tyres.cost_price',
+                'workshop_tyres.margin_rate',
+                'workshop_tyres.price',
+                'workshop_tyres.created_at'
+            )
+            ->get();
+    }
+
+    private function getPaymentReports($dateRange, $garageId = null)
     {
         return CustomerDebitLog::whereBetween('customer_debit_logs.payment_date', $dateRange)
             ->join('invoices', 'customer_debit_logs.workshop_id', '=', 'invoices.workshop_id')
             ->leftJoin('customers', 'customer_debit_logs.customer_id', '=', 'customers.id')
             // ->leftJoin('users', 'customer_debit_logs.user_id', '=', 'users.id')
             ->where('invoices.is_void', 0)
+            ->when($garageId, function ($q) use ($garageId) {
+                $q->where('invoices.garage_id', $garageId);
+            })
             ->select(
                 'customer_debit_logs.workshop_id as invoice_id',
                 DB::raw("COALESCE(customers.customer_name, '-') as customer_name"),

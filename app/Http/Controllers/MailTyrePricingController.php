@@ -5,18 +5,19 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\ShippingCharges;
 use App\Models\GarageDetails;
+use App\Models\HeaderLink;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
 
 
 class MailTyrePricingController extends Controller
 {
-    // Display all mail_order_pricing settings
     public function index()
     {
-        $settings = ShippingCharges::all();
+        $viewData['header_link'] = HeaderLink::where("menu_id", '12')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+        $viewData['settings'] = ShippingCharges::all();
         // dd($settings);
-        return view('AutoCare.mail_order_pricing.index', compact('settings'));
+        return view('AutoCare.mail_order_pricing.index', $viewData);
     }
 
     // Show the form for creating a new mail_order_pricing setting
@@ -51,7 +52,7 @@ class MailTyrePricingController extends Controller
         $milesData = [];
         if ($request->has('miles')) {
             foreach ($request->input('miles') as $mile) {
-                if (!empty($mile['valueq']) || !empty($mile['valuep'])) { // Ensure the row is not empty
+                if (!empty($mile['valueq']) || !empty($mile['valuep'])) {
                     $milesData[] = [
                         'valueq' => $mile['valueq'] ?? null,
                         'valuep' => $mile['valuep'] ?? null,
@@ -85,7 +86,7 @@ class MailTyrePricingController extends Controller
         $postcodesData = [];
         if ($request->has('postcodes')) {
             foreach ($request->input('postcodes') as $postcode) {
-                if (!empty($postcode['post_code']) || !empty($postcode['price'])) { // Ensure the row is not empty
+                if (!empty($postcode['post_code']) || !empty($postcode['price'])) {
                     $postcodesData[] = [
                         'post_code' => $postcode['post_code'] ?? null,
                         'price' => $postcode['price'] ?? null,
@@ -133,7 +134,6 @@ class MailTyrePricingController extends Controller
     public function editMailShippingCharges()
     {
 
-        // Retrieve records from the database
         $shippingbyproduct = ShippingCharges::where('code', 'shippingbyproduct')
             ->where('key', 'shippingbyproduct')->where('order_type', 'mailorder')
             ->first();
@@ -154,62 +154,48 @@ class MailTyrePricingController extends Controller
         $shippingbyproduct_tax = $shippingbyproduct_taxrate
             ? (string) $shippingbyproduct_taxrate->value
             : '';
-        // dd($shippingbyproduct_tax);
-        // Determine the selected shipping charge type
         $selectedChargeType = ($shippingbyproductStatus && $shippingbyproductStatus->value == '1') ? '1' : '2';
 
+        $viewData['header_link'] = HeaderLink::where("menu_id", '12')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
 
-        return view('AutoCare.mail_order_pricing.manage', compact('milesData', 'postcodeData', 'selectedChargeType', 'shippingbyproduct_tax'));
+        return view('AutoCare.mail_order_pricing.manage',array_merge($viewData, compact('milesData', 'postcodeData', 'selectedChargeType', 'shippingbyproduct_tax')));
     }
     public function calculateMailShipping(Request $request)
     {
-        // Validate the incoming request
         $request->validate([
             'postcode' => 'required|string|max:8',
         ]);
 
-        $postcode = strtoupper($request->input('postcode')); // Convert input postcode to uppercase
-        $postcodePrefix = substr($postcode, 0, 3); // Extract the first 3 characters of the postcode
-
-        // Fetch shipping charges from the database
+        $postcode = strtoupper($request->input('postcode'));
+        $postcodePrefix = substr($postcode, 0, 3);
         $shippingCharges = ShippingCharges::where('code', 'shippingbypostcode')
             ->where('key', 'shippingbypostcode')->where('order_type', 'mailorder')
             ->first();
-
-        // Deserialize the postcode data
         $postcodeData = $shippingCharges && !empty($shippingCharges->value) ? unserialize($shippingCharges->value) : [];
-
-        // Deserialize the miles data
         $shippingByMiles = ShippingCharges::where('code', 'shippingbyproduct')
             ->where('key', 'shippingbyproduct')->where('order_type', 'mailorder')
             ->first();
         $milesData = $shippingByMiles && !empty($shippingByMiles->value) ? unserialize($shippingByMiles->value) : [];
-
-        // Fetch the shippingbyproduct_status
         $shippingByProductStatus = ShippingCharges::where('code', 'shippingbyproduct')
             ->where('key', 'shippingbyproduct_status')->where('order_type', 'mailorder')
             ->first();
         $status = $shippingByProductStatus && !empty($shippingByProductStatus->value) ? (int) $shippingByProductStatus->value : 1;
-        // Fetch the shippingbyproduct_tax
         $shippingByProductTax = ShippingCharges::where('code', 'shippingbyproduct')
             ->where('key', 'shippingbyproduct_tax')->where('order_type', 'mailorder')
             ->first();
         $taxValue = $shippingByProductTax && !empty($shippingByProductTax->value) ? (int) $shippingByProductTax->value : 0;
-
-        // Check if the postcode exists in the postcode data (match by first 3 characters)
         $matchedPostcode = null;
         foreach ($postcodeData as $entry) {
             $postcodes = explode(',', $entry['post_code']);
             foreach ($postcodes as $pc) {
-                $dbPostcodePrefix = strtoupper(substr(trim($pc), 0, 3)); // Extract first 3 characters and convert to uppercase
+                $dbPostcodePrefix = strtoupper(substr(trim($pc), 0, 3));
                 if ($dbPostcodePrefix === $postcodePrefix) {
                     $matchedPostcode = $entry;
-                    break 2; // Exit both loops if a match is found
+                    break 2;
                 }
             }
         }
 
-        // If status is 2, use postcode-based pricing
         if ($status === 2) {
             if (!$matchedPostcode) {
                 return response()->json([
@@ -217,11 +203,8 @@ class MailTyrePricingController extends Controller
                 ], 404);
             }
 
-            // Use postcode-based pricing
             $price = $matchedPostcode['price'];
-            $shipType = $matchedPostcode['ship_type'] ?? 'job'; // Default to 'job' if not specified
-
-            // Add VAT if taxValue is 9
+            $shipType = $matchedPostcode['ship_type'] ?? 'job';
             $vatPercentage = 20;
             $vatAmount = 0;
             $priceWithVat = $price;
@@ -229,8 +212,6 @@ class MailTyrePricingController extends Controller
                 $vatAmount = ($price * $vatPercentage) / 100;
                 $priceWithVat += $vatAmount;
             }
-
-            // Store shipping data in session
             session([
                 'postcode_data' => [
                     'postcode' => $postcode,
@@ -249,11 +230,9 @@ class MailTyrePricingController extends Controller
                 'total_price' => round($priceWithVat, 2),
                 'vat_amount' => round($vatAmount, 2),
                 'includes_vat' => $taxValue === 9 ? 9 : 0,
-                'ship_type' => $shipType, // Include ship type in the response
+                'ship_type' => $shipType,
             ]);
         }
-
-        // If status is 1, use mileage-based pricing
         if ($status === 1) {
             if (empty($milesData)) {
                 return response()->json([
@@ -261,17 +240,14 @@ class MailTyrePricingController extends Controller
                 ], 404);
             }
 
-            $garage = GarageDetails::first(); // Get the first garage record (modify as needed)
-            $origin = $garage ? $garage->zone : 'DEFAULT_POSTCODE'; // Fallback in case no data is found
-            $destination = $postcode . ', UK'; // Assuming UK postcodes
+            $garage = GarageDetails::first();
+            $origin = $garage ? $garage->zone : 'DEFAULT_POSTCODE';
+            $destination = $postcode . ', UK';
             $response = Http::get('https://maps.googleapis.com/maps/api/distancematrix/json', [
                 'origins' => $origin,
                 'destinations' => $destination,
                 'key' => env('GOOGLE_MAPS_API_KEY'),
             ]);
-            // dd($response);
-
-            // Debug the API response
             if (!$response->successful()) {
                 return response()->json([
                     'error' => 'Failed to fetch distance data. Please try again later.'
@@ -288,15 +264,14 @@ class MailTyrePricingController extends Controller
             $distanceInMeters = $distanceData['rows'][0]['elements'][0]['distance']['value'];
             $distanceInMiles = $this->convertMetersToMiles($distanceInMeters);
 
-            // Use mileage-based pricing
             $price = 0;
-            $shipType = 'job'; // Default ship type
+            $shipType = 'job';
             foreach ($milesData as $mileEntry) {
-                $valueq = (float) $mileEntry['valueq']; // Upper limit of miles range
-                $valuep = (float) $mileEntry['valuep']; // Price for this range
+                $valueq = (float) $mileEntry['valueq'];
+                $valuep = (float) $mileEntry['valuep'];
                 if ($distanceInMiles <= $valueq) {
                     $price = $valuep;
-                    $shipType = $mileEntry['ship_type'] ?? 'job'; // Extract ship type from miles data
+                    $shipType = $mileEntry['ship_type'] ?? 'job';
                     break;
                 }
             }
@@ -307,7 +282,6 @@ class MailTyrePricingController extends Controller
                 ], 400);
             }
 
-            // Add VAT if taxValue is 9
             $vatPercentage = 20;
             $vatAmount = 0;
             $priceWithVat = $price;
@@ -316,7 +290,6 @@ class MailTyrePricingController extends Controller
                 $priceWithVat += $vatAmount;
             }
 
-            // Store shipping data in session
             session([
                 'postcode_data' => [
                     'postcode' => $postcode,
@@ -337,11 +310,10 @@ class MailTyrePricingController extends Controller
                 'total_price' => round($priceWithVat, 2),
                 'vat_amount' => round($vatAmount, 2),
                 'includes_vat' => $taxValue === 9 ? 9 : 0,
-                'ship_type' => $shipType, // Include ship type in the response
+                'ship_type' => $shipType,
             ]);
         }
 
-        // Default fallback if status is neither 1 nor 2
         return response()->json([
             'error' => 'Invalid shipping configuration. Please contact support.'
         ], 500);
@@ -349,7 +321,7 @@ class MailTyrePricingController extends Controller
 
     private function convertMetersToMiles($meters)
     {
-        return $meters * 0.000621371; // Conversion factor
+        return $meters * 0.000621371;
     }
 
     public function storeMailPostcodeSession(Request $request)
@@ -369,6 +341,5 @@ class MailTyrePricingController extends Controller
 
         return response()->json(['success' => true]);
     }
-
 
 }

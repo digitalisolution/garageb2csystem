@@ -4,25 +4,38 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\CarService;
+use App\Models\Garage;
+use App\Models\HeaderLink;
 use Illuminate\Http\Request;
 
 class ServiceController extends Controller
 {
     public function index()
-    {
-        try {
-            $services = CarService::orderBy('service_id', 'asc')->get();
-            return view('AutoCare.services.index', compact('services'));
-        } catch (\Throwable $e) {
-            \Log::error("Error creating service: " . $e->getMessage());
-            return redirect()->back()->withInput()->with('error', $e->getMessage());
-        }
-    }
+{
+    try {
+        /*$viewData['option1'] = 'Service List';
+        $viewData['optionValue1'] = "AutoCare/services";*/
+        $viewData['header_link'] = HeaderLink::where("menu_id", '7')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+        $viewData['services'] = CarService::with('garage')->orderBy('service_id', 'asc')->get();
 
-    public function create()
-    {
-        return view('AutoCare.services.create');
+        return view('AutoCare.services.index', $viewData);
+    } catch (\Throwable $e) {
+        \Log::error("Error fetching services: " . $e->getMessage());
+        return redirect()->back()->withInput()->with('error', $e->getMessage());
     }
+}
+
+   public function create(Request $request)
+{
+    $viewData['garages'] = Garage::where('id', $request->garage_id)->where('garage_status', 1)->firstOrFail();
+
+    /*$viewData['option1'] = 'Service List';
+    $viewData['optionValue1'] = "AutoCare/services";*/
+    $viewData['header_link'] = HeaderLink::where("menu_id", '7')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+
+    return view('AutoCare.services.create', $viewData);
+}
+
     public function getServices()
     {
         try {
@@ -39,11 +52,12 @@ class ServiceController extends Controller
         try {
            $validated = $request->validate([
                 'name' => 'required|string|max:100',
+                'garage_id' => 'required|exists:garages,id', 
                 'service_lead_time' => 'nullable|integer|max:50',
                 'content' => 'nullable|string',
                 'service_features' => 'nullable|string',
                 'service_whats_include' => 'nullable|string',
-                'slug' => 'nullable|string|max:100|unique:car_services,slug',
+                'slug' => 'nullable|string|max:250',
                 'image' => 'nullable|image|mimes:jpeg,png,webp,jpg,gif|max:2048',
                 'inner_image' => 'nullable|image|mimes:jpeg,png,webp,jpg,gif|max:2048',
                 'service_banner_path' => 'nullable|image|mimes:jpeg,png,webp,jpg,gif|max:2048',
@@ -108,28 +122,35 @@ class ServiceController extends Controller
             // Create the CarService record
             CarService::create($validated);
 
-            return redirect()->route('services.index')->with('success', 'Service created successfully!');
+        return redirect()->route('AutoCare.garages.details', ['id' => $validated['garage_id']])->with('success', 'Service created successfully!');
         } catch (\Throwable $e) {
             \Log::error("Error creating service: " . $e->getMessage());
             return redirect()->back()->withInput()->with('error', $e->getMessage());
         }
     }
 
-    public function edit(CarService $service)
-    {
-        return view('AutoCare.services.create', compact('service'));
-    }
+     public function edit(CarService $service)
+        {
+            $viewData['garages'] = Garage::where('id', $service->garage_id)->where('garage_status', 1)->firstOrFail();
+            /*$viewData['option1'] = 'Service List';
+            $viewData['optionValue1'] = "AutoCare/services";*/
+            $viewData['header_link'] = HeaderLink::where("menu_id", '7')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+
+            $viewData['service'] = $service;
+            return view('AutoCare.services.create', $viewData);
+        }
 
     public function update(Request $request, CarService $service)
     {
 
         $validated = $request->validate([
             'name' => 'required|string|max:100',
+            'garage_id' => 'required|exists:garages,id', 
             'service_lead_time' => 'nullable|integer|max:50',
             'content' => 'nullable|string',
             'service_features' => 'nullable|string',
             'service_whats_include' => 'nullable|string',
-            'slug' => 'nullable|string|max:255|unique:car_services,slug,' . $service->service_id . ',service_id',
+            'slug' => 'nullable|string|max:255,' . $service->service_id . ',service_id',
             'image' => 'nullable|image|mimes:jpeg,png,webp,jpg,gif|max:2048',
             'inner_image' => 'nullable|image|mimes:jpeg,png,webp,jpg,gif|max:2048',
             'service_banner_path' => 'nullable|image|mimes:jpeg,png,webp,jpg,gif|max:2048',
@@ -145,7 +166,6 @@ class ServiceController extends Controller
             'robots_noindex_follow' => 'nullable|integer',
             'exclude_sitemap' => 'nullable|integer',
         ]);
-
 
         $data = collect($validated)->except(['image', 'inner_image', 'service_banner_path'])->toArray();
         try {
@@ -194,7 +214,7 @@ class ServiceController extends Controller
 
             $service->update($data);
 
-            return redirect()->route('services.index')->with('success', 'Service updated successfully!');
+            return redirect()->route('AutoCare.garages.details', ['id' => $validated['garage_id']])->with('success', 'Service updated successfully!');
         } catch (\Throwable $e) {
             \Log::error("Error creating service: " . $e->getMessage());
             return redirect()->back()->withInput()->with('error', $e->getMessage());
@@ -206,7 +226,7 @@ class ServiceController extends Controller
     {
         try {
             $service->delete();
-            return redirect()->route('services.index')->with('success', 'Service deleted successfully!');
+            return redirect()->route('AutoCare.garages.details', ['id' => $service->garage_id])->with('success', 'Service deleted successfully!');
         } catch (\Throwable $e) {
             \Log::error("Error deleting service: " . $e->getMessage());
             return redirect()->back()->withInput()->with('error', $e->getMessage());

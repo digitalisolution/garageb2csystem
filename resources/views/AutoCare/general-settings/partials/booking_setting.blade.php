@@ -1,4 +1,4 @@
-<h2>Calendar Status Colors</h2>
+<h5 class="mb-3">Calendar Status Colors</h5>
 <p>Set colors for different booking statuses:</p>
 
 <form action="{{ route('AutoCare.booking.update') }}" method="POST">
@@ -50,11 +50,11 @@
         <label class="form-label">Show Admin Bookings on Calendar</label><br>
         <div class="form-check form-check-inline">
             <input class="form-check-input" type="radio" name="calendar_admin_booking_active" id="calendar_admin_booking_active_yes" value="1" {{ get_option('calendar_admin_booking_active', 1) == 1 ? 'checked' : '' }}>
-            <label class="form-check-label" for="calendar_admin_booking_active_yes">Yes</label>
+            <label class="form-check-label pl-1" for="calendar_admin_booking_active_yes">Yes</label>
         </div>
         <div class="form-check form-check-inline">
             <input class="form-check-input" type="radio" name="calendar_admin_booking_active" id="calendar_admin_booking_active_no" value="0" {{ get_option('calendar_admin_booking_active', 1) == 0 ? 'checked' : '' }}>
-            <label class="form-check-label" for="calendar_admin_booking_active_no">No</label>
+            <label class="form-check-label pl-1" for="calendar_admin_booking_active_no">No</label>
         </div>
     </div>
 

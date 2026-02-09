@@ -2,11 +2,10 @@
 
 @section('content')
 
-    <div class="container-fluid">
+    <section class="container-fluid">
         <div class="bg-white p-3">
             <div class="short__item">
-                <div class="bg-light p-2 text-center rounded mb-4 border">
-                    <h5 class="m-0"><strong>{{ isset($vehicle) ? 'Edit Vehicle' : 'Add Vehicle' }}</strong></h5>
+                    <h5>{{ isset($vehicle) ? 'Edit Vehicle' : 'Add Vehicle' }}</h5>
                     @if ($errors->any())
                         <div class="alert alert-danger">
                             <ul class="mb-0">
@@ -25,10 +24,7 @@
                         <div class="alert alert-success">{{ session('success') }}</div>
                     @endif
 
-                </div>
-                <form action="{{ isset($vehicle)
-        ? route('AutoCare.vehicles.update', ['id' => $vehicle->id])
-        : route('AutoCare.vehicles.store') }}" method="POST">
+                <form action="{{ isset($vehicle) ? route('AutoCare.vehicles.update', ['id' => $vehicle->id]) : route('AutoCare.vehicles.store') }}" method="POST">
                     @csrf
                     @if (isset($vehicle))
                         @method('PUT')
@@ -252,7 +248,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="text-center mt-3">
+                    <div class="text-right mt-3">
                         <button type="submit"
                             class="btn btn-primary">{{ isset($vehicle) ? 'Update Vehicle' : 'Add Vehicle' }}</button>
                         <a href="{{ route('customer.vehicles') }}" class="btn btn-secondary">Cancel</a>
@@ -260,7 +256,7 @@
                 </form>
             </div>
         </div>
-    </div>
+    </section>
 @endsection
 
 @section('scripts')

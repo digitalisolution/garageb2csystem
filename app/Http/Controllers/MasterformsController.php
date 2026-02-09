@@ -19,6 +19,7 @@ use App\Models\tyre_brands;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Role;
+use App\Models\HeaderLink;
 use App\Models\RegionCounty;
 use Analytics;
 
@@ -258,7 +259,8 @@ class MasterformsController extends Controller
 		// $sql1 = "select sum(total_amount) as TotalPurchasePrice from purchases ";
 		$sql2 = "select count(id) as TotalCustomers from customers ";
 		//$totalPendingJob=DB::connection()->getPdo()->exec( $sql );
-		$totalPendingJob = DB::select('select count(*) as totalPendingJob from workshops where is_complete=0');
+		$totalPendingJob = DB::select('select count(*) as totalPendingJob from workshops where status="pending" AND is_void=0 AND deleted_at IS NULL');
+		$totalInvoices = DB::select('select count(*) as totalInvoices from invoices where is_void=0 AND deleted_at IS NULL');
 		// $TotalPurchasePrice = DB::select($sql1);
 		$TotalCustomers = DB::select($sql2);
 
@@ -275,8 +277,11 @@ class MasterformsController extends Controller
 		//exit;
 		// dd($viewData);
 		$userData['totalPendingJob'] = $totalPendingJob[0]->totalPendingJob;
+		$userData['totalInvoices'] = $totalInvoices[0]->totalInvoices;
 		// $userData['TotalPurchasePrice'] = $TotalPurchasePrice[0]->TotalPurchasePrice;
 		$userData['TotalCustomers'] = $TotalCustomers[0]->TotalCustomers;
+
+		$viewData['header_link'] = HeaderLink::where("menu_id", '1')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
 		return view('AutoCare.dashboard', $userData, $viewData);
 	}
 

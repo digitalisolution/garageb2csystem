@@ -3,33 +3,52 @@
 namespace App\View\Components;
 
 use Illuminate\View\Component;
-use App\Models\OrderTypes; // Import the OrderType model
+use App\Models\OrderTypes;
+use App\Models\TyresProduct;
 
-class SearchTyres extends ViewComponent
+class SearchTyres extends Component
 {
-    public $fittingTypes; // Variable to hold fitting types
+    public $fittingTypes;
+    public $vehicleTypes;
+    public $widths;
 
-    /**
-     * Create a new component instance.
-     *
-     * @return void
-     */
-    public function __construct()
+    public function __construct($vehicleType = null)
     {
-        // Fetch active fitting types from the database
-        $this->fittingTypes = OrderTypes::where('status', 1)->get();
+        // dd($vehicleType);
+        $vehicleType = $vehicleType ?? 'car';
+
+        $this->fittingTypes = OrderTypes::where('status', 1)
+            ->when($vehicleType, function ($q) use ($vehicleType) {
+                $q->where($vehicleType, 1);
+            })
+            ->get();
+
+        $this->vehicleTypes = TyresProduct::select('vehicle_type')
+            ->whereNotNull('vehicle_type')
+            ->where('vehicle_type', '!=', '')
+            ->where('tyre_quantity', '>', 0)
+            ->where('tyre_fullyfitted_price', '>', 0)
+            ->where('status', 1)
+            ->distinct()
+            ->orderBy('vehicle_type')
+            ->pluck('vehicle_type');
+
+        $this->widths = TyresProduct::select('tyre_width')
+            ->where('tyre_width', '>', 0)
+            ->where('tyre_quantity', '>', 0)
+            ->where('tyre_fullyfitted_price', '>', 0)
+            ->where('status', 1)
+            ->distinct()
+            ->orderBy('tyre_width')
+            ->pluck('tyre_width');
     }
 
-    /**
-     * Get the view / contents that represent the component.
-     *
-     * @return \Illuminate\Contracts\View\View|\Closure|string
-     */
     public function render()
     {
-        // Pass the fitting types to the view
-        return $this->ViewComponent('search-tyres', [
+        return view('components.search-tyres', [
             'fittingTypes' => $this->fittingTypes,
+            'vehicleTypes' => $this->vehicleTypes,
+            'widths' => $this->widths,
         ]);
     }
 }

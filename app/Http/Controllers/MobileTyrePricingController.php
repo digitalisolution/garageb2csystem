@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\ShippingCharges;
 use App\Models\GarageDetails;
+use App\Models\HeaderLink;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
 
@@ -14,9 +15,10 @@ class MobileTyrePricingController extends Controller
     // Display all mobile_fitting_pricing settings
     public function index()
     {
-        $settings = ShippingCharges::all();
+        $viewData['header_link'] = HeaderLink::where("menu_id", '12')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+        $viewData['settings'] = ShippingCharges::all();
         // dd($settings);
-        return view('AutoCare.mobile_fitting_pricing.index', compact('settings'));
+        return view('AutoCare.mobile_fitting_pricing.index', $viewData);
     }
 
     // Show the form for creating a new mobile_fitting_pricing setting
@@ -154,8 +156,9 @@ class MobileTyrePricingController extends Controller
         // Determine the selected shipping charge type
         $selectedChargeType = ($shippingbyproductStatus && $shippingbyproductStatus->value == '1') ? '1' : '2';
 
+        $viewData['header_link'] = HeaderLink::where("menu_id", '12')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
 
-        return view('AutoCare.mobile_fitting_pricing.manage', compact('milesData', 'postcodeData', 'selectedChargeType', 'shippingbyproduct_tax'));
+        return view('AutoCare.mobile_fitting_pricing.manage', array_merge($viewData, compact('milesData', 'postcodeData', 'selectedChargeType', 'shippingbyproduct_tax')));
     }
     public function calculateShipping(Request $request)
     {
@@ -164,8 +167,8 @@ class MobileTyrePricingController extends Controller
             'postcode' => 'required|string|max:8',
         ]);
 
-        $postcode = strtoupper($request->input('postcode')); // Convert input postcode to uppercase
-        $postcodePrefix = substr($postcode, 0, 3); // Extract the first 3 characters of the postcode
+        $postcode = strtoupper($request->input('postcode'));
+        $postcodePrefix = substr($postcode, 0, 3);
 
         // Fetch shipping charges from the database
         $shippingCharges = ShippingCharges::where('code', 'shippingbypostcode')
@@ -215,7 +218,7 @@ class MobileTyrePricingController extends Controller
 
             // Use postcode-based pricing
             $price = $matchedPostcode['price'];
-            $shipType = $matchedPostcode['ship_type'] ?? 'job'; // Default to 'job' if not specified
+            $shipType = $matchedPostcode['ship_type'] ?? 'job';
 
             // Add VAT if taxValue is 9
             $vatPercentage = 20;
@@ -257,9 +260,9 @@ class MobileTyrePricingController extends Controller
                 ], 404);
             }
 
-            $garage = GarageDetails::first(); // Get the first garage record (modify as needed)
-            $origin = $garage ? $garage->zone : 'DEFAULT_POSTCODE'; // Fallback in case no data is found
-            $destination = $postcode . ', UK'; // Assuming UK postcodes
+            $garage = GarageDetails::first();
+            $origin = $garage ? $garage->zone : 'DEFAULT_POSTCODE';
+            $destination = $postcode . ', UK';
             $response = Http::get('https://maps.googleapis.com/maps/api/distancematrix/json', [
                 'origins' => $origin,
                 'destinations' => $destination,
@@ -361,6 +364,7 @@ class MobileTyrePricingController extends Controller
 
         // Store the data in the session
         session(['postcode_data' => $data]);
+        session(['user_postcode' => $request->postcode]);
 
         return response()->json(['success' => true]);
     }

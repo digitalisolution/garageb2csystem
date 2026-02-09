@@ -1,7 +1,7 @@
 @extends('samples') 
 @section('content')
 <section class="content" style="margin-left: 20px;margin-right: 20px;">
-   {{ Form::open(['url' => 'employee-save', 'files' => true]) }} 
+   {{ Form::open(['url' => 'AutoCare/employee-save', 'files' => true]) }} 
            {{ csrf_field() }}
            {{ Form::hidden('id', isset($id) ? $id :'', []) }}
 <div class="card">
@@ -100,5 +100,4 @@
           $('#resetBtn').hide();
         @php } @endphp
   </script>
-    <!-- /.content -->
 @endsection

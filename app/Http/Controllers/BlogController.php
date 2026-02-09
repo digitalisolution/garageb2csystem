@@ -5,22 +5,25 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Models\Blog;
+use App\Models\HeaderLink;
 use App\Models\BlogCategory;
 
 class BlogController extends Controller
 {
     public function index()
     {
-        $blogs = Blog::orderBy('sort_order', 'asc')->get();
+        $viewData['header_link'] = HeaderLink::where("menu_id", '21')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+        $viewData['blogs'] = Blog::orderBy('sort_order', 'asc')->get();
         
-        return view('AutoCare.blogs.index', compact('blogs'));
+        return view('AutoCare.blogs.index', $viewData);
     }
 
     public function create()
     {
-        $categories = BlogCategory::all();
-        $selectedCategories = [];
-        return view('AutoCare.blogs.create', compact('categories', 'selectedCategories'));
+        $viewData['header_link'] = HeaderLink::where("menu_id", '21')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+        $viewData['categories'] = BlogCategory::all();
+        $viewData['selectedCategories'] = [];
+        return view('AutoCare.blogs.create', $viewData);
     }
 
     public function store(Request $request)
@@ -71,11 +74,12 @@ class BlogController extends Controller
 
     public function edit($blog_id)
     {
+        $viewData['header_link'] = HeaderLink::where("menu_id", '21')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
         $blog = Blog::findOrFail($blog_id);
         $categories = BlogCategory::all();
         $selectedCategories = explode(',', $blog->category_id);
 
-        return view('AutoCare.blogs.create', compact('blog', 'categories', 'selectedCategories'));
+        return view('AutoCare.blogs.create', array_merge($viewData, compact('blog', 'categories', 'selectedCategories')));
     }
 
     public function update(Request $request, $blog_id)

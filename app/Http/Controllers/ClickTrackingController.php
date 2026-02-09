@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use App\Models\HeaderLink;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -36,13 +36,14 @@ class ClickTrackingController extends Controller
 
     public function clickReport()
     {
-        $clicks = DB::table('phone_tracking')
+        $viewData['header_link'] = HeaderLink::where("menu_id", '24')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+        $viewData['clicks'] = DB::table('phone_tracking')
             ->select('date','value', DB::raw('COUNT(*) as total'))
             ->groupBy('date')
             ->orderBy('date', 'desc')
             ->get();
 
-        return view('AutoCare.reports.click-report', compact('clicks'));
+        return view('AutoCare.reports.click-report', $viewData);
     }
 
 }

@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BlogCategory;
+use App\Models\HeaderLink;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -9,14 +10,16 @@ class BlogCategoryController extends Controller
 {
     public function index()
     {
-        $categories = BlogCategory::all();
-       return view('AutoCare.blogs.blog_categories.index', compact('categories'));
+        $viewData['header_link'] = HeaderLink::where("menu_id", '21')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+        $viewData['categories'] = BlogCategory::all();
+       return view('AutoCare.blogs.blog_categories.index', $viewData);
 
     }
 
     public function create()
     {
-        return view('AutoCare.blogs.blog_categories.create');
+        $viewData['header_link'] = HeaderLink::where("menu_id", '21')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+        return view('AutoCare.blogs.blog_categories.create', $viewData);
     }
 
     public function store(Request $request)
@@ -34,8 +37,9 @@ class BlogCategoryController extends Controller
 
     public function edit($id)
     {
-        $category = BlogCategory::findOrFail($id);
-        return view('AutoCare.blogs.blog_categories.edit', compact('category'));
+        $viewData['header_link'] = HeaderLink::where("menu_id", '21')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+        $viewData['category'] = BlogCategory::findOrFail($id);
+        return view('AutoCare.blogs.blog_categories.edit', $viewData);
 
     }
 

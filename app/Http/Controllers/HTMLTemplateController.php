@@ -4,6 +4,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\HTMLTemplate;
+use App\Models\HeaderLink;
 use Illuminate\Http\Request;
 
 class HTMLTemplateController extends Controller
@@ -11,14 +12,16 @@ class HTMLTemplateController extends Controller
     // Display all HTML templates
     public function index()
     {
-        $htmlTemplates = HTMLTemplate::orderBy('sort_order', 'asc')->get();
-        return view('AutoCare.html-templates.index', compact('htmlTemplates'));
+        $viewData['header_link'] = HeaderLink::where("menu_id", '20')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+        $viewData['htmlTemplates'] = HTMLTemplate::orderBy('sort_order', 'asc')->get();
+        return view('AutoCare.html-templates.index', $viewData);
     }
 
     // Show the form for creating a new template
     public function create()
     {
-        return view('AutoCare.html-templates.create');
+        $viewData['header_link'] = HeaderLink::where("menu_id", '20')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+        return view('AutoCare.html-templates.create', $viewData);
     }
 
     public function store(Request $request)
@@ -45,11 +48,12 @@ class HTMLTemplateController extends Controller
     // Show the form to edit the selected template
     public function edit($id)
     {
-        $htmlTemplate = HTMLTemplate::find($id);
-        if (!$htmlTemplate) {
+        $viewData['header_link'] = HeaderLink::where("menu_id", '20')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+        $viewData['htmlTemplate'] = HTMLTemplate::find($id);
+        if (!$viewData['htmlTemplate']) {
             return redirect()->route('AutoCare.html-templates.index')->with('error', 'Template not found');
         }
-        return view('AutoCare.html-templates.edit', compact('htmlTemplate'));
+        return view('AutoCare.html-templates.edit', $viewData);
     }
     // Update the template information
     public function update(Request $request, $id)

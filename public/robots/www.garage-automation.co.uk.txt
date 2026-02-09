@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /
+
+Sitemap: https://www.garage-automation.co.uk/sitemap.xml

@@ -36,13 +36,18 @@ class EstimateController extends Controller
     {
         $this->middleware('auth');
         $this->paymentHistoryService = $paymentHistoryService;
-        $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
+        //$viewData['header_link'] = HeaderLink::where("menu_id", '2')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
     }
 
     public function save(Request $request, $id = null)
     {   
         // Prepare initial view data
         $viewData['pageTitle'] = 'Add Estimate';
+        /*$viewData['option1'] = 'Search Estimate';
+        $viewData['optionValue1'] = "AutoCare/estimate/search";
+        $viewData['option2'] = 'Add Estimate';
+        $viewData['optionValue2'] = "AutoCare/estimate/add";*/
+        $viewData['header_link'] = HeaderLink::where("menu_id", '2')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
         // $viewData['model_select'] = Modal::pluck('model_name', 'id');
         $viewData['tyre_width'] = TyresProduct::pluck('tyre_width', 'product_id');
         $viewData['tyre_profile'] = TyresProduct::pluck('tyre_profile', 'product_id');
@@ -52,7 +57,7 @@ class EstimateController extends Controller
         $viewData['registered_vehicle_select'] = VehicleDetail::pluck('vehicle_reg_number', 'vehicle_reg_number');
         $viewData['customerNameSelect'] = Customer::pluck('customer_name', 'id');
         $viewData['counties'] = RegionCounty::where('status', 1)->get();
-        $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
+        
         $viewData['brands'] = tyre_brands::where('status', 1)->get();
 
         // For editing an existing workshop
@@ -572,10 +577,11 @@ if ($request->has('vehicle_reg_number') && $request->vehicle_reg_number != null)
     }
     public function view(Request $request)
     {
-        $viewData['header_link'] = HeaderLink::where("menu_id", '3')
-            ->select("link_title", "link_name")
-            ->orderBy('id', 'desc')
-            ->get();
+        /*$viewData['option1'] = 'Search Estimate';
+        $viewData['optionValue1'] = "AutoCare/estimate/search";
+        $viewData['option2'] = 'Add Estimate';
+        $viewData['optionValue2'] = "AutoCare/estimate/add";*/
+        $viewData['header_link'] = HeaderLink::where("menu_id", '2')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
     
         $viewData['customerNameSelect'] = Customer::pluck('customer_name', 'id');
     
@@ -689,8 +695,12 @@ if ($request->has('vehicle_reg_number') && $request->vehicle_reg_number != null)
     public function trash(Request $request, $id)
     {
         // Fetch header links for the view
-        $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
-
+        /*$viewData['option1'] = 'Search Estimate';
+        $viewData['optionValue1'] = "AutoCare/estimate/search";
+        $viewData['option2'] = 'Add Estimate';
+        $viewData['optionValue2'] = "AutoCare/estimate/add";
+        $viewData['header_link'] = HeaderLink::where("menu_id", '2')->select("link_title", "link_name")->orderBy('id', 'ASC')->get(); */
+        
         // Start a database transaction
         DB::beginTransaction();
         try {
@@ -777,7 +787,11 @@ if ($request->has('vehicle_reg_number') && $request->vehicle_reg_number != null)
     }
     public function trashedList()
     {
-        $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
+        $viewData['option1'] = 'Search Estimate';
+        $viewData['optionValue1'] = "AutoCare/estimate/search";
+        $viewData['option2'] = 'Add Estimate';
+        $viewData['optionValue2'] = "AutoCare/estimate/add";
+        $viewData['header_link'] = HeaderLink::where("menu_id", '2')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
 
         $TrashedParty = Estimate::orderBy('deleted_at', 'desc')->onlyTrashed()->simplePaginate(10);
         return view('AutoCare.estimate.delete', compact('TrashedParty', 'TrashedParty'));
@@ -785,7 +799,6 @@ if ($request->has('vehicle_reg_number') && $request->vehicle_reg_number != null)
     }
     public function permanemetDelete(Request $request, $id)
     {
-        $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
         if (($id != null) && (Estimate::where('id', $id)->forceDelete())) {
             $request->session()->flash('message.level', 'warning');
             $request->session()->flash('message.content', "Workshop was deleted Permanently and Can't rollback in Future!");
@@ -799,10 +812,11 @@ if ($request->has('vehicle_reg_number') && $request->vehicle_reg_number != null)
     public function viewIndivisual($id)
     {
         // Fetch header links
-        $viewData['header_link'] = HeaderLink::where("menu_id", '3')
-            ->select("link_title", "link_name")
-            ->orderBy('id', 'desc')
-            ->get();
+        $viewData['option1'] = 'Search Estimate';
+        $viewData['optionValue1'] = "AutoCare/estimate/search";
+        $viewData['option2'] = 'Add Estimate';
+        $viewData['optionValue2'] = "AutoCare/estimate/add";
+        $viewData['header_link'] = HeaderLink::where("menu_id", '2')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
     
         // Fetch workshop details
         $estimate = Estimate::whereId($id)->first(); // Keep as an object
@@ -859,7 +873,7 @@ if ($request->has('vehicle_reg_number') && $request->vehicle_reg_number != null)
     }
     public function viewByWorkshop($id)
     {
-        $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
+        $viewData['header_link'] = HeaderLink::where("menu_id", '2')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
         $getIndivisualWorkshopDetail = Estimate::whereId($id)->first()->toArray();
         // $estimateProduct = DB::table('workshop_products')
         //     ->join('products', 'products.id', '=', 'workshop_products.product_id')

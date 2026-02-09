@@ -64,8 +64,10 @@ $favicon = asset("frontend/themes/default/img/logo/favicon.png") . '?v=' . time(
     <link rel="stylesheet" href="{{ asset('frontend/themes/default/css/plugins.css') }}">
     <link rel="stylesheet" href="{{ asset('frontend/themes/default/css/icons.min.css') }}">
     </noscript>
-    <link rel="stylesheet" href="{{ theme_asset('css', 'style.css') }}?v={{ time() }}">
-    <link rel="stylesheet" href="{{ theme_asset('css', 'custom.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('frontend/themes/default/css/style.css') }}?v={{ time() }}">
+     @if($customCss = theme_asset('css','custom.css'))
+    <link rel="stylesheet" href="{{ $customCss }}?v={{ time() }}">
+    @endif
     <!-- JS -->
     @if (Request::is('booking*') || Request::is('calendar*') || Request::is('checkout*'))
         <script src="{{ mix('js/calendarfrd.js') }}" defer></script>
@@ -121,12 +123,14 @@ $favicon = asset("frontend/themes/default/img/logo/favicon.png") . '?v=' . time(
     </script>
     {!! include_dynamic_view('footer') !!}
     <script src="{{ asset('frontend/themes/default/js/vendor/modernizr-3.11.7.min.js') }}" defer></script>
-    <script src="{{ asset('frontend/themes/default/js/vendor/jquery-v3.6.0.min.js') }}" defer></script>
     <script src="{{ asset('frontend/themes/default/js/vendor/jquery-migrate-v3.3.2.min.js') }}" defer></script>
     <script src="{{ asset('frontend/themes/default/js/vendor/popper.min.js') }}" defer></script>
     <script src="{{ asset('frontend/themes/default/js/vendor/bootstrap.min.js') }}" defer></script>
     <script src="{{ asset('frontend/themes/default/js/plugins.js') }}" defer></script>
     <script src="{{ asset('frontend/themes/default/js/main.js') }}?v={{ time() }}" defer></script>
+    @if($customJs = theme_asset('js','custom.js'))
+    <script src="{{ $customJs }}?v={{ time() }}" defer></script>
+    @endif
     @stack('scripts')
 </body>
 </html>

@@ -9,68 +9,59 @@ class tyre_brands extends Model
 {
     use HasFactory;
 
-    // Default connection; overridden dynamically below
     protected $connection = 'mysql_vehicle_details';
 
-    /**
-     * Dynamically return the correct connection name based on host or CLI context.
-     */
+    protected array $gloucesterDomains = [
+        'www.gloucester-tyres.co.uk',
+        'www.gloucestertyresltd.co.uk',
+    ];
+
+    protected array $tyrelabDomains = [
+        'b2b.digitalideasltd.co.uk',
+        'www.garage-automation.co.uk',
+    ];
+
+    protected function resolveHost(): ?string
+    {
+        $host = app()->runningInConsole()
+            ? ($_SERVER['APP_FAKE_HOST'] ?? null)
+            : request()->getHost();
+
+        return $host ? strtolower($host) : null;
+    }
+
     public function getConnectionName()
     {
-        // $sharedDomains = ['www.digitalideasltd.in', 'b2b.garage-automation.com'];
-        $sharedDomains = [];
+        $host = $this->resolveHost();
 
-        // CLI (schedule/command)
-        if (app()->runningInConsole()) {
-            $cliHost = $_SERVER['APP_FAKE_HOST'] ?? null;
-
-            if ($cliHost && in_array($cliHost, $sharedDomains)) {
-                return 'mysql_vehicle_details';
-            }
-
-            return config('database.default'); // fallback
-        }
-
-        // Web requests
-        $host = request()->getHost();
-        if (in_array($host, $sharedDomains)) {
+        if (
+            in_array($host, $this->gloucesterDomains) ||
+            in_array($host, $this->tyrelabDomains)
+        ) {
             return 'mysql_vehicle_details';
         }
 
-        return config('database.default'); // fallback
+        return config('database.default');
     }
 
-    /**
-     * Dynamically resolve table name based on host (web or CLI).
-     */
     public function getTable()
     {
-        if (app()->runningInConsole()) {
-            $cliHost = $_SERVER['APP_FAKE_HOST'] ?? null;
+        $host = $this->resolveHost();
 
-            return match ($cliHost) {
-                // 'b2b.garage-automation.com'     => 'tyre_brands_gloucester',
-                // 'www.digitalideasltd.in'        => 'tyre_brands_gloucester',
-                default                         => 'tyre_brands',
-            };
-        }
-
-        $host = request()->getHost();
-
-        return match ($host) {
-            // 'b2b.garage-automation.com'     => 'tyre_brands_gloucester',
-            // 'www.digitalideasltd.in'        => 'tyre_brands_gloucester',
-            default                         => 'tyre_brands',
+        return match (true) {
+            in_array($host, $this->gloucesterDomains) => 'tyre_brands_gloucester',
+            in_array($host, $this->tyrelabDomains)    => 'tyre_brands_tyrelab',
+            default                                   => 'tyre_brands',
         };
     }
 
     protected $primaryKey = 'brand_id';
     public $incrementing = true;
     protected $keyType = 'int';
+    public $timestamps = false;
 
     protected $fillable = [
         'name',
-        'brand_id',
         'slug',
         'description',
         'status',
@@ -86,15 +77,4 @@ class tyre_brands extends Model
         'product_type',
         'bannerimage',
     ];
-
-    // Relationships
-    public function brand()
-    {
-        return $this->findOrFail(tyre_brands::class, 'brand_id');
-    }
-
-    public function brandName()
-    {
-        return $this->belongsTo(tyre_brands::class, 'brand_id', 'tyre_brand_id');
-    }
 }

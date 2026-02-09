@@ -7,6 +7,7 @@ use App\Models\HeaderMenu;
 use App\Models\CarService;
 use App\Models\tyre_brands;
 use App\Models\Page;
+use App\Models\HeaderLink;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -15,7 +16,8 @@ class HeaderMenuController extends Controller
 {
     public function index()
     {
-        $pages = HeaderMenu::whereNull('parent_id')
+        $viewData['header_link'] = HeaderLink::where("menu_id", '19')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+        $viewData['pages'] = HeaderMenu::whereNull('parent_id')
             ->with([
                 'children' => function ($query) {
                     $query->orderBy('sort', 'asc');
@@ -24,14 +26,15 @@ class HeaderMenuController extends Controller
             ->orderBy('sort', 'asc')
             ->get();
 
-        return view('AutoCare.headermenu.index', compact('pages'));
+        return view('AutoCare.headermenu.index', $viewData);
     }
 
 
     public function create()
     {
-        $parentPages = HeaderMenu::whereNull('parent_id')->pluck('title', 'id');
-        return view('AutoCare.headermenu.create', compact('parentPages'));
+        $viewData['header_link'] = HeaderLink::where("menu_id", '19')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+         $viewData['parentPages'] = HeaderMenu::whereNull('parent_id')->pluck('title', 'id');
+        return view('AutoCare.headermenu.create',  $viewData);
     }
 
     public function store(Request $request)
@@ -57,8 +60,10 @@ class HeaderMenuController extends Controller
     public function edit(HeaderMenu $page)
     {
         try{
-        $parentPages = HeaderMenu::whereNull('parent_id')->where('id', '!=', $page->id)->pluck('title', 'id');
-        return view('AutoCare.headermenu.create', compact('page', 'parentPages'));
+        $viewData['header_link'] = HeaderLink::where("menu_id", '19')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+        $viewData['parentPages'] = HeaderMenu::whereNull('parent_id')->where('id', '!=', $page->id)->pluck('title', 'id');
+        $viewData['page'] = $page;
+        return view('AutoCare.headermenu.create', $viewData);
          } catch (\Throwable $e) {
             \Log::error("Error edit Headermenu: " . $e->getMessage());
             return redirect()->back()->withInput()->with('error',  $e->getMessage());

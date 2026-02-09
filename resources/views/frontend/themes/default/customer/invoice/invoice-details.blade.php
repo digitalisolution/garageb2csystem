@@ -108,6 +108,7 @@ if (isset($due_out)) {
                     </address>
                 </div>
                 <div class="col-sm-5 offset-1"> <strong>Delivery Address:</strong>
+                 <h4 class="text-4 mb-1">{{$invoices->name}} {{$invoices->last_name}}</h4>
                     <address class="mt-2">
                         {{  $invoices->address }}, {{  $invoices->city }}, {{  $invoices->county }},
                         {{  $invoices->zone }} <br />

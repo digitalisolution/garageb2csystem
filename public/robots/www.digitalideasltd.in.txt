@@ -1,4 +1,0 @@
-User-agent: *
-Disallow: /
-
-Sitemap: https://www.digitalideasltd.in/sitemap.xml

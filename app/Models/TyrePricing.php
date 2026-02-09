@@ -25,6 +25,7 @@ class TyrePricing extends Model
         'sort_order',
         'margin_type',
         'default_price',
+        'default_price_type',
         'price_by_size',
         'product_type',
         'status'

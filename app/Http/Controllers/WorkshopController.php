@@ -46,9 +46,7 @@ class WorkshopController extends Controller
 
     public function save(Request $request, $id = null)
     {
-
-        $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
-        // Prepare initial view data
+        $viewData['header_link'] = HeaderLink::where("menu_id", '1')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
         $viewData['pageTitle'] = 'Add Workshop';
         // $viewData['model_select'] = Modal::pluck('model_name', 'id');
         $viewData['tyre_width'] = TyresProduct::pluck('tyre_width', 'product_id');
@@ -59,7 +57,6 @@ class WorkshopController extends Controller
         $viewData['registered_vehicle_select'] = VehicleDetail::pluck('vehicle_reg_number', 'vehicle_reg_number');
         $viewData['customerNameSelect'] = Customer::pluck('customer_name', 'id');
         $viewData['counties'] = RegionCounty::where('status', 1)->get();
-        $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
         $viewData['brands'] = tyre_brands::where('status', 1)->get();
 
 
@@ -248,12 +245,8 @@ class WorkshopController extends Controller
 
         return view('AutoCare.workshop.add', $viewData);
     }
-    /**
-     * Save workshop product, service, and tire data.
-     */
     private function saveWorkshopData($request, $workshopId)
     {
-
         if ($request->has('product_id') && $request->product_id[0] != null) {
 
             $existingTyreIds = WorkshopTyre::where('workshop_id', $workshopId)->where('ref_type', 'workshop')->pluck('id')->toArray();
@@ -266,7 +259,7 @@ class WorkshopController extends Controller
 
                 if (!$tyreProduct) {
                     \Log::warning("Tyre product with ID $productId not found.");
-                    continue; // Skip if tyre product is not found
+                    continue;
                 }
 
                 $requestedQuantity = $request->tyre_quantity[$index] ?? 1;
@@ -277,7 +270,7 @@ class WorkshopController extends Controller
                     $WorkshopTyre = new WorkshopTyre();
                     $WorkshopTyre->ref_type = 'workshop';
                 }
-                // Adjust inventory: Add back the old quantity before updating (only for existing tyres)
+
                 if ($itemId && $WorkshopTyre->exists) {
                     $oldQuantity = $WorkshopTyre->quantity;
                     $tyreProduct->tyre_quantity += $oldQuantity;
@@ -305,8 +298,6 @@ class WorkshopController extends Controller
                 // Deduct the requested quantity from the tyre's stock
                 $tyreProduct->tyre_quantity -= $requestedQuantity;
                 $tyreProduct->save();
-
-                // Track the tyre ID as part of the current request
                 if ($itemId) {
                     $updatedTyreIds[] = $itemId;
                 }
@@ -325,7 +316,7 @@ class WorkshopController extends Controller
                 $removedTyres = WorkshopTyre::whereIn('id', $tyresToRemove)->where('ref_type', 'workshop')->get();
 
                 foreach ($removedTyres as $removedTyre) {
-                    // Find the tyre product in the tyres_product table using product_id, ean, and sku for perfect matching
+
                     $tyreProduct = TyresProduct::where(function ($query) use ($removedTyre) {
                         $query->where('product_id', $removedTyre->product_id)
                             ->Where('tyre_supplier_name', $removedTyre->supplier)
@@ -333,7 +324,6 @@ class WorkshopController extends Controller
                     })->first();
 
                     if ($tyreProduct) {
-                        // Restore the quantity of the removed tyre in the tyres_product table
                         $tyreProduct->tyre_quantity += $removedTyre->quantity;
                         $tyreProduct->save();
                     }
@@ -343,19 +333,13 @@ class WorkshopController extends Controller
                         description: 'Removed tyre product: ' . $removedTyre->product_ean,
                         changes: ['quantity' => $removedTyre->quantity]
                     );
-
                 }
-
-                // Delete the removed tyres from the WorkshopTyre table
                 WorkshopTyre::whereIn('id', $tyresToRemove)->where('ref_type', 'workshop')->forceDelete();
             }
         } else {
-            // If no tyres are selected, clear all existing tyres
-
             $removedTyres = WorkshopTyre::where('workshop_id', $workshopId)->where('ref_type', 'workshop')->get();
 
             foreach ($removedTyres as $removedTyre) {
-                // Find the tyre product in the tyres_product table using product_id, ean, and sku for perfect matching
                 $tyreProduct = TyresProduct::where(function ($query) use ($removedTyre) {
                     $query->where('product_id', $removedTyre->product_id)
                         ->Where('tyre_supplier_name', $removedTyre->supplier)
@@ -363,7 +347,6 @@ class WorkshopController extends Controller
                 })->first();
 
                 if ($tyreProduct) {
-                    // Restore the quantity of the removed tyre in the tyres_product table
                     $tyreProduct->tyre_quantity += $removedTyre->quantity;
                     $tyreProduct->save();
                 }
@@ -375,7 +358,6 @@ class WorkshopController extends Controller
                 );
             }
 
-            // Delete all tyres from the WorkshopTyre table
             WorkshopTyre::where('workshop_id', $workshopId)->where('ref_type', 'workshop')->forceDelete();
         }
 
@@ -517,13 +499,6 @@ class WorkshopController extends Controller
                 $vehicledetails->vehicle_fuel_type = $request->vehicle_fuel_type;
                 $vehicledetails->vehicle_mot_expiry_date = $request->vehicle_mot_expiry_date;
                 $vehicledetails->save();
-                // ActivityLogger::log(
-                //     workshopId: $workshopId,
-                //     action: isset($vehicledetails->id) ? 'Updated Vehicle' : 'Added Vehicle',
-                //     description: 'Vehicle registration: ' . $request->vehicle_reg_number,
-                //     changes: ['make' => $request->vehicle_make, 'model' => $request->vehicle_model]
-                // );
-                // \Log::info("Updated vehicledetails: " . json_encode($vehicledetails));
             } else {
                 // Create new VehicleDetail if not found
                 $vehicledetails = new VehicleDetail();
@@ -561,24 +536,14 @@ class WorkshopController extends Controller
                     ->first();
 
                 if (!$existingRelation) {
-                    // Create a new customer_vehicle entry
                     $customerVehicle = new CustomerVehicle();
                     $customerVehicle->customer_id = $customerId;
                     $customerVehicle->vehicle_detail_id = $vehicleDetailId;
                     $customerVehicle->save();
-                    // \Log::info("Created new customer_vehicle relationship: " . json_encode($customerVehicle));
                 }
-                // ActivityLogger::log(
-                //     workshopId: $workshopId,
-                //     action: 'Linked Vehicle to Customer',
-                //     description: 'Linked customer ID ' . $customerId . ' with vehicle ' . $request->vehicle_reg_number
-                // );
-
-
 
             }
         }
-        // \Log::info("Workshop data saved successfully for ID: $workshopId.");
     }
     public function searchCustomers(Request $request)
     {
@@ -673,15 +638,49 @@ class WorkshopController extends Controller
 
             $items = WorkshopTyre::where('workshop_id', $workshop->id)->where('ref_type', 'workshop')->where('supplier', 'ownstock')->get();
             // Insert or update stock history records for each item
-            foreach ($items as $item) {
+           foreach ($items as $item) {
                 $tyreProduct = TyresProduct::find($item->product_id);
-                DB::table('stock_history')->updateOrInsert(
-                    [
+
+                $existing = DB::table('stock_history')
+                    ->where([
                         'ean' => $item->product_ean,
                         'ref_type' => 'INV',
                         'ref_id' => $workshop->id,
-                    ],
-                    [
+                    ])
+                    ->orderByDesc('id')
+                    ->first();
+
+                if ($existing) {
+                    if ($existing->qty != $item->quantity) {
+                        // Determine stock change
+                        $qtyDiff = $item->quantity - $existing->qty;
+                        $stockType = $qtyDiff > 0 ? 'Decrease' : 'Increase';
+
+                        DB::table('stock_history')->insert([
+                            'ean' => $item->product_ean,
+                            'ref_type' => 'INV',
+                            'ref_id' => $workshop->id,
+                            'sku' => $item->product_sku,
+                            'product_type' => $item->product_type,
+                            'supplier' => $item->supplier,
+                            'qty' => $item->quantity,
+                            'available_qty' => $tyreProduct->tyre_quantity,
+                            'cost_price' => $item->margin_rate,
+                            'product_id' => $item->product_id,
+                            'user_id' => auth()->id(),
+                            'reason' => 'Invoice Updated (qty change: ' . $qtyDiff . ')',
+                            'stock_type' => $stockType,
+                            'stock_date' => now()->format('Y-m-d'),
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+                } else {
+                    // If no existing record, insert new (normal case)
+                    DB::table('stock_history')->insert([
+                        'ean' => $item->product_ean,
+                        'ref_type' => 'INV',
+                        'ref_id' => $workshop->id,
                         'sku' => $item->product_sku,
                         'product_type' => $item->product_type,
                         'supplier' => $item->supplier,
@@ -695,8 +694,8 @@ class WorkshopController extends Controller
                         'stock_date' => now()->format('Y-m-d'),
                         'created_at' => now(),
                         'updated_at' => now(),
-                    ]
-                );
+                    ]);
+                }
             }
 
             // Remove stock history entries for items that no longer exist in WorkshopTyre
@@ -717,10 +716,7 @@ class WorkshopController extends Controller
 
     public function view(Request $request)
     {
-        $viewData['header_link'] = HeaderLink::where("menu_id", '3')
-            ->select("link_title", "link_name")
-            ->orderBy('id', 'desc')
-            ->get();
+        $viewData['header_link'] = HeaderLink::where("menu_id", '1')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
 
         $viewData['customerNameSelect'] = Customer::pluck('customer_name', 'id');
 
@@ -798,12 +794,12 @@ class WorkshopController extends Controller
 
     public function getWorkshopData(Request $request)
     {
-        // Build the base query
-        // Join with invoices if you need invoice.is_void for the void badge or filtering
         $workshopQuery = DB::table('workshops')
+            ->leftJoin('garages', 'workshops.garage_id', '=', 'garages.id')
             ->select(
                 'workshops.id',
                 'workshops.created_at as workshop_date',
+                'garages.garage_name',
                 'workshops.name',
                 'workshops.mobile',
                 'workshops.vehicle_reg_number',
@@ -832,6 +828,10 @@ class WorkshopController extends Controller
             });
         }
 
+        if ($request->filled('garage_name')) {
+            $workshopQuery->where('garages.garage_name', 'like', '%' . $request->garage_name . '%');
+        }
+
         if ($request->filled('mobile')) {
             $workshopQuery->where('workshops.mobile', 'like', '%' . $request->mobile . '%');
         }
@@ -853,7 +853,6 @@ class WorkshopController extends Controller
         }
 
         if ($request->filled('convert_to_invoice')) {
-            // Make sure the database value matches the select option value (1/0 or '1'/'0')
             $workshopQuery->where('workshops.is_converted_to_invoice', $request->convert_to_invoice);
         }
 
@@ -889,6 +888,9 @@ class WorkshopController extends Controller
             ->addColumn('customer_name', function ($workshop) {
                 return $workshop->name ?? '';
             })
+            ->addColumn('garage_name', function ($workshop) {
+                return $workshop->garage_name ?? 'Unknown Garage';
+            })
             // Vehicle Reg (uppercase)
             ->addColumn('vehicle_reg', function ($workshop) {
                 return strtoupper($workshop->vehicle_reg_number ?? '');
@@ -918,7 +920,7 @@ class WorkshopController extends Controller
                         $statusClass = 'Partially';
                         $statusText = 'Partially';
                         break;
-                    default: // case 0 or null/other
+                    default:
                         $statusClass = 'Unpaid';
                         $statusText = 'Unpaid';
                 }
@@ -926,12 +928,10 @@ class WorkshopController extends Controller
             })
             // Origin Badge
             ->addColumn('origin_badge', function ($workshop) {
-                // Ensure workshop_origin is safe for CSS class or escape output
                 return "<span class='" . e($workshop->workshop_origin) . "'>" . e($workshop->workshop_origin) . "</span>";
             })
             // Status Badge
             ->addColumn('status_badge', function ($workshop) {
-                // Ensure status is safe for CSS class or escape output
                 return "<span class='" . e($workshop->status) . "'>" . e($workshop->status) . "</span>";
             })
             // Invoice Convert Badge
@@ -944,9 +944,9 @@ class WorkshopController extends Controller
             // Actions Column (Crucial Part)
             ->addColumn('actions', function ($workshop) {
                 $emailBody = getDefaultEmailBody($workshop) ?? '';
-                $roleId = auth()->user()->role_id ?? 0; // Get role ID for actions
-                $isVoid = ($workshop->is_void ?? false); // || ($workshop->invoice_is_void ?? false); if joined
-    
+                $roleId = auth()->user()->role_id ?? 0;
+                $isVoid = ($workshop->is_void ?? false);
+
                 $actions = '<div class="btn-group" role="group">
                                 <button id="btnGroupDrop' . $workshop->id . '" type="button"
                                     class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown"
@@ -971,14 +971,14 @@ class WorkshopController extends Controller
                                     </a>
                                 </li>
                             <li>
-    <button type="button"
-        class="dropdown-item btn btn-info btn-sm open-email-modal-btn"
-        data-workshop-id="' . e($workshop->id) . '"
-        data-workshop-email="' . e($workshop->email ?? '') . '"
-        data-email-body-b64="' . e(base64_encode($emailBody)) . '">
-        <i class="fa fa-envelope"></i> Email Invoice
-    </button>
-</li>';
+                                <button type="button"
+                                    class="dropdown-item btn btn-info btn-sm open-email-modal-btn"
+                                    data-workshop-id="' . e($workshop->id) . '"
+                                    data-workshop-email="' . e($workshop->email ?? '') . '"
+                                    data-email-body-b64="' . e(base64_encode($emailBody)) . '">
+                                    <i class="fa fa-envelope"></i> Email Invoice
+                                </button>
+                            </li>';
                     if ($roleId == 1) {
                         $actions .= '<li>
                                         <a href="' . route('invoice.preview', $workshop->id) . '" target="_blank"
@@ -987,7 +987,7 @@ class WorkshopController extends Controller
                                         </a>
                                     </li>';
                     }
-                    if (!$isVoid) {
+                    if (!$isVoid ) {
                         $actions .= '<li>
                                         <form action="' . url('/AutoCare/workshop/void/' . $workshop->id) . '"
                                             method="POST"
@@ -1001,14 +1001,16 @@ class WorkshopController extends Controller
                                     </li>';
                     }
                 } else {
-                    $actions .= '<li>
+                    if (!$isVoid) {
+                        $actions .= '<li>
                                     <a href="' . url('/') . '/AutoCare/workshop/addinvoice/' . $workshop->id . '"
                                         class="dropdown-item btn btn-primary btn-sm">
                                         <i class="fa fa-upload"></i> Convert to Invoice
                                     </a>
                                 </li>';
+                    }
                 }
-
+        if (!$isVoid) {
                 $actions .= '<li>
                                 <a data-toggle="modal" id="' . $workshop->id . '"
                                     data-target="#workshopDiscount"
@@ -1024,8 +1026,9 @@ class WorkshopController extends Controller
                                     data-grand-total="' . ($workshop->balance_price ?? 0) . '">
                                     <i class="fa fa-money" aria-hidden="true"></i> Receive Payment
                                 </a>
-                            </li>
-                            <li>
+                            </li>';
+                            }
+                            $actions .= '<li>
                                 <a target="_blank"
                                     href="' . url('/') . '/AutoCare/workshop/view/' . $workshop->id . '"
                                     class="dropdown-item btn btn-primary btn-sm">
@@ -1040,6 +1043,7 @@ class WorkshopController extends Controller
                                         <i class="fa fa-eye"></i> Payment History
                                     </a>
                                 </li>';
+                        }
                     if (!$isVoid) {
                         $actions .= '<li>
                                         <a href="' . url('/') . '/AutoCare/workshop/add/' . $workshop->id . '"
@@ -1048,7 +1052,6 @@ class WorkshopController extends Controller
                                         </a>
                                     </li>';
                     }
-                }
                 $actions .= '<li>
                                 <a href="#"
                                     class="dropdown-item btn btn-success btn-sm open-activity-log-modal"
@@ -1094,6 +1097,10 @@ class WorkshopController extends Controller
                 }
             })
 
+            ->filterColumn('garage_name', function ($query, $keyword) {
+                $query->where('garages.garage_name', 'like', "%{$keyword}%");
+            })
+
             // Invoice Convert custom search
             ->filterColumn('invoice_convert_badge', function ($query, $keyword) {
                 $keyword = strtolower(trim($keyword));
@@ -1119,6 +1126,7 @@ class WorkshopController extends Controller
             ->rawColumns([
                 'workshop_date_formatted',
                 'customer_name',
+                'garage_name',
                 'vehicle_reg',
                 'payment_method_formatted',
                 'amount_due',
@@ -1132,20 +1140,12 @@ class WorkshopController extends Controller
             ->make(true);
     }
 
-
     public function viewSearchInvoice(Request $request)
     {
-        $viewData['header_link'] = HeaderLink::where("menu_id", '3')
-            ->select("link_title", "link_name")
-            ->orderBy('id', 'desc')
-            ->get();
+        $viewData['header_link'] = HeaderLink::where("menu_id", '1')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
 
         $viewData['customerNameSelect'] = Customer::pluck('customer_name', 'id');
-
-        // Always build query based on request query parameters
         $invoiceQuery = DB::table('invoices')->whereNull('deleted_at');
-
-        // Apply filters from request (both GET and POST)
         if ($request->filled('id')) {
             $invoiceQuery->where('workshop_id', $request->id);
         }
@@ -1196,7 +1196,6 @@ class WorkshopController extends Controller
         // Sorting
         $invoiceQuery->orderBy('id', 'desc');
         $now = \Carbon\Carbon::now();
-        // Clone the query before paginate
         $totals = (clone $invoiceQuery)
             ->selectRaw('SUM(CASE WHEN due_out IS NOT NULL AND due_out < ? AND balance_price > 0 THEN balance_price ELSE 0 END) as total_overdue', [$now])
             ->selectRaw('
@@ -1211,17 +1210,9 @@ class WorkshopController extends Controller
         $viewData['total_discount'] = $totals->total_discount ?? 0;
         $viewData['total_overdue'] = $totals->total_overdue ?? 0;
 
-
-        // Paginate
         $invoiceResults = $invoiceQuery->paginate(10)->appends($request->except('page'));
-
-        // Pass data to view
         $viewData['workshop'] = $invoiceResults;
-
-        // Set title
         $viewData['pageTitle'] = 'Invoice Details';
-
-        // If POST, get form input for repopulating fields
         $formAutoFillup = $request->isMethod('post') ? $request->all() : $request->query();
 
         return view('AutoCare.workshop.search-invoice', $viewData, $formAutoFillup);
@@ -1229,13 +1220,13 @@ class WorkshopController extends Controller
 
     public function getInvoiceData(Request $request)
     {
-        // Build the base query
-        // Join with invoices if you need invoice.is_void for the void badge or filtering
         $invoiceQuery = DB::table('invoices')
+            ->leftJoin('garages', 'invoices.garage_id', '=', 'garages.id')
             ->select(
                 'invoices.workshop_id',
                 'invoices.created_at as workshop_date',
                 'invoices.name',
+                'garages.garage_name',
                 'invoices.email',
                 'invoices.mobile',
                 'invoices.vehicle_reg_number',
@@ -1262,6 +1253,10 @@ class WorkshopController extends Controller
                 $query->where('invoices.name', 'like', $searchTerm)
                     ->orWhere('invoices.company_name', 'like', $searchTerm);
             });
+        }
+
+        if ($request->filled('garage_name')) {
+            $invoiceQuery->where('garages.garage_name', 'like', '%' . $request->garage_name . '%');
         }
 
         if ($request->filled('mobile')) {
@@ -1315,6 +1310,9 @@ class WorkshopController extends Controller
             // Customer Name (if just taking from invoices)
             ->addColumn('customer_name', function ($invoice) {
                 return $invoice->name ?? '';
+            })
+            ->addColumn('garage_name', function ($invoice) {
+                return $invoice->garage_name ?? '';
             })
             // Vehicle Reg (uppercase)
             ->addColumn('vehicle_reg', function ($invoice) {
@@ -1397,14 +1395,14 @@ class WorkshopController extends Controller
                                     </a>
                                 </li>
                             <li>
-    <button type="button"
-        class="dropdown-item btn btn-info btn-sm open-email-modal-btn"
-        data-workshop-id="' . e($invoice->workshop_id) . '"
-        data-workshop-email="' . e($invoice->email ?? '') . '"
-        data-email-body-b64="' . e(base64_encode($emailBody)) . '">
-        <i class="fa fa-envelope"></i> Email Invoice
-    </button>
-</li>';
+        <button type="button"
+            class="dropdown-item btn btn-info btn-sm open-email-modal-btn"
+            data-workshop-id="' . e($invoice->workshop_id) . '"
+            data-workshop-email="' . e($invoice->email ?? '') . '"
+            data-email-body-b64="' . e(base64_encode($emailBody)) . '">
+            <i class="fa fa-envelope"></i> Email Invoice
+        </button>
+        </li>';
                 if ($roleId == 1) {
                     $actions .= '<li>
                                         <a href="' . route('invoice.preview', $invoice->workshop_id) . '" target="_blank"
@@ -1458,6 +1456,7 @@ class WorkshopController extends Controller
                                         <i class="fa fa-eye"></i> Payment History
                                     </a>
                                 </li>';
+                            }
                     if (!$isVoid) {
                         $actions .= '<li>
                                         <a href="' . url('/') . '/AutoCare/workshop/add/' . $invoice->workshop_id . '"
@@ -1466,7 +1465,6 @@ class WorkshopController extends Controller
                                         </a>
                                     </li>';
                     }
-                }
                 $actions .= '<li>
                                 <a href="#"
                                     class="dropdown-item btn btn-success btn-sm open-activity-log-modal"
@@ -1512,7 +1510,9 @@ class WorkshopController extends Controller
                 }
             })
 
-
+            ->filterColumn('garage_name', function ($query, $keyword) {
+                $query->where('garages.garage_name', 'like', "%{$keyword}%");
+            })
 
             ->setRowClass(function ($invoice) {
                 $isVoid = ($invoice->is_void ?? false);
@@ -1535,13 +1535,18 @@ class WorkshopController extends Controller
             ->make(true);
     }
 
-
     public function getActivityLog($id)
     {
         try {
             $logs = ActivityLog::where('workshop_id', $id)
-                ->with('user')
-                ->latest()
+                ->leftJoin('users', 'activity_logs.user_id', '=', 'users.id')
+                ->leftJoin('customers', 'activity_logs.user_id', '=', 'customers.id')
+                ->select(
+                    'activity_logs.*',
+                    'users.name as user_name',
+                    'customers.customer_name as customer_name'
+                )
+                ->latest('activity_logs.created_at')
                 ->get()
                 ->map(function ($log) {
                     // Handle changes field properly
@@ -1552,6 +1557,10 @@ class WorkshopController extends Controller
                     } else {
                         $log->changes_array = [];
                     }
+
+                    // Decide display name: prefer user, else customer
+                    $log->display_name = $log->user_name ?? $log->customer_name ?? 'System';
+
                     return $log;
                 });
 
@@ -1562,6 +1571,7 @@ class WorkshopController extends Controller
             return response()->json(['error' => 'Failed to load activity logs'], 500);
         }
     }
+
 
     public function viewpaymenthistory($id)
     {
@@ -1689,9 +1699,6 @@ class WorkshopController extends Controller
 
     public function trash(Request $request, $id)
     {
-        // Fetch header links for the view
-        $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
-
         // Start a database transaction
         DB::beginTransaction();
         try {
@@ -1778,15 +1785,12 @@ class WorkshopController extends Controller
     }
     public function trashedList()
     {
-        $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
-
         $TrashedParty = Workshop::orderBy('deleted_at', 'desc')->onlyTrashed()->simplePaginate(10);
         return view('AutoCare.workshop.delete', compact('TrashedParty', 'TrashedParty'));
 
     }
     public function permanemetDelete(Request $request, $id)
     {
-        $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
         if (($id != null) && (Workshop::where('id', $id)->forceDelete())) {
             $request->session()->flash('message.level', 'warning');
             $request->session()->flash('message.content', "Workshop was deleted Permanently and Can't rollback in Future!");
@@ -1799,15 +1803,11 @@ class WorkshopController extends Controller
     }
     public function viewIndivisual($id)
     {
-        // Fetch header links
-        $viewData['header_link'] = HeaderLink::where("menu_id", '3')
-            ->select("link_title", "link_name")
-            ->orderBy('id', 'desc')
-            ->get();
+        $viewData['header_link'] = HeaderLink::where("menu_id", '1')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
 
         // Fetch workshop details
         $workshop = Workshop::whereId($id)->first(); // Keep as an object
-
+        // dd($workshop->garage);
         if ($workshop) {
             // Format discount based on type
             if ($workshop->discount_type === 'percentage' && $workshop->discount_value > 0) {
@@ -1860,7 +1860,7 @@ class WorkshopController extends Controller
     }
     public function viewByWorkshop($id)
     {
-        $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
+        $viewData['header_link'] = HeaderLink::where("menu_id", '1')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
         $getIndivisualWorkshopDetail = Workshop::whereId($id)->first()->toArray();
         // $WorkshopProduct = DB::table('workshop_products')
         //     ->join('products', 'products.id', '=', 'workshop_products.product_id')
@@ -1879,7 +1879,7 @@ class WorkshopController extends Controller
     }
     public function viewInvoice($id)
     {
-        $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
+        $viewData['header_link'] = HeaderLink::where("menu_id", '1')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
         $workshop = Invoice::where('workshop_id', $id)->first();
         if ($workshop) {
             // Format discount based on type

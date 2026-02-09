@@ -54,4 +54,9 @@ class Workshop extends Model
 		return $this->belongsTo(VehicleDetail::class, 'vehicle_id');
 	}
 
+	public function garage()
+{
+    return $this->belongsTo(Garage::class);
+}
+
 }

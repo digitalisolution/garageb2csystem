@@ -43,7 +43,6 @@ class AppServiceProvider extends ServiceProvider
             $this->setSiteDatabaseConfig($siteIdentifier);
         }
         Paginator::useBootstrap();
-            // 🔹 Global View Data (applies to all views)
         View::composer('*', function ($view) {
             $cart = session('cart', []);
             $totalQuantity = array_sum(array_column($cart, 'quantity'));
@@ -55,14 +54,11 @@ class AppServiceProvider extends ServiceProvider
 
             $garage = GarageDetails::first();
             $view->with('garage', $garage);
-
-            // $vehicleDetails = \App\Models\VrmVehicleDetail::all();
-            // $view->with('vehicleDetails', $vehicleDetails);
         });
         View::composer('core.navbar', function ($view) {
             $service = app(BookingNotificationService::class);
             $newBookings = $service->getLatestBookings();
-            $newBookingsCount = $newBookings->count();  // Adjust condition as needed
+            $newBookingsCount = $newBookings->count();
             $view->with('newBookings', $newBookings);
             $view->with('newBookingsCount', $newBookingsCount);
         });
@@ -76,12 +72,8 @@ class AppServiceProvider extends ServiceProvider
      */
     protected function getSiteIdentifierFromConfig()
     {
-        // Retrieve the site configuration (only return the domain name)
         $sitesConfig = Config::get('sites.sites');
-
-        // For the purpose of console commands, you can either return a specific domain or loop through all
-        // Here, we just return the first domain
-        return array_key_first($sitesConfig); // Or use other logic to select the domain dynamically
+        return array_key_first($sitesConfig);
     }
 
     /**
@@ -92,34 +84,20 @@ class AppServiceProvider extends ServiceProvider
      */
     protected function setSiteDatabaseConfig($siteIdentifier)
     {
-        // Skip dynamic database configuration for console commands
         if ($this->app->runningInConsole()) {
-            // Optionally, log a warning or set a default database connection
             \Log::warning('Skipping dynamic database configuration for console command.');
             return;
         }
-
-        // Ensure the site identifier exists and its database config is loaded
         $siteConfigPath = base_path("website-configs/$siteIdentifier/database.php");
         if (!file_exists($siteConfigPath)) {
-            // Log the error and throw a custom exception for CLI
-            // \Log::error("Database configuration file not found for site: $siteIdentifier");
-
-            // Handle HTTP vs CLI differently
             if ($this->app->runningInConsole()) {
                 throw new \Exception("Database configuration not found for site: $siteIdentifier");
             } else {
                 abort(410, 'Database configuration not found.');
             }
         }
-
-        // Include the site-specific database configuration
         $domainDatabaseConfig = include($siteConfigPath);
-
-        // Dynamically set the database connection
         Config::set('database.connections.mysql', $domainDatabaseConfig['connections']['mysql']);
-
-        // Clear existing connection and reconnect to use new config
         DB::purge('mysql');
         DB::reconnect('mysql');
     }
@@ -134,24 +112,22 @@ class AppServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app->bind(BondService::class, function ($app) {
-            // Provide the required $supplierDetails array
             $supplierDetails = [
                 'trading_point' => env('BOND_TRADING_POINT', ''),
                 'supplier_email' => env('BOND_SUPPLIER_EMAIL', ''),
                 'api_code' => env('BOND_API_CODE', ''),
-                'api_mode' => env('BOND_API_MODE', 'test'), // Default to 'test' mode
+                'api_mode' => env('BOND_API_MODE', 'test'),
             ];
 
             return new BondService($supplierDetails);
         });
 
         $this->app->bind(EdenService::class, function ($app) {
-            // Provide the required $supplierDetails array
             $supplierDetails = [
                 'trading_point' => env('BOND_TRADING_POINT', ''),
                 'supplier_email' => env('BOND_SUPPLIER_EMAIL', ''),
                 'api_code' => env('BOND_API_CODE', ''),
-                'api_mode' => env('BOND_API_MODE', 'test'), // Default to 'test' mode
+                'api_mode' => env('BOND_API_MODE', 'test'),
             ];
 
             return new EdenService($supplierDetails);

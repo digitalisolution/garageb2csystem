@@ -36,6 +36,23 @@
             <!-- Search Form -->
             <form action="{{ route('AutoCare.tyres.search') }}" method="GET">
                 <div class="row align-items-center">
+                    <!-- Garage Name Field -->
+                    <div class="col-md-2 grg_name_fitters">
+                        <div class="form-group">
+                            <label for="garage_id">Garage Name</label>
+                            <select name="garage_id" id="garage_id" class="form-control">
+                                <option value="">Select Garage Name</option>
+
+                                @foreach($garages as $garage)
+                                    <option value="{{ $garage->id }}"
+                                        {{ request('garage_id') == $garage->id ? 'selected' : '' }}>
+                                        {{ $garage->garage_name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
                     <!-- Width Field -->
                     <div class="col-md-2">
                         <div class="form-group">
@@ -102,14 +119,16 @@
                             <label for="tyre_supplier_name">Tyre Supplier</label>
                             <select name="tyre_supplier_name" id="tyre_supplier_name" class="form-control">
                                 <option value="">Select Source</option>
-                                @foreach ($suppliers as $supplier)
-                                    <option value="{{ $supplier }}" {{ isset($filters['tyre_supplier_name']) && $filters['tyre_supplier_name'] == $supplier ? 'selected' : '' }}>
-                                        {{ $supplier }}
+                                @foreach ($suppliersWithGarage as $supplier)
+                                    <option value="{{ $supplier->display_name }}"
+                                        {{ isset($filters['tyre_supplier_name']) && $filters['tyre_supplier_name'] == $supplier->display_name ? 'selected' : '' }}>
+                                        {{ $supplier->display_name }}
                                     </option>
                                 @endforeach
                             </select>
                         </div>
                     </div>
+
                     <!-- Tyre Type Field -->
                     <div class="col-md-2">
                         <div class="form-group">
@@ -175,11 +194,11 @@
                         </div>
                     </div>
 
-                    <!-- Submit Button -->
+                </div>
+                <!-- Submit Button -->
                     <div class="col-md-12 text-right">
                         <button type="submit" class="btn btn-primary">Search</button>
                     </div>
-                </div>
             </form>
             @if(session('success'))
                 <div class="alert alert-success alert-dismissible fade show m-3" role="alert">
@@ -373,24 +392,16 @@
                                 <td align="center">£{{ number_format($tyre->trade_costprice, 2) }}</td>
                                 <td align="center" class="trade_costprice">£{{ number_format($tyre->trade_costprice * 1.2, 2) }}
                                 </td>
-                                <!-- <td>{{ $tyre->instock == 1 ? 'Yes' : 'No' }}</td> -->
-                                <td align="center"><span
-                                        class="{{$tyre->tyre_supplier_name }}">{{ strtoupper($tyre->tyre_supplier_name) }}</span>
+                                <td align="center">
+                                    <span class="{{ $tyre->tyre_supplier_name }}">{{ strtoupper($tyre->tyre_supplier_name) }}
+                                        @if(!empty($tyre->garage_name))</span>
+                                            <br>
+                                            <span>({{ $tyre->garage_name }})</span>
+                                        @endif
+                                    
                                 </td>
                                 <td align="center" class="no-wrap"><span
                                         class="{{ $tyre->lead_time }}">{{ $tyre->lead_time }}</span></td>
-                                <!-- <td align="center" class="no-wrap">
-                                    <a href="{{ route('AutoCare.tyres.edit', ['product_id' => $tyre->product_id]) . '?' . http_build_query(request()->query()) }}"
-                                        class="btn btn-sm btn-warning">Edit</a>
-                                    <form action="{{ route('AutoCare.tyres.delete', $tyre->product_id) }}" method="POST"
-                                        style="display:inline;">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-                                    </form>
-                                </td> -->
-
-
                             </tr>
                         @empty
                             <tr>
@@ -404,7 +415,7 @@
                 {{ $tyres->appends(request()->query())->links('pagination::bootstrap-5') }}
             </div>
         </div>
-        @include('AutoCare/tyres/stock_history_modal');
+        @include('AutoCare/tyres/stock_history_modal')
         <div class="modal fade" id="ownstockModal" tabindex="-1" aria-labelledby="ownstockModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -421,6 +432,16 @@
                                 <label for="supplier_name">Supplier Name:</label>
                                 <input type="text" name="supplier_name" id="supplier_name" value='ownstock'
                                     class="form-control" required>
+                            </div>
+                             <!-- Garage Select -->
+                            <div class="form-group mb-3 grg_name_fitters">
+                                <label for="garage_id">Select Garage:</label>
+                                <select name="garage_id" id="garage_id" class="form-control" required>
+                                    <option value="">-- Select Garage --</option>
+                                    @foreach($garages as $garage)
+                                        <option value="{{ $garage->id }}">{{ $garage->garage_name }}</option>
+                                    @endforeach
+                                </select>
                             </div>
                             <div class="form-group mb-3">
                                 <label for="file_upload">Upload File:</label>

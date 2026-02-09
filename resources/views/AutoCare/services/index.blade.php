@@ -30,6 +30,7 @@
                     <tr>
                         <th>Service id</th>
                         <th>Service Name</th>
+                        <th>Garage Name</th>
                         <th>Slug</th>
                         <th class="text-center">Price</th>
                         <th class="text-center">Status</th>
@@ -41,6 +42,7 @@
                         <tr>
                             <td>{{ $service->service_id }}</td>
                             <td>{{ $service->name }}</td>
+                            <td>{{ $service->garage->garage_name }}</td>
                             <td>{{ $service->slug }}</td>
                             <td class="text-center">{{ $service->cost_price }}</td>
                             <td class="text-center">

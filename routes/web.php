@@ -1,25 +1,29 @@
 <?php
 
+use App\Http\Controllers\GaragePayoutController;
 use App\Http\Controllers\BrandController;
+use App\Http\Controllers\Gateways\RevolutController;
+use App\Http\Controllers\Gateways\RevolutBusinessController;
 use App\Http\Controllers\ViewController\HomeController;
 use App\Http\Controllers\ViewController\ServiceViewController;
+use App\Http\Controllers\ViewController\GarageViewController;
 use App\Http\Controllers\ServiceController;
-// use App\Http\Controllers\ViewController\SlugController;
 use App\Http\Controllers\ViewController\SitemapController;
 use App\Http\Controllers\TyrePricingController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\MobileTyrePricingController;
 use App\Http\Controllers\ViewController\TyresProductController;
+use App\Http\Controllers\ViewController\MotorbikeTyresProductController;
 use App\Http\Controllers\TyresController;
 use App\Http\Controllers\WorkshopController;
-use App\Http\Controllers\EstimateController;
+use App\Http\Controllers\GaragesController;
 use App\Http\Controllers\CalendarSettingController;
 use App\Http\Controllers\Gateways\DojoController;
 use App\Http\Controllers\Gateways\PaymentAssistController;
 use App\Http\Controllers\ClickTrackingController;
 use App\Http\Controllers\HeaderMenuController;
 use App\Http\Controllers\PluginController;
-
+use App\Http\Controllers\VrmSmsCreditController;
 use App\Http\Controllers\PaymentController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PageController;
@@ -29,26 +33,28 @@ use App\Http\Controllers\GeneralSettingsController;
 use App\Http\Controllers\ViewController\CarserviceProductController;
 use App\Http\Controllers\CustomerAuthController;
 use App\Http\Controllers\ViewController\CustomerAccountController;
+use App\Http\Controllers\CustomerGroupController;
+use App\Http\Controllers\GarageAuthController;
+use App\Http\Controllers\ViewController\GarageAccountController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\MailTyrePricingController;
 use App\Http\Controllers\TyreImportController;
-// use App\Http\Controllers\BondApiController;
-//use App\Http\Controllers\EdenApiController;
 use App\Http\Controllers\VrmController;
 use App\Http\Controllers\VehicleDetailController;
-// use App\Http\Controllers\OtpVerificationController;
-// use App\Http\Controllers\ViewController\BrandController;
 use App\Http\Controllers\ViewController\CalendarController;
 use App\Http\Controllers\HTMLTemplateController;
 use App\Http\Controllers\GarageDetailsController;
 use App\Http\Controllers\ViewController\CartController;
 use App\Http\Controllers\ViewController\CheckoutController;
+use App\Http\Controllers\MobilefittingformController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\BlogCategoryController;
 use App\Http\Controllers\AppointmentController;
 
-use App\Http\Controllers\MobilefittingformController;
+use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Admin\RolePermissionController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -88,18 +94,16 @@ use App\Http\Controllers\MobilefittingformController;
 // Route::get('tyres/get-diameters', [TyresProductController::class, 'getDiameters'])->name('tyres.getDiameters');
 // Route::get('tyreslist', [TyresProductController::class, 'filter'])->name('tyres.filter');
 Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
+Route::post('/cart/clear', [CartController::class, 'clearCart'])->name('cart.clear');
 Route::post('/cart/update', [CartController::class, 'update'])->name('cart.update');
 Route::post('/cart/delete', [CartController::class, 'delete'])->name('cart.delete');
 Route::post('/cart/remove', [CartController::class, 'remove'])->name('cart.remove');
 Route::get('/cart/show', [CartController::class, 'show'])->name('cart.show');
 Route::get('/cart-refresh', [CheckoutController::class, 'refresh'])->name('cart.refresh');
-
-
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
 Route::get('/sitemap', [SitemapController::class, 'index'])->name('sitemap');
 Route::post('/track-phone-click', [ClickTrackingController::class, 'trackPhoneClick'])->name('click.trackPhoneClick');
 
-// Route::post('/checkout/submit', [CheckoutController::class, 'submitOrder'])->name('checkout.submit');
 
 Route::post('/checkout/store-in-session', [CheckoutController::class, 'storeInSession'])->name('checkout.storeInSession');
 // Route::post('/checkout/submit', [CheckoutController::class, 'submitCheckout'])->name('checkout.submit');
@@ -122,7 +126,18 @@ Route::prefix('payment-assist')->name('paymentassist.')->group(function () {
     Route::match(['GET', 'POST'], '/callback/{invoiceid}', [PaymentAssistController::class, 'handleCallback'])->name('callback');
 });
 
+Route::get('/revolut/pay/{workshopId}', [RevolutController::class, 'makePayment'])
+    ->name('revolut.pay');
+Route::get('/payment/revolut/return', [RevolutController::class, 'return'])
+    ->name('revolut.return');
+Route::post('/revolut/webhook', [RevolutController::class, 'webhook']);
 
+// routes/web.php
+Route::get('/revolut-business/oauth', [RevolutBusinessController::class, 'oauthRedirect'])->name('AutoCare.revolut.oauth.redirect');
+Route::get('/revolut/callback', [RevolutBusinessController::class, 'oauthCallback']);
+
+Route::post('/revolut-business/payout/{workshop}', [RevolutBusinessController::class, 'payout'])->name('revolut.payout');
+Route::post('/revolut-business/refund/{workshop}', [RevolutBusinessController::class, 'refund'])->name('revolut.refund');
 
 //appointment
 // Route::get('/appointment', [AppointmentController::class, 'create'])->name('appointment.create');
@@ -142,31 +157,43 @@ Route::prefix('payment-assist')->name('paymentassist.')->group(function () {
 // Route::get('/tyre-sizes', [TyresProductController::class, 'getTyreSizes']);
 Route::get('/recommended-tyre', [TyresProductController::class, 'recommendedTyres'])->name('tyres.recommendedTyres');
 Route::get('/search', [TyresProductController::class, 'tyreslist'])->name('tyreslist');
+Route::get('/searchMotorbike', [MotorbikeTyresProductController::class, 'motorbikeTyreslist'])->name('motorbikeTyreslist');
 Route::get('/tyreslist', [TyresProductController::class, 'tyreslist'])->name('tyres.tyreslist');
 Route::get('/tyreslist/filter', [TyresProductController::class, 'filter'])->name('tyres.filter');
+Route::get('/tyreslist/get-widths', [TyresProductController::class, 'getWidths'])->name('tyres.getWidths');
 Route::get('/tyreslist/get-profiles', [TyresProductController::class, 'getProfiles'])->name('tyres.getProfiles');
 Route::get('/tyreslist/get-diameters', [TyresProductController::class, 'getDiameters'])->name('tyres.getDiameters');
-// Route::get('/tyre-cards', [TyresProductController::class, 'filter'])->name('tyres.filter');
 Route::get('/getSeasonOptions', [TyresProductController::class, 'getSeasonOptions'])->name('tyres.getSeasonOptions');
 Route::get('/getWetGripOptions', [TyresProductController::class, 'getWetGripOptions'])->name('tyres.getWetGripOptions');
 Route::get('/getTyreBrandOptions', [TyresProductController::class, 'getTyreBrandOptions'])->name('tyres.getTyreBrandOptions');
 Route::get('/getFuelEfficiencyOptions', [TyresProductController::class, 'getFuelEfficiencyOptions'])->name('tyres.getFuelEfficiencyOptions');
 Route::get('/getPriceRange', [TyresProductController::class, 'getPriceRange'])->name('tyres.getPriceRange');
-
+Route::get('/loadIndexOptions', [TyresProductController::class, 'getLoadIndexOptions'])->name('tyres.getLoadIndexOptions');
+Route::get('/getVehicleTypeOptions', [TyresProductController::class, 'getVehicleTypeOptions'])->name('tyres.getVehicleTypeOptions');
+Route::get('/getSpeedIndexOptions', [TyresProductController::class, 'getSpeedIndexOptions'])->name('tyres.getSpeedIndexOptions');
+Route::get('/getNoiseLevelOptions', [TyresProductController::class, 'getNoiseLevelOptions'])->name('tyres.getNoiseLevelOptions');
+Route::get('/getOrderTypesOptions', [TyresProductController::class, 'getOrderTypesOptions'])->name('tyres.getOrderTypesOptions');
+Route::get('/getOrderTypes', [TyresProductController::class, 'getOrderTypes'])->name('tyres.getOrderTypes');
 Route::post('/process-payment', [PaymentController::class, 'processPayment'])->name('payment.process');
-
-
 Route::post('/api/place-order', [ApiOrderController::class, 'placeOrder']);
-
 Route::get('/', [HomeController::class, 'getVehicleDetails'])->name('home');
-
 Route::get('/models', [CarserviceProductController::class, 'getModels'])->name('models');
 Route::get('/years', [CarserviceProductController::class, 'getYears'])->name('years');
 Route::get('/engines', [CarserviceProductController::class, 'getEngines'])->name('engines');
+// Route::get('/service', [ServiceViewController::class, 'services'])->name('service');
 
+// List all garages
+Route::get('/garages/listing', [GarageViewController::class, 'garages'])->name('grages');
+Route::get('/garage/{id}', [GarageViewController::class, 'garageProfile'])->name('garage.profile');
+Route::post('/garage/{id}/review', [GarageViewController::class, 'submitReview'])->name('garage.review.submit');
+Route::get('/book-service', [GarageViewController::class, 'list'])->name('book.service');
+Route::post('/garage/filter', [GarageViewController::class, 'filter'])->name('garage.filter');
+Route::post('/garage/save-postcode', [GarageViewController::class, 'savePostcode'])->name('garage.save-postcode');
+Route::get('/book-now/{id}', [GarageViewController::class, 'bookNow'])->name('book.now');
 
-Route::get('/service', [ServiceViewController::class, 'services'])->name('service'); 
-Route::post('/service-enquiry', [ServiceViewController::class, 'handleEnquiry'])->name('service.enquiry.submit');
+//garge end
+
+// Route::post('/service-enquiry', [ServiceViewController::class, 'handleEnquiry'])->name('service.enquiry.submit');
 
 Route::get('/cart/fetch', [CartController::class, 'fetchCartItems'])->name('cart.fetch');
 
@@ -308,22 +335,51 @@ Route::middleware('auth:customer')->group(function () {
     Route::put('/customer/vehicles/{id}', [CustomerAccountController::class, 'updateVehicle'])->name('customer.vehicles.update');
     Route::delete('/customer/vehicles/{id}', [CustomerAccountController::class, 'deleteVehicle'])->name('customer.vehicles.delete');
 
-
+    Route::post('customer/orders/void/{id}', [CustomerAccountController::class, 'voidWorkshop'])->name('workshop.void');
     Route::get('/customer/orders/job-{id}', [CustomerAccountController::class, 'viewOrder'])->name('customer.orders.view');
     Route::get('/customer/invoice/inv-{id}', [CustomerAccountController::class, 'viewInvoice'])->name('customer.invoice.view');
 });
-// Route::prefix('customer')->group(function () {
-//     Route::get('password/reset', [App\Http\Controllers\Auth\CustomerForgotPasswordController::class, 'showLinkRequestForm'])->name('customer.password.request');
-//     Route::post('password/email', [App\Http\Controllers\Auth\CustomerForgotPasswordController::class, 'sendResetLinkEmail'])->name('customer.password.email');
-//     Route::get('password/reset/{token}', [App\Http\Controllers\Auth\CustomerResetPasswordController::class, 'showResetForm'])->name('customer.password.reset');
-//     Route::post('password/reset', [App\Http\Controllers\Auth\CustomerResetPasswordController::class, 'reset'])->name('customer.password.update');
-// });
+
+//garage login start
+Route::middleware('guestgarage:garage')->group(function () {
+Route::get('/garage/auth/register', [GarageAuthController::class, 'showRegistrationForm'])->name('garage.register');
+Route::post('/garage/auth/register', [GarageAuthController::class, 'garageRegister'])->name('garage.register.submit');
+Route::get('/garage/auth/login', [GarageAuthController::class, 'showLoginForm'])->name('garage.login');
+Route::post('/garage/auth/login', [GarageAuthController::class, 'garagelogin'])->name('garage.login.submit');
+// Route::get('/garage/auth/password/reset', [App\Http\Controllers\Auth\garageForgotPasswordController::class, 'showLinkRequestForm'])->name('garage.password.request');
+// Route::post('/garage/auth/password/email', [App\Http\Controllers\Auth\garageForgotPasswordController::class, 'sendResetLinkEmail'])->name('garage.password.email');
+// Route::get('/garage/auth/password/reset/{token}', [App\Http\Controllers\Auth\garageResetPasswordController::class, 'showResetForm'])->name('garage.password.reset');
+// Route::post('/garage/auth/password/reset', [App\Http\Controllers\Auth\garageResetPasswordController::class, 'reset'])->name('garage.password.update');
+    // Route::get('/garage/auth/forgot-password', [GarageAuthController::class, 'ShowforgotPassward'])->name('garage.forgot-password');
+    // Route::post('/garage/auth/forgot-password', [GarageAuthController::class, 'forgotPassward']);
+});
+Route::get('garage/password/email', function () {
+    return redirect('/garage/auth/password/reset');
+});
+Route::middleware('auth:garage')->group(function () {
+    Route::post('/garage/auth/logout', [GarageAuthController::class, 'logout'])->name('garage.logout');
+    Route::get('/garage/auth/myaccount', [GarageAccountController::class, 'myaccount'])->name('garage.myaccount');
+    Route::get('/garage/auth/orders', [GarageAccountController::class, 'orders'])->name('garage.orders');
+    Route::get('/garage/auth/vehicles', [GarageAccountController::class, 'vehicles'])->name('garage.vehicles');
+    Route::get('/garage/auth/invoices', [GarageAccountController::class, 'invoices'])->name('garage.invoices');
+    Route::get('/garage/auth/statement', [GarageAccountController::class, 'statements'])->name('garage.statement');
+
+
+    Route::post('/garage/auth/update-profile', [GarageAccountController::class, 'updateProfile'])->name('garage.update-profile');
+    Route::post('/garage/auth/update-password', [GarageAccountController::class, 'updatePassword'])->name('garage.update-password');
+    Route::post('/garage/auth/update-billing-address', [GarageAccountController::class, 'updateBillingAddress'])->name('garage.update-billing-address');
+    Route::post('/garage/auth/update-shipping-address', [GarageAccountController::class, 'updateShippingAddress'])->name('garage.update-shipping-address');
+    Route::get('/garage/auth/orders/job-{id}', [GarageAccountController::class, 'viewOrder'])->name('garage.orders.view');
+    Route::get('/garage/auth/invoice/inv-{id}', [GarageAccountController::class, 'viewInvoice'])->name('garage.invoice.view');
+    // Route::post('/garage/auth/orders/{id}/verify', [GarageAccountController::class, 'verifyJob'])->name('garage.orders.verify');
+    Route::post('/garage/auth/orders/{order}/verify', [GarageAccountController::class, 'verifyJob'])->name('garage.orders.verify')->middleware('auth:garage');
+    Route::post('/garage/auth/orders/{order}/resend-code', [GarageAccountController::class, 'resendCode'])->name('garage.orders.resend')->middleware('auth:garage');
+
+
+});
 
 Auth::routes();
-// Auth::routes(['login' => false]); // Disable default login
-// Auth::routes(['register' => false]); // Disable default register
-// Auth::routes(['password' => false]); // Disable default register
-// Prevent access to default password reset routes
+
 Route::match(['get', 'post'], 'password/reset', function () {
     abort(404);
 })->name('password.reset.blocked');
@@ -358,6 +414,36 @@ Route::middleware('auth:web')->group(function () {
     // });
     // Admin Routes
     // HTML Templates Management Routes
+
+    Route::prefix('AutoCare/vrmsmscredit')->group(function () {
+        Route::get('/', [VrmSmsCreditController::class,'index'])->name('AutoCare.vrmsmscredit.index');
+        Route::post('/add-to-cart', [VrmSmsCreditController::class,'addCreditToCart'])->name('AutoCare.vrmsmscredit.addToCart');
+        Route::post('/AutoCare/vrmsmscredit/buy', [VrmSmsCreditController::class, 'buyCredits'])->name('AutoCare.vrmsmscredit.buy');
+    });
+
+    Route::prefix('AutoCare')->group(function () {
+        Route::resource('roles', RoleController::class);
+        Route::resource('permissions', PermissionController::class);
+        Route::get('roles/{role}/permissions', [RolePermissionController::class, 'edit'])->name('roles.permissions.edit');
+        Route::post('roles/{role}/permissions', [RolePermissionController::class, 'update'])->name('roles.permissions.update');
+
+        Route::get('/users', [\App\Http\Controllers\UserController::class, 'index'])
+            ->middleware('permission:user.view')->name('users.index');
+
+        Route::get('/users/create', [\App\Http\Controllers\UserController::class, 'create'])
+            ->middleware('permission:user.create')->name('users.create');
+        Route::post('/users', [\App\Http\Controllers\UserController::class, 'store'])
+            ->middleware('permission:user.create')->name('users.store');
+
+        Route::get('/users/{user}/edit', [\App\Http\Controllers\UserController::class, 'edit'])
+            ->middleware('permission:user.edit')->name('users.edit');
+        Route::put('/users/{user}', [\App\Http\Controllers\UserController::class, 'update'])
+            ->middleware('permission:user.edit')->name('users.update');
+
+        Route::delete('/users/{user}', [\App\Http\Controllers\UserController::class, 'destroy'])
+            ->middleware('permission:user.delete')->name('users.destroy');
+    });
+
     Route::get('/AutoCare/click-report', [ClickTrackingController::class, 'clickReport'])->name('admin.click.report');
     Route::get('/AutoCare/api-orders', [ApiOrderController::class, 'viewApiOrders'])->name('viewApiOrders');
 
@@ -464,19 +550,15 @@ Route::middleware('auth:web')->group(function () {
         Route::delete('/{setting_id}', [MetaSettingsController::class, 'destroy'])->name('AutoCare.meta-settings.destroy');
     });
     Route::prefix('AutoCare/general-settings')->group(function () {
-        // Route::get('/', [GeneralSettingsController::class, 'index'])->name('AutoCare.general-settings.index');
-        // Route::get('/create', [GeneralSettingsController::class, 'create'])->name('AutoCare.general-settings.create');
-        // Route::post('/', [GeneralSettingsController::class, 'store'])->name('AutoCare.general-settings.store');
-        // Route::get('/{id}', [GeneralSettingsController::class, 'show'])->name('AutoCare.general-settings.show');
-        // Route::get('/{id}/edit', [GeneralSettingsController::class, 'edit'])->name('AutoCare.general-settings.edit');
-        // Route::put('/{id}', [GeneralSettingsController::class, 'update'])->name('AutoCare.general-settings.update');
-        // Route::delete('/{id}', [GeneralSettingsController::class, 'destroy'])->name('AutoCare.general-settings.destroy');
-
-    Route::get('/', [GeneralSettingsController::class, 'index'])->name('settings.index');
-    Route::put('/smtp', [GeneralSettingsController::class, 'updateSmtpDetails'])->name('settings.smtp.update');
-    Route::put('/payment', [GeneralSettingsController::class, 'updatePayment'])->name('settings.payment.update');
-    Route::post('/booking', [GeneralSettingsController::class, 'updateBooking'])->name('AutoCare.booking.update');
-});
+        Route::get('/', [GeneralSettingsController::class, 'index'])->name('settings.index');
+        Route::put('/smtp', [GeneralSettingsController::class, 'updateSmtpDetails'])->name('settings.smtp.update');
+        Route::put('/payment', [GeneralSettingsController::class, 'updatePayment'])->name('settings.payment.update');
+        Route::post('/booking', [GeneralSettingsController::class, 'updateBooking'])->name('AutoCare.booking.update');
+        Route::post('/tyre-service', [GeneralSettingsController::class, 'updateTyreService'])->name('settings.tyre-service.update');
+        Route::post('/common-module', [GeneralSettingsController::class, 'updateCommonModule'])->name('settings.common-module.update');
+        
+    });
+    
 
 
 //estimates route
@@ -520,7 +602,8 @@ Route::middleware('auth:web')->group(function () {
     Route::get('/AutoCare/workshop/search-invoice', 'WorkshopController@viewSearchInvoice');
     Route::post('/AutoCare/workshop/search-invoice', 'WorkshopController@viewSearchInvoice');
     Route::get('/AutoCare/workshop/payment_history/{id}', 'WorkshopController@viewpaymenthistory');
-    Route::get('/AutoCare/payment-record', 'PaymentRecordController@index');
+    Route::get('/AutoCare/payment-record', 'PaymentRecordController@index');    
+    Route::get('/AutoCare/payment-settlement', 'PaymentSettlementController@index');
     Route::get('AutoCare/workshop/{id}/activity-log', 'WorkshopController@getActivityLog')->name('workshop.activity-log');
     Route::get('/AutoCare/workshop/data', [WorkshopController::class, 'getWorkshopData'])->name('workshop.data');
     Route::get('/AutoCare/invoice/data', [WorkshopController::class, 'getInvoiceData'])->name('invoice.data');
@@ -564,11 +647,14 @@ Route::middleware('auth:web')->group(function () {
       Route::get('/AutoCare/supplier/deleterow', [SupplierController::class, 'deleteRow'])
     ->name('AutoCare.supplier.deleterow');
       Route::post('/AutoCare/supplier/store/{id}', [SupplierController::class, 'store']);
+      Route::post('AutoCare/supplier/toggle-website-status',[SupplierController::class, 'toggleWebsiteStatus'])->name('supplier.toggleWebsiteStatus');
     // tyre product data :stop
     // Route::post('file/importpath', [TyreImportController::class, 'saveFilePath']);
     // Route::get('/AutoCare/supplier/install/{id}', [SupplierController::class, 'install'])->name('supplier.install');
     Route::get('/AutoCare/supplier/uninstall/{id}', [TyreImportController::class, 'uninstall'])->name('supplier.uninstall');
     Route::get('/AutoCare/supplier/install/{id}', [TyreImportController::class, 'install'])->name('supplier.install');
+    Route::match(['get', 'post'], '/supplier/getOakAddress', [SupplierController::class, 'getOakAddress'])
+    ->name('supplier.getOakAddress');
 
 
     // Route::post('/bond/place-order', [BondApiController::class, 'placeOrder']);
@@ -635,7 +721,7 @@ Route::middleware('auth:web')->group(function () {
     Route::get('/AutoCare/product/delete/{id}', 'ProductController@permanemetDelete');
     //End: Product Details
 
-    // Start: Supplier Details
+    // Start: customer Details
     Route::get('/AutoCare/customer/add', 'CustomerController@save');
     Route::post('/AutoCare/customer/add', 'CustomerController@save');
     Route::post('/AutoCare/customer/update', 'CustomerController@update');
@@ -651,7 +737,7 @@ Route::middleware('auth:web')->group(function () {
     Route::get('/AutoCare/customer/details/{id}/invoices', 'CustomerController@invoices')->name('AutoCare.customer.invoices');
     Route::get('/AutoCare/customer/details/{id}/statements', 'CustomerController@statements')->name('AutoCare.customer.statement');
     Route::get('/AutoCare/customer/details/{id}/vehicles/create', 'CustomerController@createVehicle');
-    // End: Supplier Details
+  
 
     Route::post('/AutoCare/customer/details/{id}/update-profile', 'CustomerController@updateProfile')->name('AutoCare.customer.update-profile');
     Route::post('/AutoCare/customer/details/{id}/update-password', 'CustomerController@updatePassword')->name('AutoCare.customer.update-password');
@@ -672,6 +758,47 @@ Route::middleware('auth:web')->group(function () {
     Route::get('/customers/{id}/statement/preview', 'CustomerController@previewStatementPdf')->name('customer.statement.preview');
 Route::get('/customers/{id}/statement/download', 'CustomerController@downloadStatementPdf')->name('customer.statement.download');
 Route::post('/customers/statement/email', 'CustomerController@sendStatementEmail')->name('customer.statement.email');
+
+        
+//garages details
+    Route::get('/AutoCare/garages/show', 'GaragesController@show')->name('AutoCare.garages.show');
+    Route::post('/AutoCare/garages/show', 'GaragesController@show')->name('AutoCare.garages.show');
+    Route::get('/AutoCare/garages/create', 'GaragesController@create')->name('AutoCare.garages.create');
+    Route::post('/AutoCare/garages', 'GaragesController@store')->name('AutoCare.garages.store');
+    Route::get('/AutoCare/garages/{garage}/edit', 'GaragesController@edit')->name('AutoCare.garages.edit');
+    Route::put('/AutoCare/garages/destroy/{garage}', 'GaragesController@update')->name('AutoCare.garages.update');
+    Route::delete('/AutoCare/garages/{garage}', 'GaragesController@destroy')->name('AutoCare.garages.destroy');
+    Route::get('/AutoCare/garages/search', 'GaragesController@view');
+    Route::post('/AutoCare/garages/search', 'GaragesController@view');
+    Route::get('/AutoCare/garages/trash/{id}', 'GaragesController@trash');
+    Route::get('/AutoCare/garages/delete', 'GaragesController@trashedList');
+    Route::get('/AutoCare/garages/delete/{id}', 'GaragesController@permanemetDelete');
+    Route::get('/AutoCare/garages/details/{id}', 'GaragesController@edit')->name('AutoCare.garages.details');
+    Route::get('/AutoCare/garages/details/{id}/orders', 'GaragesController@orders')->name('AutoCare.garages.orders');
+    Route::get('/AutoCare/garages/details/{id}/invoices', 'GaragesController@invoices')->name('AutoCare.garages.invoices');
+    Route::get('/AutoCare/garages/details/{id}/statements', 'GaragesController@statements')->name('AutoCare.garages.statement');
+    Route::get('/AutoCare/garages/details/{id}/vehicles/create', 'GaragesController@createVehicle');
+    Route::get('/AutoCare/garages/data', 'GaragesController@getGaragesData')->name('garages.data');
+    Route::get('/AutoCare/garages/statement/pdf', 'GaragesController@downloadStatementPDF')->name('AutoCare.garages.statement.pdf');
+    Route::post('/AutoCare/garages/statement/email', 'GaragesController@sendStatementEmail')->name('AutoCare.garages.statement.email');
+    Route::get('/garagess/{id}/statement/preview', 'GaragesController@previewStatementPdf')->name('garages.statement.preview');
+    Route::get('/garagess/{id}/statement/download', 'GaragesController@downloadStatementPdf')->name('garages.statement.download');
+    Route::post('/garagess/statement/email', 'GaragesController@sendStatementEmail')->name('garages.statement.email');
+    Route::post('/AutoCare/garages/update-status/{id}', 'GaragesController@updateStatus')->name('garages.updateStatus');
+    //end garage details
+// In your routes/web.php
+Route::put('/AutoCare/garages/{id}/password', 'GaragesController@updatePassword')->name('AutoCare.garages.update.password');
+
+    Route::get('/AutoCare/payouts', [GaragePayoutController::class, 'index'])->name('AutoCare.payouts.index');
+    Route::post('/AutoCare/payouts/{workshop}', [GaragePayoutController::class, 'payout'])->name('AutoCare.payouts.payout');
+    Route::post('/AutoCare/payouts/bulk', [GaragePayoutController::class, 'bulkPayout'])->name('AutoCare.payouts.bulk');
+
+    // Route::post('/payouts/bulk', [RevolutBusinessController::class, 'bulkPayout'])
+    // ->name('AutoCare.payouts.bulk');
+
+// Route::post('/payouts/{payout}', [RevolutBusinessController::class, 'payout'])
+    // ->name('AutoCare.payouts.payout');
+    Route::resource('/AutoCare/customer-groups', CustomerGroupController::class);
 
     // Start: Master Form Details
     Route::post('/master/brands', 'MasterController@brand');
@@ -787,13 +914,13 @@ Route::post('/customers/statement/email', 'CustomerController@sendStatementEmail
      */
 
 
-    Route::get('/employee', 'MasterformsController@addUser')->name('employee');
-    Route::post('/employee-save', 'MasterformsController@addUser')->name('employee-save');
-    Route::get('/employee-list', 'MasterformsController@userList')->name('employee-list');
-    Route::get('/employee-edit/{id}', 'MasterformsController@addUser')->name('employee-edit');
-    Route::get('/employee/block/{type}/{id}', 'MasterformsController@blockUser')->name('employee-block-edit');
-    Route::get('/employee/trash/{type}/{id}', 'MasterformsController@trashUser')->name('employee-trash-edit');
-    Route::get('/employee/{id}/{view}', 'MasterformsController@addUser')->name('employee-view-edit');
+    Route::get('AutoCare/employee', 'MasterformsController@addUser')->name('employee');
+    Route::post('AutoCare/employee-save', 'MasterformsController@addUser')->name('employee-save');
+    Route::get('AutoCare/employee-list', 'MasterformsController@userList')->name('employee-list');
+    Route::get('AutoCare/employee-edit/{id}', 'MasterformsController@addUser')->name('employee-edit');
+    Route::get('AutoCare/employee/block/{type}/{id}', 'MasterformsController@blockUser')->name('employee-block-edit');
+    Route::get('AutoCare/employee/trash/{type}/{id}', 'MasterformsController@trashUser')->name('employee-trash-edit');
+    Route::get('AutoCare/employee/{id}/{view}', 'MasterformsController@addUser')->name('employee-view-edit');
 
     // Route::get('/get-payment-overview/{sid}', 'StudentController@paymentOverview')->name('get-payment-overview');
     // Route::get('/get-payment-overview-by-year-id/{sid}/{year}', 'StudentController@paymentOverview')->name('get-payment-overview');

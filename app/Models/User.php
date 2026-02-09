@@ -4,11 +4,13 @@ namespace App\Models;
 
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable
 {
     use Notifiable;
+     use HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -33,10 +35,10 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
-    public function role()
-    {
-        return $this->hasOne('App\Role', 'id', 'role_id');
-    }
+    // public function role()
+    // {
+    //     return $this->hasOne('App\Role', 'id', 'role_id');
+    // }
     public function isAdmin()
     {
         return $this->role_id === 1;
@@ -51,4 +53,23 @@ class User extends Authenticatable
     {
         return $this->hasOne('App\Models\UserDetail', 'users_id', 'id');
     }
+
+public function role()
+{
+    return $this->belongsTo(\App\Models\Role::class, 'role_id');
+}
+
+public function hasRole($roleName)
+{
+    return $this->role && strtolower($this->role->name) === strtolower($roleName);
+}
+
+
+public function hasPermission($permissionName)
+{
+    return $this->role
+        ->permissions
+        ->contains('name', $permissionName);
+}
+
 }

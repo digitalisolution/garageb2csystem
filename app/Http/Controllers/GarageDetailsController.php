@@ -4,19 +4,22 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\GarageDetails;
+use App\Models\HeaderLink;
 use Illuminate\Support\Facades\Log;
 
 class GarageDetailsController extends Controller
 {
     public function index()
     {
-        $garages = GarageDetails::all();
-        return view('AutoCare.garage_details.index', compact('garages'));
+        $viewData['header_link'] = HeaderLink::where("menu_id", '18')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+        $viewData['garages'] = GarageDetails::all();
+        return view('AutoCare.garage_details.index', $viewData);
     }
 
     public function create()
     {
-        return view('AutoCare.garage_details.create');
+        $viewData['header_link'] = HeaderLink::where("menu_id", '18')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+        return view('AutoCare.garage_details.create', $viewData);
     }
 
     public function store(Request $request)
@@ -80,8 +83,9 @@ class GarageDetailsController extends Controller
 
     public function edit($id)
     {
-        $garage = GarageDetails::findOrFail($id);
-        return view('AutoCare.garage_details.create', compact('garage'));
+        $viewData['header_link'] = HeaderLink::where("menu_id", '18')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+        $viewData['garage'] = GarageDetails::findOrFail($id);
+        return view('AutoCare.garage_details.create', $viewData);
     }
 
     public function update(Request $request, $id)

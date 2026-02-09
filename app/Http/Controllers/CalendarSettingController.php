@@ -8,6 +8,7 @@ use App\Models\Booking;
 use App\Models\Supplier;
 use App\Models\CarService;
 use App\Models\DeliveryTime;
+use App\Models\HeaderLink;
 use Carbon\Carbon;
 
 
@@ -16,14 +17,16 @@ class CalendarSettingController extends Controller
     // Display all calendar settings
     public function index()
     {
-        $settings = CalendarSetting::all();
-        return view('AutoCare.calendar.index', compact('settings'));
+        $viewData['header_link'] = HeaderLink::where("menu_id", '17')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+        $viewData['settings'] = CalendarSetting::all();
+        return view('AutoCare.calendar.index', $viewData);
     }
 
     // Show the form to create a new calendar setting
     public function create()
     {
-        return view('AutoCare.calendar.create');
+        $viewData['header_link'] = HeaderLink::where("menu_id", '17')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+        return view('AutoCare.calendar.create', $viewData);
     }
 
     // Store a new calendar setting
@@ -58,9 +61,10 @@ class CalendarSettingController extends Controller
     // Show the form to edit an existing calendar setting
     public function edit($id)
     {
-        $calendarSetting = CalendarSetting::findOrFail($id);
-         $services = CarService::where('status', 1)->get(); 
-        return view('AutoCare.calendar.create', compact('calendarSetting','services'));
+        $viewData['calendarSetting'] = CalendarSetting::findOrFail($id);
+        $viewData['services'] = CarService::where('status', 1)->get(); 
+        $viewData['header_link'] = HeaderLink::where("menu_id", '17')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+        return view('AutoCare.calendar.create', $viewData);
     }
 
     // Update an existing calendar setting

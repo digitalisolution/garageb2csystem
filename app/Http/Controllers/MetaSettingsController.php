@@ -4,18 +4,20 @@
 // app/Http/Controllers/MetaSettingsController.php
 namespace App\Http\Controllers;
 use Mews\Purifier\Facades\Purifier;
-
+use App\Models\HeaderLink;
 use App\Models\MetaSettings;
 use Illuminate\Http\Request;
 
 class MetaSettingsController extends Controller {
     public function index() {
-        $metasettings = MetaSettings::orderBy('status', 'asc')->get();
-        return view('AutoCare.meta-settings.index', compact('metasettings'));
+        $viewData['header_link'] = HeaderLink::where("menu_id", '23')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+        $viewData['metasettings'] = MetaSettings::orderBy('status', 'asc')->get();
+        return view('AutoCare.meta-settings.index', $viewData);
     }
 
     public function create() {
-        return view('AutoCare.meta-settings.create');
+        $viewData['header_link'] = HeaderLink::where("menu_id", '23')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+        return view('AutoCare.meta-settings.create', $viewData);
     }
 
     public function store(Request $request) {
@@ -34,8 +36,9 @@ class MetaSettingsController extends Controller {
     }
 
     public function edit($setting_id) {
-        $metasettings = MetaSettings::where('setting_id', $setting_id)->first();
-        return view('AutoCare.meta-settings.edit', compact('metasettings'));
+        $viewData['header_link'] = HeaderLink::where("menu_id", '23')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+        $viewData['metasettings'] = MetaSettings::where('setting_id', $setting_id)->first();
+        return view('AutoCare.meta-settings.edit', $viewData);
     }
 
     public function update(Request $request, $setting_id) {

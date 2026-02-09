@@ -74,13 +74,14 @@
                     <h3>Tyre Sizes</h3>
                     <div class="sitemap_bank">
                         @foreach ($tyreSizes as $tyre)
-                            <?php        //echo "<pre>"; print_r($tyre); ?>
-                            @if($tyre['tyre_width'] != '' && $tyre['tyre_profile'] != '' && $tyre['tyre_diameter'] != '')
-                                <a
-                                    href="{{ url('/tyres-size/' . $tyre['tyre_width'] . '-' . $tyre['tyre_profile'] . '-' . $tyre['tyre_diameter']) }}">
-                                    {{ $tyre['tyre_width'] }} / {{ $tyre['tyre_profile'] }} R{{ $tyre['tyre_diameter'] }}</a>
-                            @endif
-
+                        @if(!empty($tyre['tyre_width']) && !empty($tyre['tyre_profile']) && !empty($tyre['tyre_diameter']))
+                        @php
+                        $fittingType = $tyre['order_types'][0] ?? 'mailorder';
+                        @endphp
+                        <a href="{{ url('/tyres-size/' . $tyre['tyre_width'] . '-' . $tyre['tyre_profile'] . '-' . $tyre['tyre_diameter']) }}?vehicle_type={{ $tyre['vehicle_type'] }}&fitting_type={{ $fittingType }}">
+                        {{ $tyre['tyre_width'] }} / {{ $tyre['tyre_profile'] }} R{{ $tyre['tyre_diameter'] }}
+                        </a>
+                        @endif
                         @endforeach
                     </div>
                 </div>

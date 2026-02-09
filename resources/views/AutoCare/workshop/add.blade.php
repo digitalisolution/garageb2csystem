@@ -11,15 +11,9 @@
             {{ Form::hidden('id', isset($id) ? $id : '', []) }}
             <div class="">
                 <h5>Please Fill Up Workshop Details</h5>
-
-
                 <div class="row">
-                    <!-- left column -->
                     <div class="col-md-12 col-sm-12">
-                        <!-- general form elements -->
                         <div class="box box-primary">
-                            <!-- /.box-header -->
-                            <!-- form start -->
                             <div class="box-body">
                                 @if ($errors->any())
                                     <ul class="alert alert-danger" style="list-style:none">
@@ -45,7 +39,6 @@
                                                         $('#openWorkshopDetail').trigger('click');
                                                         var newTab = window.open(
                                                             "{{ url('/') }}/AutoCare/workshop/search");
-                                                        // console.log("Worshop Detail Opened In New Tab");
                                                     }, 1000)
                                                 })
                                             </script>
@@ -59,7 +52,6 @@
                                                         $('#openWorkshopDetail').trigger('click');
                                                         var newTab = window.open(
                                                             "{{ url('/') }}/AutoCare/workshop/search");
-                                                        // console.log("Worshop Detail Opened In New Tab");
                                                     }, 1000)
                                                 })
                                             </script>
@@ -84,10 +76,10 @@
                 <div class="card-body">
                     <div class=" form-group row">
                         @if (!isset($id))
-                                        <div class="col-md-3">
-                                            <label class="control-label" for="name"> Select Customer:&emsp;</label>
-                                            <div class="input-group flex-nowrap">
-                                            {{ Form::select(
+                    <div class="col-md-3">
+                        <label class="control-label" for="name"> Select Customer:&emsp;</label>
+                        <div class="input-group flex-nowrap">
+                        {{ Form::select(
             'customer_id',
             $customerNameSelect,
             isset($customer_id) ? $customer_id : '',
@@ -265,8 +257,9 @@
                                                 {{ Form::select('status', [
             'pending' => 'Pending',
             'booked' => 'Booked',
-            'awaiting' => 'Awaiting',
+            'processing' => 'Processing',
             'failed' => 'Failed',
+            'cancelled' => 'Cancelled',
             'completed' => 'Completed'
         ], isset($status) ? $status : 'pending', [
             'class' => 'form-control',
@@ -544,8 +537,9 @@
                                                 {{ Form::select('status', [
             'pending' => 'Pending',
             'booked' => 'Booked',
-            'awaiting' => 'Awaiting',
+            'processing' => 'Processing',
             'failed' => 'Failed',
+            'cancelled' => 'Cancelled',
             'completed' => 'Completed'
         ], isset($status) ? $status : 'pending', [
             'class' => 'form-control',
@@ -1694,12 +1688,8 @@
                     shippingPrice = parseFloat(window.postcodeResponseData.ship_price) || 0;
                     shippingVat = shippingPrice * 0.2; // 20% VAT on shipping
                 }
-                // shippingPrice = parseFloat(window.postcodeResponseData.ship_price) || 0;
-                // shippingVat = shippingPrice * 0.2; // 20% VAT on shipping
 
                 const grandTotal = totalProductPrice + totalServicePrice + shippingPrice + shippingVat;
-
-                // Update display values
                 $('#total_Product_amount').text(totalProductPrice.toFixed(2));
                 $('#total_Service_amount').text(totalServicePrice.toFixed(2));
                 if (shippingPrice > 0) {
@@ -1707,7 +1697,6 @@
                     $('#shipping_vat').text(shippingVat.toFixed(2));
                 }
                 $('#total_grand_amount').text(grandTotal.toFixed(2));
-                // Update hidden input fields
                 $('#total_tyre_price_input').val(totalProductPrice.toFixed(2));
                 $('#total_service_price_input').val(totalServicePrice.toFixed(2));
                 $('#grand_total_input').val(grandTotal.toFixed(2));
@@ -1720,12 +1709,12 @@
         allowClear: true,
         width: '100%',
         ajax: {
-            url: '/customers/search', // Replace with your API endpoint
+            url: '/customers/search',
             dataType: 'json',
-            delay: 250, // Delay in milliseconds before sending the request
+            delay: 250,
             data: function (params) {
                 return {
-                    q: params.term, // Search term entered by the user
+                    q: params.term,
                 };
             },
             processResults: function (data) {
@@ -1733,23 +1722,21 @@
                     results: data.map(function (item) {
                         return {
                             id: item.id,
-                            text: item.text, // Display text combining customer_name and company_name
+                            text: item.text,
                         };
                     }),
                 };
             },
             cache: true,
         },
-        minimumInputLength: 2, // Minimum characters required to trigger the search
+        minimumInputLength: 2,
     });
 });
             </script>
         <script>
             $(document).ready(function () {
-                let tyreProducts = []; // Store fetched tyre data globally
-                let currentFilters = {}; // Store current filter values globally
-
-                // Fetch Tyre Products and Populate Filters
+                let tyreProducts = [];
+                let currentFilters = {};
                 $('#addTyreButton').click(function () {
                     const selectedFittingType = $('#fitting_type').val();
                     $('#tyreModal').modal('show');
@@ -1758,10 +1745,9 @@
                         applyFilters();
                     }
                 });
-
                 function populateSupplierFilter() {
                 const supplierDropdown = $('#supplier');
-                if (supplierDropdown.children().length > 1) return; // Prevent redundant population
+                if (supplierDropdown.children().length > 1) return;
 
                 $.ajax({
                     type: "GET",
@@ -1769,9 +1755,8 @@
                     success: function (response) {
                         const suppliers = response.suppliers;
                         if (Array.isArray(suppliers)) {
-                            supplierDropdown.empty(); // Clear existing options
-                            supplierDropdown.append('<option value="">-- Select Supplier --</option>'); // Add default placeholder
-
+                            supplierDropdown.empty();
+                            supplierDropdown.append('<option value="">-- Select Supplier --</option>'); 
                             suppliers.forEach((supplier) => {
                                 const option = `<option value="${supplier.supplier_name}" ${
                                     supplier.supplier_name === 'ownstock' ? 'selected' : ''
@@ -1787,11 +1772,9 @@
                     }
                 });
             }
-
                 function populateOrdertypeFilter(selectedValue = '19') {
                     const orderTypeDropdown = $('#fittingtype');
                     if (orderTypeDropdown.find('option').length > 0) return;
-
                     $.ajax({
                         type: "GET",
                         url: "{{ route('AutoCare.workshop.getOrderType') }}",
@@ -1820,14 +1803,13 @@
 
                 let currentPage = 1;
                 let perPage = 10;
-
                 function fetchTyreProducts(page = 1) {
                     $.ajax({
                         type: "GET",
                         url: "{{ route('getTyreProducts') }}",
                         data: {
                             page,
-                            ...currentFilters // Use stored filters
+                            ...currentFilters
                         },
                         success: function (response) {
                             const products = response.tyre_products?.data || [];
@@ -1842,7 +1824,6 @@
                         }
                     });
                 }
-
                 function setupPagination(paginationData) {
                     const { current_page, last_page } = paginationData;
                     const paginationControls = $('#paginationControls');
@@ -1890,7 +1871,6 @@
                         tyreList.append('<tr><td colspan="14">No products found</td></tr>');
                         return;
                     }
-
                     products.forEach((product) => {
                         tyreList.append(`
                         <tr>
@@ -1917,7 +1897,6 @@
                     });
                     attachSelectEvent(products);
                 }
-
                 function applyFilters() {
                     let rftFilterValue = document.getElementById('rftFilter').checked ? 1 : 0;
 
@@ -1933,7 +1912,6 @@
                         fittingtype: $('#fittingtype').val(),
                         tyre_price: $('#priceFilter').val(),
                     };
-
                     fetchTyreProducts(1);
                 }
 
@@ -1950,7 +1928,6 @@
                         event.preventDefault();
                         const productId = $(this).data('product-id');
                         const selectedProduct = products.find((product) => product.product_id === productId);
-
                         if (selectedProduct) {
                             const selectedPrice = parseFloat(selectedProduct.selected_price) || 0;
                             const tyre_price = parseFloat(selectedProduct.tyre_price) || 0;
@@ -1959,7 +1936,6 @@
                             const amount = rate * (1 + vatType / 100);
                             const itemValue = ` ${selectedProduct.tyre_description}`;
                             const descriptionValue = `<strong>${selectedProduct.tyre_ean}</strong> ${itemValue}`;
-
                             const newRow = `
                             <tr>
                             <input type="hidden" name="product_id[]" value="${selectedProduct.product_id}" class="form-control" required>

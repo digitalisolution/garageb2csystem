@@ -60,17 +60,19 @@
     <div class="col-sm-12">
       <div class="card">
         <div class="card-header">
-          <i class="fa fa-align-justify"></i> supplier Detail
+          <i class="fa fa-align-justify"></i>Supplier Detail
+          <a href="AutoCare/supplier/add" class="btn btn-primary text-center float-right"><i class="fa fa-plus"></i> Add Supplier</a>
         </div>
         <div class="card-body table-responsive" style="font-size: 13px;padding-left:10px;vertical-align:middle;">
-          <table id="datable_1" class="table table-hover">
+        <table id="datable_1" class="table table-hover">
             <thead class="thead-dark">
               <tr>
                 <th style="white-space: nowrap">Id</th>
+                <th style="white-space: nowrap">Garage Name</th>
                 <th style="white-space: nowrap">Supplier</th>
                 <th style="white-space: nowrap">Mobile</th>
                 <th style="white-space: nowrap">Email</th>
-                <th style="white-space: nowrap">Address</th>
+                <th style="white-space: nowrap">Website Display</th>
                 <th style="white-space: nowrap">Status</th>
                 <th style="white-space: nowrap">Products</th>
                 <th style="white-space: nowrap">Created Date</th>
@@ -82,10 +84,19 @@
               @foreach($supplier as $key => $value)
           <tr>
           <td>{{ $value['id'] }}</td>
+          <td>{{ $value->garage ? $value->garage->garage_name : '-' }}</td>
           <td>{{ $value['supplier_name'] }}<br><a href="{{ route('download.csv', ['id' => $value->id]) }}" class="">Download</a></td>
           <td>{{ $value['mob_num'] }}</td>
           <td>{{ $value['email'] }}</td>
-          <td>{{ $value['address'] }}</td>
+           <td>
+            <label class="switch">
+              <input type="checkbox"
+                    class="toggleWebsiteStatus"
+                    data-id="{{ $value['id'] }}"
+                    {{ $value['website_display_status'] ? 'checked' : '' }}>
+              <span class="slider round"></span>
+            </label>
+          </td>
           <td>
             <span class="badge {{ $value['status'] ? 'bg-success' : 'bg-danger' }}">
             {{ $value['status'] ? 'Active' : 'Inactive' }}
@@ -99,43 +110,33 @@
             Install
             </a>
             @if($value['supplier_name'] != 'ownstock')
-        <a href="{{ route('supplier.uninstall', $value['id']) }}" class="btn btn-danger btn-sm">
-        Uninstall
-        </a>
-      @endif
-            <a href="{{ url('/AutoCare/supplier/add/' . $value['id']) }}" class="btn btn-success btn-sm">
-            <i class="fa fa-edit"></i>
+            <a href="{{ route('supplier.uninstall', $value['id']) }}" class="btn btn-danger btn-sm">
+            Uninstall
             </a>
-            @if($value['supplier_name'] != 'ownstock')
-        <a href="{{ url('/')}}/AutoCare/supplier/delete/{{ $value['id']}}" class="btn btn-danger btn-sm"
-         onclick="return confirm('Are you sure you want to delete this supplier?');">
-        <i class="fa fa-remove"></i>                 
-      @endif
+          @endif
+                <a href="{{ url('/AutoCare/supplier/add/' . $value['id']) }}" class="btn btn-success btn-sm">
+                <i class="fa fa-edit"></i>
+                </a>
+                @if($value['supplier_name'] != 'ownstock')
+            <a href="{{ url('/')}}/AutoCare/supplier/delete/{{ $value['id']}}" class="btn btn-danger btn-sm"
+             onclick="return confirm('Are you sure you want to delete this supplier?');">
+            <i class="fa fa-remove"></i>                 
+            @endif
 
-          </td>
-          </tr>
-        @endforeach
+              </td>
+              </tr>
+            @endforeach
             </tbody>
-          </table>
+        </table>
 
           <div class="col-lg-12 text-center">
 
           </div>
-          <!-- <li><a href="#" id="json"> <i class="fa fa-print"></i> JSON</a></li>
-                                <li><a href="#" onclick="$('#table').tableExport({type:'json',escape:'false'});"><img src="images/json.jpg" width="24px">JSON (ignoreColumn)</a></li> -->
-          <!--  <p class="lead"><button id="json" class="btn btn-primary">TO JSON</button> <button id="csv" class="btn btn-info">TO CSV</button>  <button id="pdf" class="btn btn-danger">TO PDF</button></p> -->
         </div>
       </div>
     </div>
 
   </div>
-
-  <div class="row">
-
-  </div>
-
-
-
 </section>
 
 <script src="{{ asset('alerts-boxes/js/sweetalert.min.js') }}"></script>
@@ -228,10 +229,32 @@
         });
       }
     });
-
-
-
   });
+</script>
+<script>
+  $(document).on('change', '.toggleWebsiteStatus', function () {
+  let supplierId = $(this).data('id');
+  let status = $(this).is(':checked') ? 1 : 0;
 
+  $.ajax({
+    url: "{{ url('/AutoCare/supplier/toggle-website-status') }}",
+    type: "POST",
+    data: {
+      _token: "{{ csrf_token() }}",
+      supplier_id: supplierId,
+      website_display_status: status
+    },
+    success: function (response) {
+      if (response.status) {
+        swal("Success!", response.message, "success");
+      } else {
+        swal("Error!", "Something went wrong", "error");
+      }
+    },
+    error: function () {
+      swal("Error!", "Unable to update status", "error");
+    }
+  });
+});
 </script>
 @endsection

@@ -8,9 +8,11 @@ class WorkshopTyre extends Model
 {
     protected $fillable = [
         'workshop_id',
+        'garage_id',
         'ref_type',
         'product_id',
         'description',
+        'tyre_weight',
         'model',
         'supplier',
         'product_type',
@@ -31,4 +33,9 @@ class WorkshopTyre extends Model
     {
         return $this->belongsTo(Workshop::class);
     }
+
+    public function garage()
+{
+    return $this->belongsTo(Garage::class);
+}
 }

@@ -8,6 +8,37 @@
 				<div class="bg-gray p-3 text-center rounded mb-4">
 					<h2 class="m-0"><strong>Orders</strong></h2>
 				</div>
+                        @if ($errors->any())
+                            <ul class="alert alert-danger" style="list-style:none">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        @endif
+
+                        <!-- Notifications -->
+                        @if(session('success'))
+                            <div class="alert alert-success alert-dismissible fade show m-3" role="alert">
+                                {{ session('success') }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        @endif
+
+                        @if(session('error'))
+                            <div class="alert alert-danger alert-dismissible fade show m-3" role="alert">
+                                {{ session('error') }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        @endif
+
+                        @if (session()->has('message.level'))
+                            <div class="alert alert-{{ session('message.level') }} alert-dismissible"
+                                onload="javascript: Notify('You`ve got mail.', 'top-right', '5000', 'info', 'fa-envelope', true); return false;">
+                                <button type="button" class="close" data-bs-dismiss="alert" aria-hidden="true">×</button>
+                                <h4><i class="icon fa fa-check"></i> {{ ucfirst(session('message.level')) }}!</h4>
+                                {!! session('message.content') !!}
+                            </div>
+                        @endif
 				<div class="table-responsive">
 					<table class="table table-striped border text-center">
 						<thead class="bg-dark text-white">
@@ -36,12 +67,14 @@
 									</td>
 
 									<td>
-										@if ($order->status === 'Work Complete')
-											<badge class="bg-success text-white rounded px-2 no-wrap">{{ $order->status }}</badge>
-										@elseif ($order->status === 'Collection')
-											<badge class="bg-primary text-white rounded px-2 no-wrap">{{ $order->status }}</badge>
+										@if ($order->status === 'completed')
+											<badge class="bg-success text-white rounded px-2 no-wrap">{{ strtoupper($order->status) }}</badge>
+										@elseif ($order->status === 'cancelled')
+											<badge class="bg-danger text-white rounded px-2 no-wrap">{{ strtoupper($order->status) }}</badge>
+										@elseif ($order->status === 'processing')
+											<badge class="bg-warning text-white rounded px-2 no-wrap">{{ strtoupper($order->status)}}</badge>
 										@else
-											<badge class="bg-warning text-white rounded px-2 no-wrap">{{ $order->status }}</badge>
+											<badge class="bg-primary text-white rounded px-2 no-wrap">{{strtoupper($order->status) }}</badge>
 										@endif
 									</td>
 									<td>£{{ number_format($order->grandTotal, 2) }}</td>
@@ -50,17 +83,26 @@
 											class="btn btn-info btn-sm text-white" target="_blank">
 											<i class="fa fa-eye"></i>
 										</a>
-										<button type="submit" class="btn btn-danger btn-sm">Cancel</button>
+										@if ($order->status === 'booked')
+											<form action="{{ route('workshop.void', $order->id) }}" method="POST"
+												style="display:inline;">
+												@csrf
+												<button type="submit" class="btn btn-danger btn-sm"
+													onclick="return confirm('Are you sure you want to cancel this booking?');">
+													<i class="fa fa-times"></i> Cancel
+												</button>
+											</form>
+										@endif
 									</td>
 								</tr>
 							@endforeach
 						</tbody>
 					</table>
-					
+
 				</div>
 				<div class="d-flex justify-content-center mt-2">
-						{{ $workshops->links() }}
-					</div>
+					{{ $workshops->links() }}
+				</div>
 			</div>
 		</div>
 	</div>

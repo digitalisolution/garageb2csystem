@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\VehicleDetail;
+use App\Models\HeaderLink;
 use Illuminate\Http\Request;
 
 class VehicleDetailController extends Controller
@@ -10,14 +11,27 @@ class VehicleDetailController extends Controller
     // Display a listing of vehicles
     public function index()
     {
-        $vehicles = VehicleDetail::orderBy('id', 'desc')->get(); // Load 25 per page
-        return view('AutoCare.vehicles.index', compact('vehicles'));
+        $viewData['vehicles'] = VehicleDetail::orderBy('id', 'desc')->get(); // Load 25 per page
+
+        /*$viewData['option1'] = 'Vehicle List';
+        $viewData['optionValue1'] = "AutoCare/vehicles";
+        $viewData['option2'] = 'Add Vehicle';
+        $viewData['optionValue2'] = "AutoCare/vehicles/create";*/
+        $viewData['header_link'] = HeaderLink::where("menu_id", '10')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+
+        return view('AutoCare.vehicles.index', $viewData);
     }
     
     // Show the form for creating a new vehicle
     public function create()
     {
-        return view('AutoCare.vehicles.create');
+        /*$viewData['option1'] = 'Vehicle List';
+        $viewData['optionValue1'] = "AutoCare/vehicles";
+        $viewData['option2'] = 'Add Vehicle';
+        $viewData['optionValue2'] = "AutoCare/vehicles/create";*/
+        $viewData['header_link'] = HeaderLink::where("menu_id", '10')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+
+        return view('AutoCare.vehicles.create', $viewData);
     }
 
     // Store a newly created vehicle in the database
@@ -75,7 +89,13 @@ public function store(Request $request)
     // Show the form for editing the specified vehicle
     public function edit(VehicleDetail $vehicle)
     {
-        return view('AutoCare.vehicles.create', compact('vehicle'));
+        /*$viewData['option1'] = 'Vehicle List';
+        $viewData['optionValue1'] = "AutoCare/vehicles";
+        $viewData['option2'] = 'Add Vehicle';
+        $viewData['optionValue2'] = "AutoCare/vehicles/create";*/
+        $viewData['header_link'] = HeaderLink::where("menu_id", '10')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+        $viewData['vehicle'] = $vehicle;
+        return view('AutoCare.vehicles.create', $viewData);
     }
 
     // Update the specified vehicle in the database

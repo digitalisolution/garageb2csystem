@@ -18,12 +18,8 @@
                                     <div class="dropdown-menu dropdown-menu-right">
                                         <a class="dropdown-item" href="{{ url('/') }}/AutoCare/workshop/search">Search
                                             Workshop</a>
-                                        <a class="dropdown-item" href="{{ url('/') }}/AutoCare/sale/add">Sale Spare</a>
-                                        <a class="dropdown-item" href="{{ url('/') }}/AutoCare/sale/sale_return">Return
-                                            Spare Log</a>
                                     </div>
                                 </div>
-                                {{-- <h4 class="mb-0">{{ $totalPendingJob }}</h4> --}}
                                 <a href="{{ url('/') }}/AutoCare/workshop/add">
                                     <p style="color:white">Job Sheet</p>s
                                 </a>
@@ -47,28 +43,25 @@
                             </div>
                         </div>
                         <!--/.col-->
-                        <div class="card text-white bg-dash3">
+                        <div class="card text-white bg-dash2">
                             <div class="card-body pb-0">
+                                
                                 <div class="btn-group float-right">
                                     <button type="button" class="btn btn-transparent dropdown-toggle p-0" data-toggle="dropdown"
                                         aria-haspopup="true" aria-expanded="false">
-                                        <i class="icon-settings"></i>
+                                        <i class="icon-location-pin"></i>
                                     </button>
                                     <div class="dropdown-menu dropdown-menu-right">
-                                        <a class="dropdown-item" href="{{ url('/') }}/AutoCare/workshop/search">Purchase
-                                            Search</a>
-                                        <a class="dropdown-item" href="{{ url('/') }}/AutoCare/purchase/purhase_return">Purchase
-                                            Return</a>
-                                        {{-- <a class="dropdown-item" href="{{ url('/') }}/AutoCare/workshop/search">Something
-                                            else here</a> --}}
+                                        <a class="dropdown-item" href="{{ url('/') }}/AutoCare/workshop/search-invoice">Invoices List</a>
                                     </div>
                                 </div>
-                                <a href="{{ url('/') }}/AutoCare/workshop/add">
-                                    <p style="color:white">Purchase</p>
+                                <h4 class="mb-0">{{ $totalInvoices }}</h4>
+                                <a href="{{ url('/') }}/AutoCare/workshop/search-invoice">
+                                    <p style="color:white">Invoices</p>
                                 </a>
                             </div>
-                            <div class="chart-wrapper hidden">
-                                <canvas id="card-chart3" class="chart" height="70"></canvas>
+                            <div class="chart-wrapper px-3 hidden">
+                                <canvas id="card-chart2" class="chart" height="70"></canvas>
                             </div>
                         </div>
                         <!--/.col-->
@@ -80,10 +73,8 @@
                                         <i class="icon-settings"></i>
                                     </button>
                                     <div class="dropdown-menu dropdown-menu-right">
-                                        <a class="dropdown-item" href="{{ url('/') }}/CustomerCreditDebitLog/add">Customer
-                                            Payment Log</a>
-                                        {{-- <a class="dropdown-item" href="#">Another action</a>
-                                        <a class="dropdown-item" href="#">Something else here</a> --}}
+                                        <a class="dropdown-item" href="{{ url('/') }}/AutoCare/customer/add">Customer
+                                            List</a>
                                     </div>
                                 </div>
                                 <h4 class="mb-0">{{ $TotalCustomers }}</h4>

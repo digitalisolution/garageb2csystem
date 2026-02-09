@@ -2,14 +2,26 @@
 namespace App\Http\Controllers\ViewController;
 
 use App\Models\TyresProduct;
-use App\Models\CarService; // Assuming a model for services
+use App\Models\CarService;
+
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Response;
+use App\Http\Controllers\MailTyrePricingController;
+use App\Http\Controllers\MobileTyrePricingController;
 use Illuminate\Support\Facades\Session;
 use App\Models\Booking;
 
 class CartController extends Controller
 {
+      protected $mailTyrePricingController;
+      protected $mobileTyrePricingController;
+
+    public function __construct(MailTyrePricingController $mailTyrePricingController, MobileTyrePricingController $mobileTyrePricingController)
+    {
+        $this->mailTyrePricingController = $mailTyrePricingController;
+        $this->mobileTyrePricingController = $mobileTyrePricingController;
+    }
     public function show()
     {
         $cart = session('cart', []);
@@ -23,11 +35,11 @@ class CartController extends Controller
                 'end' => $booking->end ? $booking->end->format('Y-m-d\TH:i:s') : null,
             ];
         })->filter(function ($event) {
-            return $event['start'] && $event['end']; // Exclude events with invalid dates
+            return $event['start'] && $event['end'];
         });
 
         if (empty($cart)) {
-            return redirect()->route('home'); // Redirect if cart is empty
+            return redirect()->route('home');
         }
 
         foreach ($cart as $item) {
@@ -40,10 +52,19 @@ class CartController extends Controller
                     $product = CarService::find($item['id']);
                 }
 
+                if ($item['type'] === 'tyre') {
+                    $image = $product->tyre_image ?? 'sample-tyre.png';
+                } elseif ($item['type'] === 'service') {
+                    $image = $product->inner_image ?? 'no-img-service.jpg';
+                } else {
+                    $image = null; // fallback
+                }
+
                 if ($product) {
                     $cartItem = [
                         'id' => $product->id,
                         'type' => $item['type'],
+                        'image' => $image,
                         'tax_class_id' => $product->tax_class_id ?? '',
                         'model' => $product->model ?? ($item['type'] === 'service' ? $product->name : ''),
                         'price' => $item['price'] ?? 0,
@@ -52,7 +73,6 @@ class CartController extends Controller
                         'total' => $item['price'] * $item['quantity'],
                     ];
 
-                    // Add `ean` and `sku` only for `tyre` type
                     if ($item['type'] === 'tyre') {
                         $cartItem['ean'] = $product->ean ?? '';
                         $cartItem['sku'] = $product->sku ?? '';
@@ -66,32 +86,55 @@ class CartController extends Controller
             }
         }
 
-        // Ensure total price is stored in the session, aligning with `add` function
         Session::put('cartTotalPrice', $total);
-
         return view('checkout', compact('cartItems', 'total', 'shippingData', 'totalQuantity', 'events'));
     }
 
 
-    public function add(Request $request)
+  public function add(Request $request)
     {
         $itemId = $request->input('id');
         $fittingType = $request->input('fitting_type', null);
         $qty = $request->input('qty', 1);
-        $type = $request->input('type', 'tyre'); // Default type is tyre
+        $type = $request->input('type', 'tyre');
         $shippingPricePerJob = 0;
         $shippingPricePerTyre = 0;
         $shippingData = session('postcode_data', []);
         $hasMobileFitting = false;
+        $cart = Session::get('cart', []);
+        $existingFittingTypes = collect($cart)->pluck('fitting_type')->unique()->values()->toArray();
 
-        if ($qty < 1) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Minimum quantity is 1.'
-        ], 400);
+        $hasConflictingFittingType = false;
+        $existingFittingTypeLabel = '';
+
+        if (!empty($existingFittingTypes)) {
+            if (!in_array($fittingType, $existingFittingTypes)) {
+                $hasConflictingFittingType = true;
+                $existingFittingTypeLabel = $existingFittingTypes[0] ?? 'an existing fitting type';
+            }
         }
 
-        // Determine product details based on type
+        if ($hasConflictingFittingType) {
+            return response()->json([
+                'success' => false,
+                'message' => "This item has a different fitting type ({$fittingType}). The cart currently contains items with fitting type '{$existingFittingTypeLabel}'.",
+                'needs_confirmation' => true,
+                'requested_item' => [
+                    'id' => $itemId,
+                    'type' => $type,
+                    'fitting_type' => $fittingType,
+                    'qty' => $qty,
+                ],
+                'existing_fitting_type' => $existingFittingTypeLabel,
+            ], 200);
+        }
+
+        if ($qty < 1) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Minimum quantity is 1.'
+            ], 400);
+        }
         if ($type === 'tyre') {
             $product = TyresProduct::where('product_id', $itemId)->first();
             $productIdField = 'product_id';
@@ -104,11 +147,9 @@ class CartController extends Controller
             return response()->json(['success' => false, 'message' => 'Invalid product type'], 400);
         }
 
-        // Validate product existence
         if (!$product) {
             return response()->json(['success' => false, 'message' => ucfirst($type) . ' not found'], 404);
-        }// After fetching $product and before updating the cart
-        $cart = Session::get('cart', []);
+        }
         $cartKey = $type . '_' . $itemId;
 
         $existingQuantity = isset($cart[$cartKey]) ? $cart[$cartKey]['quantity'] : 0;
@@ -120,12 +161,38 @@ class CartController extends Controller
                 'message' => nl2br("Requested quantity exceeds available stock.</br>Available: {$product->tyre_quantity}"),
             ], 200);
         }
-        // Retrieve cart from session
 
+    if (session('user_postcode') && $fittingType === 'mailorder') {
+        $user_postcode = new Request(['postcode' => session('user_postcode')]);
+        $response = $this->mailTyrePricingController->calculateMailShipping($user_postcode);
+        $shippingData = $response->getData(true);
+        if (isset($shippingData['success'])) {
+            session(['postcode_data' => $shippingData]);
+        }
+    }
+    if (session('user_postcode') && $fittingType === 'mobile_fitted') {
+        $user_postcode = new Request(['postcode' => session('user_postcode')]);
+        $response = $this->mobileTyrePricingController->calculateShipping($user_postcode);
+        $shippingData = $response->getData(true);
+        if (isset($shippingData['success'])) {
+            session(['postcode_data' => $shippingData]);
+        }
+    }
 
         // Add or update item in the cart
         if (isset($cart[$cartKey])) {
-            $cart[$cartKey]['quantity'] += $qty;
+            if ($type === 'service') {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Service already in cart',
+                    'totalQuantity' => array_sum(array_column($cart, 'quantity')),
+                    'cartSubTotal' => number_format(Session::get('cartSubTotal', 0), 2),
+                    'vatTotal' => number_format(Session::get('vatTotal', 0), 2),
+                    'cartTotalPrice' => number_format(Session::get('cartTotalPrice', 0), 2),
+                ]);
+            } else {
+                $cart[$cartKey]['quantity'] += $qty;
+            }
         } else {
             $cartItem = [
                 'id' => $product->$productIdField,
@@ -138,19 +205,19 @@ class CartController extends Controller
             ];
 
             if ($type === 'tyre') {
+                $cartItem['image'] = $product->tyre_image ?? 'sample-tyre.png';
                 $cartItem['ean'] = $product->tyre_ean ?? '';
                 $cartItem['sku'] = $product->tyre_sku ?? '';
                 $cartItem['desc'] = $product->tyre_description ?? '';
+                $cartItem['tyre_weight'] = $product->tyre_weight ?? '10KG';
                 $cartItem['supplier'] = $product->tyre_supplier_name ?? '';
+            }elseif ($type === 'service') {
+                $cartItem['image'] = $product->inner_image ?? 'no-img-service.jpg';
             }
 
             $cart[$cartKey] = $cartItem;
         }
-
-        // Save updated cart back to session
         Session::put('cart', $cart);
-
-        // Calculate sub-total, VAT total, and grand total
         $cartSubTotal = array_reduce($cart, function ($total, $item) {
             return $total + ($item['price'] * $item['quantity']);
         }, 0);
@@ -164,18 +231,25 @@ class CartController extends Controller
 
         // Initialize shipping costs
         foreach ($cart as $item) {
-            // Check if any item has fitting_type as mobile_fitted
             if ($item['fitting_type'] === 'mobile_fitted') {
                 $hasMobileFitting = true;
-                // Determine shipping type and apply charges accordingly
-                $shippingType = $shippingData['ship_type'] ?? 'job'; // Default to 'job' if not specified
+                $shippingType = $shippingData['ship_type'] ?? 'job';
                 $shippingPrice = $shippingData['ship_price'] ?? 0;
 
                 if ($shippingType === 'job') {
-                    // Add shipping price once per booking
                     $shippingPricePerJob = max($shippingPricePerJob, $shippingPrice);
                 } elseif ($shippingType === 'tyre' && $item['type'] === 'tyre') {
-                    // Add shipping price per tyre (multiplied by quantity)
+                    $shippingPricePerTyre += $shippingPrice * $item['quantity'];
+                }
+            }
+            if ($item['fitting_type'] === 'mailorder') {
+                $hasMobileFitting = true;
+                $shippingType = $shippingData['ship_type'] ?? 'job';
+                $shippingPrice = $shippingData['ship_price'] ?? 0;
+
+                if ($shippingType === 'job') {
+                    $shippingPricePerJob = max($shippingPricePerJob, $shippingPrice);
+                } elseif ($shippingType === 'tyre' && $item['type'] === 'tyre') {
                     $shippingPricePerTyre += $shippingPrice * $item['quantity'];
                 }
             }
@@ -199,6 +273,7 @@ class CartController extends Controller
         Session::put('shippingPricePerTyre', $shippingPricePerTyre);
         Session::put('shippingVAT', $shippingVAT);
         Session::save();
+
         return response()->json([
             'success' => true,
             'message' => ucfirst($type) . ' added to cart',
@@ -212,24 +287,37 @@ class CartController extends Controller
             'shippingVAT' => number_format($shippingVAT, 2),
         ]);
     }
+     public function clearCart(Request $request)
+    {
+        Session::forget('cart');
+        Session::forget('cartSubTotal');
+        Session::forget('vatTotal');
+        Session::forget('cartTotalPrice');
+        Session::forget('shippingPricePerJob');
+        Session::forget('shippingPricePerTyre');
+        Session::forget('shippingVAT');
+
+        return response()->json(['success' => true, 'message' => 'Cart cleared successfully.']);
+    }
+
+    public function addAfterConfirmation(Request $request)
+    {
+        return $this->add($request);
+    }
     public function update(Request $request)
     {
         $cart = session('cart', []);
-        $productId = $request->id; // Product ID passed from the frontend
-        $action = $request->action; // Action: 'increase' or 'decrease'
-
-        // Find the key in the cart that matches the product ID
+        $productId = $request->id;
+        $action = $request->action;
         $itemKey = null;
         foreach ($cart as $key => $item) {
-            if ($item['id'] == $productId && $item['type'] === 'tyre') { // Ensure it's a tyre
+            if ($item['id'] == $productId && $item['type'] === 'tyre') {
                 $itemKey = $key;
                 break;
             }
         }
-
-        // If the item exists in the cart, validate and update its quantity
         if ($itemKey !== null && isset($cart[$itemKey])) {
-            $product = TyresProduct::where('product_id', $productId)->first(); // Fetch product details from the database
+            $product = TyresProduct::where('product_id', $productId)->first();
 
             if (!$product) {
                 return response()->json([
@@ -238,7 +326,7 @@ class CartController extends Controller
                 ], 404);
             }
 
-            $existingQuantity = $cart[$itemKey]['quantity']; // Current quantity in the cart
+            $existingQuantity = $cart[$itemKey]['quantity']; 
             $newQuantity = $existingQuantity;
 
             if ($action === 'increase') {
@@ -247,7 +335,6 @@ class CartController extends Controller
                 $newQuantity--;
             }
 
-            // Validate against database stock
             if ($newQuantity > $product->tyre_quantity) {
                 return response()->json([
                     'success' => false,
@@ -255,11 +342,9 @@ class CartController extends Controller
                 ], 200);
             }
 
-            // Update the cart quantity
             $cart[$itemKey]['quantity'] = $newQuantity;
         }
 
-        // Recalculate sub-total, VAT total, and grand total
         $cartSubTotal = 0;
         $vatTotal = 0;
         $shippingPricePerJob = 0;
@@ -274,35 +359,28 @@ class CartController extends Controller
                 $vatTotal += $item['price'] * $item['quantity'] * 0.2;
             }
 
-            // Check if any item has fitting_type as mobile_fitted
             if ($item['fitting_type'] === 'mobile_fitted') {
                 $hasMobileFitting = true;
 
-                // Determine shipping type and apply charges accordingly
-                $shippingType = $shippingData['ship_type'] ?? 'job'; // Default to 'job' if not specified
+                $shippingType = $shippingData['ship_type'] ?? 'job';
                 $shippingPrice = $shippingData['ship_price'] ?? 0;
 
                 if ($shippingType === 'job') {
-                    // Add shipping price once per booking
                     $shippingPricePerJob = max($shippingPricePerJob, $shippingPrice);
                 } elseif ($shippingType === 'tyre' && $item['type'] === 'tyre') {
-                    // Add shipping price per tyre (multiplied by quantity)
                     $shippingPricePerTyre += $shippingPrice * $item['quantity'];
                 }
             }
         }
 
-        // Calculate shipping VAT if applicable
         $shippingVAT = 0;
         if ($hasMobileFitting && ($shippingData['includes_vat'] ?? 0) == 9) {
             $shippingVAT = ($shippingPricePerJob + $shippingPricePerTyre) * 0.2;
             $vatTotal = $vatTotal + $shippingVAT;
         }
 
-        // Calculate grand total
         $grandTotal = $cartSubTotal + $vatTotal + $shippingPricePerJob + $shippingPricePerTyre;
 
-        // Save updated cart and totals back to the session
         session([
             'cart' => $cart,
             'cartSubTotal' => $cartSubTotal,
@@ -331,7 +409,6 @@ class CartController extends Controller
         $productId = $request->input('id');
         $cart = session()->get('cart', []);
 
-        // Find the key in the cart matching the product ID
         $itemKey = null;
         foreach ($cart as $key => $item) {
             if ($item['id'] == $productId) {
@@ -340,13 +417,11 @@ class CartController extends Controller
             }
         }
 
-        // Check if the item key exists in the cart and remove it
         if ($itemKey !== null && isset($cart[$itemKey])) {
-            unset($cart[$itemKey]); // Remove the item
-            $cart = array_values($cart); // Reindex the array
-            session()->put('cart', $cart); // Update the session
+            unset($cart[$itemKey]);
+            $cart = array_values($cart);
+            session()->put('cart', $cart);
 
-            // Recalculate sub-total, VAT total, and grand total
             $cartSubTotal = 0;
             $vatTotal = 0;
             $shippingPricePerJob = 0;
@@ -360,26 +435,19 @@ class CartController extends Controller
                 if ($item['tax_class_id'] == 9) {
                     $vatTotal += $item['price'] * $item['quantity'] * 0.2;
                 }
-
-                // Check if any item has fitting_type as mobile_fitted
                 if ($item['fitting_type'] === 'mobile_fitted') {
                     $hasMobileFitting = true;
-
-                    // Determine shipping type and apply charges accordingly
-                    $shippingType = $shippingData['ship_type'] ?? 'job'; // Default to 'job' if not specified
+                    $shippingType = $shippingData['ship_type'] ?? 'job';
                     $shippingPrice = $shippingData['ship_price'] ?? 0;
 
                     if ($shippingType === 'job') {
-                        // Add shipping price once per booking
                         $shippingPricePerJob = max($shippingPricePerJob, $shippingPrice);
                     } elseif ($shippingType === 'tyre' && $item['type'] === 'tyre') {
-                        // Add shipping price per tyre (multiplied by quantity)
                         $shippingPricePerTyre += $shippingPrice * $item['quantity'];
                     }
                 }
             }
 
-            // Calculate shipping VAT if applicable
             $shippingVAT = 0;
             if ($hasMobileFitting && ($shippingData['includes_vat'] ?? 0) == 9) {
                 $shippingVAT = ($shippingPricePerJob + $shippingPricePerTyre) * 0.2;
@@ -409,11 +477,10 @@ class CartController extends Controller
                 'shippingPricePerJob' => number_format($shippingPricePerJob, 2),
                 'shippingPricePerTyre' => number_format($shippingPricePerTyre, 2),
                 'shippingVAT' => number_format($shippingVAT, 2),
-                'shippingPostcode' => $shippingData['postcode'] ?? '', // Add this line
+                'shippingPostcode' => $shippingData['postcode'] ?? '',
             ]);
         }
 
-        // If the item does not exist, return an error
         return response()->json([
             'success' => false,
             'message' => 'Item not found in cart',
@@ -424,7 +491,6 @@ class CartController extends Controller
         $productId = $request->input('id');
         $cart = session()->get('cart', []);
 
-        // Find the key in the cart matching the product ID
         $itemKey = null;
         foreach ($cart as $key => $item) {
             if ($item['id'] == $productId) {
@@ -433,13 +499,10 @@ class CartController extends Controller
             }
         }
 
-        // Check if the item key exists in the cart and remove it
         if ($itemKey !== null && isset($cart[$itemKey])) {
-            unset($cart[$itemKey]); // Remove the item
-            $cart = array_values($cart); // Reindex the array
-            session()->put('cart', $cart); // Update the session
-
-            // Recalculate sub-total, VAT total, and grand total
+            unset($cart[$itemKey]);
+            $cart = array_values($cart);
+            session()->put('cart', $cart);
             $cartSubTotal = 0;
             $vatTotal = 0;
             $shippingPricePerJob = 0;
@@ -454,19 +517,14 @@ class CartController extends Controller
                     $vatTotal += $item['price'] * $item['quantity'] * 0.2;
                 }
 
-                // Check if any item has fitting_type as mobile_fitted
                 if ($item['fitting_type'] === 'mobile_fitted') {
                     $hasMobileFitting = true;
-
-                    // Determine shipping type and apply charges accordingly
-                    $shippingType = $shippingData['ship_type'] ?? 'job'; // Default to 'job' if not specified
+                    $shippingType = $shippingData['ship_type'] ?? 'job';
                     $shippingPrice = $shippingData['ship_price'] ?? 0;
 
                     if ($shippingType === 'job') {
-                        // Add shipping price once per booking
                         $shippingPricePerJob = max($shippingPricePerJob, $shippingPrice);
                     } elseif ($shippingType === 'tyre' && $item['type'] === 'tyre') {
-                        // Add shipping price per tyre (multiplied by quantity)
                         $shippingPricePerTyre += $shippingPrice * $item['quantity'];
                     }
                 }
@@ -502,7 +560,7 @@ class CartController extends Controller
                 'shippingPricePerJob' => number_format($shippingPricePerJob, 2),
                 'shippingPricePerTyre' => number_format($shippingPricePerTyre, 2),
                 'shippingVAT' => number_format($shippingVAT, 2),
-                'shippingPostcode' => $shippingData['postcode'] ?? '', // Add this line
+                'shippingPostcode' => $shippingData['postcode'] ?? '',
             ]);
         }
 
@@ -516,7 +574,7 @@ class CartController extends Controller
     {
         $request->merge([
             'year' => (string) $request->input('year'),
-            'engine' => (string) $request->input('engine') // Use the cleaned engine value
+            'engine' => (string) $request->input('engine')
         ]);
         $request->validate([
             'make' => 'required|string|max:100',

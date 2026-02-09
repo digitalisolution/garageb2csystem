@@ -41,37 +41,29 @@ class Handler extends ExceptionHandler
     public function render($request, Throwable $exception)
     {
         if ($exception instanceof HttpException && $exception->getStatusCode() == 419) {
-            // Check if the request expects a JSON response (typically AJAX requests)
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json(['error' => 'Session expired. Please log in again.'], 419);
             } else {
                 return redirect()->route('webmaster.login')->with('error', 'Your session has expired. Please log in again.');
             }
         }
-
-        // Check if the exception is an instance of HttpExceptionInterface
         if (method_exists($exception, 'getStatusCode') && $exception->getStatusCode() == 410) {
             return response()->view('errors.410', [], 410);
         }
 
-        if (method_exists($exception, 'getStatusCode') && $exception->getStatusCode() == 429) {
-        return response()->view('errors.429', [], 429);
-        }
+        // if (method_exists($exception, 'getStatusCode') && $exception->getStatusCode() == 429) {
+        // return response()->view('errors.429', [], 429);
+        // }
 
-        // Handle other types of exceptions or errors
         if ($exception instanceof \Error) {
-            // Log the error for debugging purposes
             \Log::error('Unhandled Error: ' . $exception->getMessage(), [
                 'file' => $exception->getFile(),
                 'line' => $exception->getLine(),
                 'trace' => $exception->getTraceAsString(),
             ]);
 
-            // Return a generic error response
             return response()->view('errors.generic', ['message' => 'An unexpected error occurred.'], 500);
         }
-
-        // Default Laravel exception handling
         return parent::render($request, $exception);
     }
 }

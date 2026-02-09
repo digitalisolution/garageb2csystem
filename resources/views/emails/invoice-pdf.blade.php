@@ -234,10 +234,10 @@ $itemIndex = 1;
                                     <td align="right">£{{ number_format($itemTotal, 2) }}</td>
                                     <td align="right"><strong>£{{ number_format($totalAmount, 2) }}</strong></td>
                                 </tr>
-                                 @if($tyre->fitting_type === 'mobile_fitted')
+                                 @if($tyre->fitting_type === 'mobile_fitted' || 'mailorder')
                                 <tr>
                                 <td>
-                                        <td><strong>Mobile Fitting CallOut Charge({{$tyre->shipping_postcode}})</strong></td>
+                                     <td><strong>{{ str_replace('_', ' ', ucfirst($tyre->fitting_type)) }} CallOut Charge({{$tyre->shipping_postcode}})</strong></td>
                                 </td>
                                         <td colspan="4" align="right"><strong>£{{ number_format($tyre->shipping_price, 2) }}</strong></td>
                                          <td colspan="5" align="right"><strong>£{{ number_format($tyre->shipping_price+($tyre->shipping_price*$vatRate), 2) }}</strong></td>
@@ -276,7 +276,7 @@ $itemIndex = 1;
                             <thead class="bg-gray">
                                 <tr>
                                     <td><strong>Sub Total</strong></td>
-                                    @if($tyre->fitting_type === 'mobile_fitted')
+                                    @if($tyre->fitting_type === 'mobile_fitted' || 'mailorder')
                                         <td><strong>CallOut Charge({{$tyre->shipping_postcode}})</strong></td>
                                     @endif
 
@@ -300,7 +300,7 @@ $itemIndex = 1;
             $balancePrice = $grandTotal - ($installmentPayment + $paid_price + $discount_price);
                                     @endphp
                                     <td>£{{ number_format($subTotal, 2) }}</td>
-                                    @if($tyre->fitting_type === 'mobile_fitted')
+                                    @if($tyre->fitting_type === 'mobile_fitted' || 'mailorder')
                                         <td>£{{ number_format($tyre->shipping_price, 2) }}</td>
                                     @endif
 

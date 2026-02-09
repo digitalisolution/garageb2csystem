@@ -6,7 +6,7 @@ use App\Models\Workshop;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use App\Models\Customer;
+use App\Models\TyresProduct;
 use Carbon\Carbon;
 
 use App\Models\Invoice;
@@ -14,6 +14,7 @@ use App\Models\VehicleDetail;
 use App\Models\WorkshopTyre;
 use App\Models\WorkshopService;
 use DB;
+use App\Helpers\ActivityLogger;
 use App\Models\RegionCounty;
 use App\Http\Controllers\Controller;
 
@@ -118,48 +119,53 @@ class CustomerAccountController extends Controller
         return redirect()->back()->with('success', 'Shipping address updated successfully!');
     }
     // Customer Dashboard
-    public function orders()
-    {
-        $customer = Auth::guard('customer')->user();
+   public function orders()
+{
+    $customer = Auth::guard('customer')->user();
 
-        // Fetch workshops created by the logged-in customer with their associated items
-        $workshops = Workshop::where('customer_id', $customer->id)
-            ->with('items') // Ensure items are loaded
-            ->where('is_void', 0)
-            ->orderBy('id', 'desc')
-            ->paginate(15)
-            ->onEachSide(2);
+    $workshops = Workshop::where('customer_id', $customer->id)
+        ->with('items')
+        ->where(function ($query) {
+            $query->where('is_void', 0)
+                  ->orWhere(function ($q) {
+                      $q->where('is_void', 1)
+                        ->where('status', 'cancelled');
+                  });
+        })
+        ->orderBy('id', 'desc')
+        ->paginate(15)
+        ->onEachSide(2);
 
-        return view('customer.orders', compact('workshops'));
-    }
+    return view('customer.orders', compact('workshops'));
+}
+
 
     public function viewOrder($id)
     {
-        // Fetch the logged-in customer
         $customer = Auth::guard('customer')->user();
+        $workshop = Workshop::where('customer_id', $customer->id)
+    ->where(function ($query) {
+        $query->where('is_void', 0)
+              ->orWhere(function ($q) {
+                  $q->where('is_void', 1)
+                    ->where('status', 'cancelled');
+              });
+    })
+    ->findOrFail($id);
 
-        // Fetch the workshop (acting as the order) created by the logged-in customer
-        $workshop = Workshop::where('customer_id', $customer->id)->where('is_void', 0)->findOrFail($id);
-
-        // If the workshop is not found, show an error
         if (!$workshop) {
             return redirect()->route('customer.orders')->with('error', 'You are not authorized to view this order.');
         }
 
         // Fetch related data
-        $vehicle = $workshop->vehicle; // Vehicle associated with the workshop
-
-        // Fetch products from WorkshopTyre table using workshop_id
+        $vehicle = $workshop->vehicle;
         $WorkshopTyre = WorkshopTyre::where('workshop_id', $workshop->id)->where('is_void', 0)->get();
-        // dd($items);
-        // Fetch services from WorkshopService table using workshop_id
         $WorkshopService = WorkshopService::where('workshop_id', $workshop->id)->where('is_void', 0)->get();
         $WorkshopVehicle = DB::table('vehicle_details')
-                ->where('vehicle_reg_number', $workshop->vehicle_reg_number)
-                ->get();
-        // Calculate totals
-        $total_service_price = $WorkshopService->sum('service_price'); // Sum of all service prices
-        $total_product_price = $WorkshopTyre->sum('price'); // Sum of all product prices from WorkshopTyre
+            ->where('vehicle_reg_number', $workshop->vehicle_reg_number)
+            ->get();
+        $total_service_price = $WorkshopService->sum('service_price');
+        $total_product_price = $WorkshopTyre->sum('price');
         $total_Tax_Amount = $workshop->tax_amount;
         $grandTotal = $workshop->grand_total;
         $discount_price = $workshop->discount_price;
@@ -181,12 +187,136 @@ class CustomerAccountController extends Controller
             'balancePrice'
         ));
     }
+    public function voidWorkshop(Request $request, $workshopId)
+    {
 
+            $workshop = Workshop::findOrFail($workshopId);
+            $cancelGracePeriod = (int) get_option('workshop_cancel_hours', 1);
+            $bookingTime = \Carbon\Carbon::parse($workshop->created_at);
+            $expiryTime = $bookingTime->copy()->addHours($cancelGracePeriod);
+            if (now()->greaterThanOrEqualTo($expiryTime)) {
+                if ($workshop->status === 'booked' || $workshop->status === 'processing') {
+                    $workshop->status = 'processing';
+                    $workshop->save();
+                }
+                $request->session()->flash('message.level', 'danger');
+                $request->session()->flash(
+                    'message.content',
+                    'Cancellation period expired. This booking has moved to Processing.'
+                );
+                // dd( $workshop);
+                return redirect()->back();
+            }elseif($workshop->status === 'processing'){
+                $request->session()->flash('message.level', 'danger');
+                $request->session()->flash(
+                    'message.content',
+                    'Cancellation period expired. This booking has moved to Processing.'
+                );
+                // dd( $workshop);
+                return redirect()->back();
+            }
+
+        DB::beginTransaction();
+
+        try {
+            
+            // Mark workshop as void
+            $workshop->is_void = true;
+            $workshop->status = 'cancelled';
+            $workshop->save();
+            // Void related invoice, tyres, and services
+            $invoice = Invoice::where('workshop_id', $workshopId)->first();
+            if ($invoice) {
+                $invoice->is_void = true;
+                $invoice->status = 'cancelled';
+                $invoice->save();
+                \Log::info("Invoice voided successfully", ['invoice_id' => $invoice->id]);
+                }
+                WorkshopTyre::where('workshop_id', $workshop->id)
+                    ->where('ref_type', 'workshop')
+                    ->update(['is_void' => true]);
+
+                WorkshopService::where('workshop_id', $workshop->id)
+                    ->where('ref_type', 'workshop')
+                    ->update(['is_void' => true]);
+            
+
+            // Restore stock for tyres
+            $workshopTyres = WorkshopTyre::where('workshop_id', $workshop->id)
+                ->where('ref_type', 'workshop')
+                ->where('is_void', true)
+                ->get();
+
+            foreach ($workshopTyres as $workshopTyre) {
+                $tyreProduct = TyresProduct::where(function ($query) use ($workshopTyre) {
+                    $query->where('product_id', $workshopTyre->product_id)
+                        ->where('tyre_supplier_name', $workshopTyre->supplier)
+                        ->where('tyre_ean', $workshopTyre->product_ean);
+                })->first();
+
+                if ($tyreProduct) {
+                    $tyreProduct->tyre_quantity += $workshopTyre->quantity;
+                    $tyreProduct->save();
+
+                    ActivityLogger::log(
+                        workshopId: $workshop->id,
+                        action: 'Restored Tyre Quantity',
+                        description: 'Restored tyre quantity for product: ' . $tyreProduct->tyre_description . ' ' . $tyreProduct->tyre_ean,
+                        changes: [
+                            'quantity_restored' => $workshopTyre->quantity,
+                            'reason' => 'Cancelled Workshop'
+                        ]
+                    );
+                } else {
+                    \Log::warning("Tyre product not found", [
+                        'product_id' => $workshopTyre->product_id,
+                        'supplier' => $workshopTyre->supplier,
+                        'ean' => $workshopTyre->product_ean
+                    ]);
+                }
+            }
+
+            // Delete stock history entries
+            DB::table('stock_history')
+                ->where('ref_type', 'INV')
+                ->where('ref_id', $workshop->id)
+                ->delete();
+            DB::commit();
+
+            ActivityLogger::log(
+                workshopId: $workshop->id,
+                action: 'Cancelled Workshop',
+                description: 'Cancelled Workshop, Invoice ID: ' . $workshop->id,
+                changes: [
+                    'invoice_id' => $workshop->id,
+                    'invoice_status' => $workshop->status,
+                    'balance amount' => $workshop->balance_price
+                ]
+            );
+
+            $request->session()->flash('message.level', 'success');
+            $request->session()->flash('message.content', 'Workshop and Invoice voided successfully!');
+            return redirect()->back();
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            \Log::error("Error voiding workshop/invoice", [
+                'workshop_id' => $workshopId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            $request->session()->flash('message.level', 'danger');
+            $request->session()->flash('message.content', 'An error occurred while voiding: ' . $e->getMessage());
+            return redirect()->back();
+        }
+    }
 
     public function vehicles()
     {
         $customer = Auth::guard('customer')->user();
-        $vehicles = $customer->vehicles()->paginate(10); // 10 vehicles per page
+        $vehicles = $customer->vehicles()->paginate(10);
         return view('customer.vehicles', compact('vehicles'));
     }
 
@@ -197,10 +327,7 @@ class CustomerAccountController extends Controller
 
     public function editVehicle($id)
     {
-        // Fetch the logged-in customer
         $customer = Auth::guard('customer')->user();
-
-        // Fetch the vehicle details for the logged-in customer
         $vehicle = $customer->vehicles()->findOrFail($id);
 
         return view('customer.vehicle.vehicle-form', compact('vehicle'));
@@ -209,10 +336,8 @@ class CustomerAccountController extends Controller
     // Store a new vehicle
     public function storeVehicle(Request $request)
     {
-        // Fetch the logged-in customer
         $customer = Auth::guard('customer')->user();
-    
-        // Validate the request data
+
         $validatedData = $request->validate([
             'vehicle_vehicle_reg_number' => 'required|string|max:20',
             'vehicle_make' => 'required|string|max:255',
@@ -234,37 +359,28 @@ class CustomerAccountController extends Controller
             'vehicle_torque_settings' => 'nullable|string|max:50',
             'vehicle_mot_expiry_date' => 'nullable|date',
         ]);
-    
-        // Check if the vehicle already exists by registration number
+
         $vehicle = VehicleDetail::where('vehicle_reg_number', $validatedData['vehicle_reg_number'])->first();
-    
+
         if ($vehicle) {
-            // Update the existing vehicle details
             $vehicle->update($validatedData);
         } else {
-            // Create a new vehicle record
             $vehicle = VehicleDetail::create($validatedData);
         }
-    
-        // Check if the relationship between the customer and the vehicle already exists
         if (!$customer->vehicles()->where('vehicle_detail_id', $vehicle->id)->exists()) {
-            // Attach the vehicle to the customer in the customer_vehicle table
             $customer->vehicles()->attach($vehicle->id);
         }
-    
+
         return redirect()->route('customer.vehicles')->with('success', 'Vehicle added/updated successfully!');
     }
 
-    
+
     // Update the vehicle details
     public function updateVehicle(Request $request, $id)
     {
-        // Fetch the logged-in customer
         $customer = Auth::guard('customer')->user();
-        
-        // Fetch the vehicle details for the logged-in customer
+
         $vehicle = VehicleDetail::where('id', $id)->first();
-        // Validate the request data
         $validatedData = $request->validate([
             'vehicle_reg_number' => 'required|string|max:20',
             'vehicle_make' => 'required|string|max:255',
@@ -287,34 +403,26 @@ class CustomerAccountController extends Controller
             'vehicle_mot_expiry_date' => 'nullable|date',
         ]);
 
-     
+
         // Update the vehicle details
         $vehicle->update($validatedData);
 
         return redirect()->route('customer.vehicles')->with('success', 'Vehicle updated successfully!');
     }
 
-    // Delete a vehicle
     public function deleteVehicle($id)
     {
-        // Fetch the logged-in customer
         $customer = Auth::guard('customer')->user();
-    
-        // Fetch the vehicle details for the logged-in customer
         $vehicle = $customer->vehicleDetails()->findOrFail($id);
-    
-        // Detach the relationship from the customer_vehicle table
         $customer->vehicles()->detach($vehicle->id);
-    
+
         return redirect()->route('customer.vehicles')->with('success', 'Vehicle removed successfully!');
     }
 
     public function invoices()
     {
         $customer = Auth::guard('customer')->user();
-        $invoices = $customer->invoices()->where('is_void', 0)->paginate(10); // 10 invoices per page
-
-        // Calculate invoice counts for each status
+        $invoices = $customer->invoices()->where('is_void', 0)->paginate(10);
         $unpaidCount = $customer->invoices()->where('status', 'Unpaid')->where('is_void', 0)->count();
         $paidCount = $customer->invoices()->where('status', 'Paid')->where('is_void', 0)->count();
         $overdueCount = $customer->invoices()->where('status', 'Overdue')->where('is_void', 0)->count();
@@ -348,8 +456,8 @@ class CustomerAccountController extends Controller
         // Fetch services from WorkshopService table using workshop_id
         $WorkshopService = WorkshopService::where('workshop_id', $invoices->workshop_id)->where('is_void', 0)->get();
         $WorkshopVehicle = DB::table('vehicle_details')
-                ->where('vehicle_reg_number', $invoices->vehicle_reg_number)
-                ->get();
+            ->where('vehicle_reg_number', $invoices->vehicle_reg_number)
+            ->get();
         $paymentHistory = DB::table('customer_debit_logs')
             ->where('workshop_id', $invoices->workshop_id)->get();
 
@@ -379,7 +487,7 @@ class CustomerAccountController extends Controller
         ));
     }
 
-       public function statements(Request $request)
+    public function statements(Request $request)
     {
         $customer = Auth::guard('customer')->user();
         $query = Invoice::where('customer_id', $customer->id)->where('is_void', 0)->orderBy('created_at', 'asc');

@@ -101,6 +101,19 @@
                                 @enderror
                             </div>
                         </div>
+                        <div class="col-lg-3 col-md-2 col-12">
+                        <div class="form-group">
+                            <label for="customer_group_id">Customer Group</label>
+                            <select name="customer_group_id" class="form-control">
+                                <option value="">-- Select Group --</option>
+                                @foreach($groups as $group)
+                                    <option value="{{ $group->id }}" {{ old('customer_group_id', $customer->customer_group_id ?? '') == $group->id ? 'selected' : '' }}>
+                                        {{ $group->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        </div>
                     </div>
                     <div class="text-center mt-3"><button type="submit" class="btn btn-primary">Update Profile</button>
                     </div>

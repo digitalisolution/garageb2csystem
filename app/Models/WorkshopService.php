@@ -13,6 +13,7 @@ class WorkshopService extends Model
 	protected $guarded = ['_token', 'id', 'created_at', 'updated_at', 'deleted_at'];
 	protected $fillable = [
 		'service_type_id',
+		'garage_id',
 		'service_id',
 		'workshop_id',
 		'ref_type',
@@ -29,4 +30,8 @@ class WorkshopService extends Model
 	{
 		return $this->hasMany(tblitems::class);
 	}
+	public function garage()
+{
+    return $this->belongsTo(Garage::class);
+}
 }

@@ -7176,7 +7176,10 @@ button {
     background: #e7357a; }
     .btn-dribbble:hover::before {
       background: #e51e6b; }
-
+.text-red{
+    color:red;
+    font-size:15px
+}
 .btn-google-plus {
   background: #d34836; }
   .btn-google-plus::before {
@@ -9566,3 +9569,36 @@ table.dataTable thead th, table.dataTable thead td{padding:10px 10px !important;
 .notification-item .mark-as-read-btn i{color:darkturquoise;}
 .notification-item .Unpaid, .notification-item .Paid, .notification-item .Partially{padding:2px 5px;}
 .alert{overflow-wrap: anywhere;}
+.grg_name_fitters{display: none;}
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 45px;
+  height: 24px;
+}
+.switch input { display:none; }
+.slider {
+  position: absolute;
+  cursor: pointer;
+  background-color: #ccc;
+  border-radius: 24px;
+  top: 0; left: 0; right: 0; bottom: 0;
+  transition: .4s;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+input:checked + .slider {
+  background-color: #28a745;
+}
+input:checked + .slider:before {
+  transform: translateX(21px);
+}

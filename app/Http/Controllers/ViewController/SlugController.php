@@ -32,9 +32,9 @@ class SlugController extends Controller
         $counties = RegionCounty::pluck('name', 'zone_id');
         $countries = Countries::pluck('name', 'country_id');
         $analytics = MetaSettings::where('name', 'analytics')->value('content') ?? '';
-        if ($service) {
-            return view('service.serviceDetails', compact('service','services','counties', 'countries', 'metaTitle', 'metaDescription', 'metaKeywords', 'google_tag_manager', 'tag_manager', 'analytics'));
-        }
+        // if ($service) {
+        //     return view('service.serviceDetails', compact('service','services','counties', 'countries', 'metaTitle', 'metaDescription', 'metaKeywords', 'google_tag_manager', 'tag_manager', 'analytics'));
+        // }
 
         // Check if the slug exists in the pages table
         $page = Page::where('slug', $slug)->where('status', 1)->orderBy('sort', 'asc')->first();

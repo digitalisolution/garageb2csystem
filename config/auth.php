@@ -49,6 +49,10 @@ return [
             'driver' => 'session',
             'provider' => 'customers',
         ],
+        'garage' => [
+            'driver' => 'session',
+            'provider' => 'garages',
+        ],
     ],
 
     /*
@@ -82,6 +86,10 @@ return [
             'driver' => 'eloquent',
             'model' => App\Models\Customer::class,
         ],
+        'garages' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Garage::class,
+        ],
     ],
 
     /*
@@ -108,6 +116,11 @@ return [
         'customers' => [
             'provider' => 'customers',
             'table' => 'customer_password_resets',
+            'expire' => 60,
+        ],
+         'garages' => [
+            'provider' => 'garages',
+            'table' => 'garage_password_resets',
             'expire' => 60,
         ],
     ],

@@ -30,7 +30,7 @@
     <div class="breadcrumb-area pt-35 pb-35 bg-gray-3 {{ $page->slug }}">
         <div class="container">
             <div class="row">
-                <div class="col-md-8">
+                <div class="col-md-8 hidden-xs">
                     <h2 class="text-uppercase">Grip the Road with Confidence!</h2>
                     <h4>Find the right tyre for your vehicle.</h4>
                 </div>
@@ -45,7 +45,7 @@
             <div class="bg-dark p-4 ityreForm">
                 <span class="arrow-blade"></span>
                 <div class="row align-items-center">
-                    <div class="col-lg-7 px-5">
+                    <div class="col-lg-7 px-5 hidden-xs">
                         <h3 class="text-white mb-3">Discover the Perfect Tyre for Your Vehicle</h3>
                         <p class="text-white hidden-xs">
                             Choosing the right tyre is essential for your vehicle’s safety, performance, and fuel
@@ -61,6 +61,11 @@
                     <div class="col-lg-5">
                         <x-search-tyres />
                     </div>
+                    <x-vrm-modal id="vehicleDataModal" title="Vehicle Details">
+                        <div id="vehicleDataContent">
+                            <p>Loading...</p>
+                        </div>
+                    </x-vrm-modal>
                 </div>
             </div>
         </div>

@@ -46,6 +46,15 @@
     ]) }}
                     </div>
 
+                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                        <label>Garage Name:</label>
+                        {{ Form::text('garage_name', request('garage_name', old('garage_name')), [
+        'class' => 'form-control',
+        'name' => 'garage_name',
+        'placeholder' => 'Garage Name'
+    ]) }}
+                    </div>
+
                     <!-- Mobile Number -->
                     <div class="col-lg-3 col-md-6 col-12 form-group">
                         <label>Mobile Number:</label>
@@ -196,6 +205,7 @@
                                     <th style="white-space: nowrap">Job Date</th>
                                     <th style="white-space: nowrap">Job Id</th>
                                     <th style="white-space: nowrap">Name</th>
+                                    <th style="white-space: nowrap">Garage</th>
                                     <th style="white-space: nowrap">Mobile</th>
                                     <th style="white-space: nowrap">Reg. No</th>
                                     <th style="white-space: nowrap">Grand Total</th>
@@ -209,7 +219,7 @@
                             </thead>
                             <tfoot>
                                 <tr>
-                                    <th colspan="5" style="text-align:right">Total:</th>
+                                    <th colspan="6" style="text-align:right">Total:</th>
                                     <th></th>
                                     <th></th>
                                     <th></th>
@@ -867,6 +877,7 @@
                     data: function (d) {
                         d.id = $('input[name="id"]').val();
                         d.name = $('input[name="name"]').val();
+                        d.garage_name = $('input[name="garage_name"]').val();
                         d.mobile = $('input[name="mobile"]').val();
                         d.created_at_from = $('input[name="created_at_from"]').val();
                         d.created_at_to = $('input[name="created_at_to"]').val();
@@ -884,6 +895,7 @@
                     { data: 'workshop_date_formatted', name: 'invoices.created_at' },
                     { data: 'workshop_id', name: 'invoices.workshop_id' },
                     { data: 'customer_name', name: 'invoices.name' },
+                    { data: 'garage_name', name: 'garages.garage_name' },
                     { data: 'mobile', name: 'invoices.mobile' },
                     { data: 'vehicle_reg', name: 'invoices.vehicle_reg_number' },
                     { data: 'grand_total', name: 'invoices.grandTotal' },
@@ -904,25 +916,15 @@
                                 i : 0;
                     };
                     totalGrand = api
-                        .column(5)
-                        .data()
-                        .reduce(function (a, b) {
-                            return intVal(a) + intVal(b);
-                        }, 0);
-                        $(api.column(5).footer()).html(
-                        '£' + parseFloat(totalGrand).toFixed(2)
-                    );
-                    totalPaid = api
                         .column(6)
                         .data()
                         .reduce(function (a, b) {
                             return intVal(a) + intVal(b);
                         }, 0);
-                    
-                    $(api.column(6).footer()).html(
-                        '£' + parseFloat(totalPaid).toFixed(2)
+                        $(api.column(6).footer()).html(
+                        '£' + parseFloat(totalGrand).toFixed(2)
                     );
-                    totalDiscount = api
+                    totalPaid = api
                         .column(7)
                         .data()
                         .reduce(function (a, b) {
@@ -930,9 +932,9 @@
                         }, 0);
                     
                     $(api.column(7).footer()).html(
-                        '£' + parseFloat(totalDiscount).toFixed(2)
+                        '£' + parseFloat(totalPaid).toFixed(2)
                     );
-                    totalDue = api
+                    totalDiscount = api
                         .column(8)
                         .data()
                         .reduce(function (a, b) {
@@ -940,6 +942,16 @@
                         }, 0);
                     
                     $(api.column(8).footer()).html(
+                        '£' + parseFloat(totalDiscount).toFixed(2)
+                    );
+                    totalDue = api
+                        .column(9)
+                        .data()
+                        .reduce(function (a, b) {
+                            return intVal(a) + intVal(b);
+                        }, 0);
+                    
+                    $(api.column(9).footer()).html(
                         '£' + parseFloat(totalDue).toFixed(2)
                     );
                 }

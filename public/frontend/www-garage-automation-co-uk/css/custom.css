@@ -1,0 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,300..900;1,300..900&display=swap');
+
+body, h1, h2, h3, h4, h5, h6, p{font-family: "Rubik", sans-serif;font-optical-sizing: auto;}
+.app-header-area{background:#1b1b1b;padding:20px 0;}
+.linkwidget a{color:#fff;text-transform:uppercase;}
+.linkwidget a span{color:#e61937;display:block;text-decoration:underline;font-size:17px;}
+.header-right-wrap .account-setting .account-satting-active{color:#fff;padding:10px 10px;border:0;}
+.header-right-wrap .same-style.cart-wrap button{background:#e61937;border-color:#e61937;padding:10px 20px;text-transform:uppercase;font-weight:600;white-space:nowrap;}
+.header-right-wrap .same-style.cart-wrap button span.count-style {position: absolute;top: -10px;right: -10px;background-color:#fff;color: #e61937;font-weight:700;}
+.blog-reply-wrapper .blog-form, .clickable-menu, .mt-35 {margin-top:0;}
+.header-right-wrap .same-style.cart-wrap, .ml-12{margin-left:20px;}
+.clickable-mainmenu .side-logo{padding:10px;background-color:#1b1b1b;}
+.clickable-mainmenu{padding: 80px 35px 40px;right:0;left:auto;-webkit-transform: translateX(110%);transform: translateX(110%);}
+.header-right-wrap .same-style.cart-wrap .shopping-cart-content, .header-right-wrap .same-style .account-dropdown{top:150%;border-radius:0 0 5px 5px;}
+.slider-area {background: url(../img/bg/tires_header.webp) bottom center / cover no-repeat;}
+.slider-area h2{color:#fff;font-size:3rem;font-weight:600;line-height:normal;}
+.btn-theme{text-transform:uppercase;}
+.opening-hours-widget p, .opening-hours-widget p span{display:block;background:transparent;padding:0;font-size:100%;}
+.opening-hours-widget p{margin-bottom:30px;}
+.grg_name_fitters{display: none;}
+@media screen and (max-width:600px){
+	.slider-area h2{font-size:2rem;}
+	.searchengine_style .form-control{margin-bottom:10px;}
+	.reg_outer{margin-bottom:15px;display:inline-block;}
+}
+
+
+
+
+
+
+
+
+
+
+

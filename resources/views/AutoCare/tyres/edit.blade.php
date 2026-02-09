@@ -1,6 +1,5 @@
 @extends('samples')
 @section('content')
-
         <div class="container-fluid">
             <div class="bg-white p-3">
                 <h5>{{ isset($tyre) ? 'Edit' : 'Add' }} Tyre Product</h5>
@@ -31,8 +30,27 @@
                         @method('PUT')
                     @endif
                     <div class="row">
+                        <div class="form-group col-lg-3 col-md-6 col-12 grg_name_fitters">
+                            <label for="garage_id">Garage Name</label>
+                            <select name="garage_id" id="garage_id" class="form-control">
+                            <option value="">Use Logged-in Garage</option>
+
+                            @foreach ($garages as $garage)
+                                <option value="{{ $garage->id }}"
+                                    @selected(
+                                        (isset($tyre) && $tyre->garage_id == $garage->id)
+                                        || (!isset($tyre) && strtolower($garage->garage_name) === 'tyre lab')
+                                    )
+                                >
+                                    {{ $garage->garage_name }}
+                                </option>
+                            @endforeach
+                        </select>
+
+                        </div>
+
                         <div class="form-group col-lg-3 col-md-6 col-12">
-                            <label for="ean">EAN:</label>
+                            <label for="ean">EAN<span class="text-red">*</span></label>
                             <input type="text" name="tyre_ean" id="ean" class="form-control"
                                 value="{{ isset($tyre) ? $tyre->tyre_ean : old('tyre_ean') }}" required>
                         </div>
@@ -46,7 +64,7 @@
                         </div>
 
                         <div class="form-group col-lg-3 col-md-6 col-12">
-                            <label for="sku">SKU:</label>
+                            <label for="sku">SKU<span class="text-red">*</span></label>
                             <input type="text" name="tyre_sku" id="sku" class="form-control"
                                 value="{{ isset($tyre) ? $tyre->tyre_sku : old('tyre_sku') }}" required>
                         </div>
@@ -57,7 +75,7 @@
                         </div>
 
                         <div class="form-group col-lg-3 col-md-6 col-12">
-                            <label for="brand_id">Select Brand:</label>
+                            <label for="brand_id">Select Brand<span class="text-red">*</span></label>
                             <select name="tyre_brand_id" id="brand" class="form-control" required>
                                 <option value="">Select Brand</option>
                                 @foreach ($brands as $brand)
@@ -69,22 +87,32 @@
                         </div>
                          <input type="hidden" name="product_type" value="tyre">
                         <div class="form-group col-lg-3 col-md-6 col-12">
-                            <label for="model">Model:</label>
+                            <label for="model">Model<span class="text-red">*</span></label>
                             <input type="text" name="tyre_model" id="tyre_model" class="form-control"
                                 value="{{ isset($tyre) ? $tyre->tyre_model : old('tyre_model') }}" required>
                         </div>
 
                         <div class="form-group col-lg-3 col-md-6 col-12">
-                        <label for="supplier_id">Tyre Source:</label>
-                        <select name="supplier_id" id="supplier_id" class="form-control" required>
-                            @foreach ($suppliers as $supplier)
-                                <option value="{{ $supplier->id }}" 
-                                    {{ (isset($tyre) && $tyre->supplier_id == $supplier->id) || (!isset($tyre) && $supplier->id == 1) ? 'selected' : '' }}>
-                                    {{ $supplier->supplier_name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
+                            <label for="supplier_id">Tyre Source:</label>
+                            <select name="supplier_id" id="supplier_id" class="form-control" required>
+    @foreach ($suppliers as $supplier)
+        <option value="{{ $supplier->id }}"
+            {{ (isset($tyre) && $tyre->supplier_id == $supplier->id) 
+                || (!isset($tyre) && $supplier->id == 1) ? 'selected' : '' }}>
+
+            {{ $supplier->supplier_name }}
+
+            @if($supplier->garage)
+                ({{ $supplier->garage->garage_name }})
+            @endif
+        </option>
+    @endforeach
+</select>
+
+                        </div>
+
+
+
                         <div class="form-group col-lg-3 col-md-6 col-12">
                             <label for="status">Status:</label>
                             <select name="status" id="status" class="form-control">
@@ -94,38 +122,43 @@
                         </div>
 
 
-                        <div class="form-group col-lg-3 col-md-6 col-12">
-                            <label for="tyre_width">Width:</label>
-                            <select name="tyre_width" id="tyre_width" class="form-control" required>
-                                <option value="">Select Width</option>
-                                @foreach([11, 13, 18, 19, 20, 22, 23, 24, 25, 26, 27, 30, 31, 33, 35, 75, 80, 90, 100, 110, 115, 120, 125, 130, 135, 140, 145, 155, 160, 165, 175, 185, 195, 205, 215, 225, 230, 235, 245, 250, 255, 265, 275, 285, 295, 300, 305, 315, 325, 335, 345, 350, 355, 385, 400, 410, 425, 435, 500, 560, 650, 750, 1000, 1050] as $width)
-                                    <option value="{{ $width }}" {{ (old('tyre_width', $tyre->tyre_width ?? '') == $width) ? 'selected' : '' }}>
-                                        {{ $width }}
-                                    </option>
-                                @endforeach
-                            </select>
+                       <div class="form-group col-lg-3 col-md-6 col-12">
+                            <label for="tyre_width">Width<span class="text-red">*</span></label>
+                            <input 
+                                type="text" 
+                                name="tyre_width" 
+                                id="tyre_width" 
+                                class="form-control" 
+                                value="{{ old('tyre_width', $tyre->tyre_width ?? '') }}" 
+                                required
+                                placeholder="e.g. 205"
+                            >
                         </div>
 
-
                         <div class="form-group col-lg-3 col-md-6 col-12">
-                            <label for="tyre_profile">Profile:</label>
-                            <select name="tyre_profile" id="tyre_profile" class="form-control" required>
-                                <option value="">Select Profile</option>
-                                @foreach([0, 7, 8, 9, 10, 12, 15, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 82, 85, 88, 90, 95, 100, 105, 110, 120, 125, 130, 350, 800, 850, 900, 950] as $profile)
-                                    <option value="{{ $profile }}" {{ (old('tyre_profile', $tyre->tyre_profile ?? '') == $profile) ? 'selected' : '' }}>{{ $profile }}</option>
-                                @endforeach
-                            </select>
+                            <label for="tyre_profile">Profile<span class="text-red">*</span></label>
+                            <input 
+                                type="text" 
+                                name="tyre_profile" 
+                                id="tyre_profile" 
+                                class="form-control" 
+                                value="{{ old('tyre_profile', $tyre->tyre_profile ?? '') }}" 
+                                required
+                                placeholder="e.g. 55"
+                            >
                         </div>
 
-
                         <div class="form-group col-lg-3 col-md-6 col-12">
-                            <label for="tyre_diameter">Diameter:</label>
-                            <select name="tyre_diameter" id="tyre_diameter" class="form-control" required>
-                                <option value="">Select Diameter</option>
-                                @foreach([0, 1, 4, 8, 10, 11, 12, 13, 14, 15, 16, 17, 17.5, 18, 19, 20, 21, 22, 22.5, 23, 24, 39, 175, 195, 225] as $diameter)
-                                    <option value="{{ $diameter }}" {{ (old('tyre_diameter', $tyre->tyre_diameter ?? '') == $diameter) ? 'selected' : '' }}>{{ $diameter }}</option>
-                                @endforeach
-                            </select>
+                            <label for="tyre_diameter">Diameter<span class="text-red">*</span></label>
+                            <input 
+                                type="text" 
+                                name="tyre_diameter" 
+                                id="tyre_diameter" 
+                                class="form-control" 
+                                value="{{ old('tyre_diameter', $tyre->tyre_diameter ?? '') }}" 
+                                required
+                                placeholder="e.g. 16 or 17.5"
+                            >
                         </div>
 
                         <div class="form-group col-lg-3 col-md-6 col-12">
@@ -205,7 +238,7 @@
                             <label for="tyre_noisedb">Tyre NoiseDB:</label>
                             <select name="tyre_noisedb" id="tyre_noisedb" class="form-control">
                                 <option value="">Select NoiseDB</option>
-                                @for ($db = 60; $db <= 90; $db++) {{-- Loop to dynamically create options --}}
+                                @for ($db = 60; $db <= 90; $db++)
                                     <option value="{{ $db }}" {{ (isset($tyre) && $tyre->tyre_noisedb == $db) || old('tyre_noisedb') == $db ? 'selected' : '' }}>
                                         {{ $db }}
                                     </option>
@@ -257,7 +290,7 @@
                         <label for="vehicle_type">Vehicle Type:</label>
                         <select name="vehicle_type" id="vehicle_type" class="form-control">
                             <option value="">Select Vehicle Type</option>
-                            @foreach (['Car', 'Van', '4x4', 'SUV', 'Commercial Truck'] as $type)
+                            @foreach (['Car', 'Van', '4x4', 'SUV','Motorbike','Commercial Truck'] as $type)
                             <option value="{{ $type }}" 
                                 {{ (isset($tyre) && ucwords(strtolower($tyre->vehicle_type)) == $type) || ucwords(strtolower(old('vehicle_type'))) == $type ? 'selected' : '' }}>
                                 {{ $type }}
@@ -267,7 +300,7 @@
                     </div>
                     @if(!isset($tyre))
                     <div class="form-group col-lg-3 col-md-6 col-12">
-                    <label for="quantity">Quantity:</label>
+                    <label for="quantity">Quantity<span class="text-red">*</span></label>
                             <input type="number" name="tyre_quantity" id="quantity" class="form-control" required >
                             </div>
                         @endif
@@ -509,7 +542,6 @@
         document.getElementById('tyre_delivery_price').value = deliveryPrice.toFixed(2);
         document.getElementById('trade_costprice').value = tradeprice.toFixed(2);
     }
-
     document.getElementById('tyre_price').addEventListener('input', calculateFullyFitted);
     document.getElementById('tyre_margin').addEventListener('input', calculateFullyFitted);
 </script>

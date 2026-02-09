@@ -30,7 +30,7 @@
                     <!-- Job/Workshop Id -->
                     <div class="col-lg-3 col-md-6 col-12 form-group">
                         <label>Job/Workshop Id:</label>
-                        {{ Form::text('id', request('id', old('id')), [ // Use request() helper for cleaner syntax
+                        {{ Form::text('id', request('id', old('id')), [
         'class' => 'form-control',
         'id' => 'id',
         'placeholder' => 'Job Id'
@@ -42,15 +42,24 @@
                         <label>Customer Name:</label>
                         {{ Form::text('name', request('name', old('name')), [
         'class' => 'form-control',
-        'name' => 'name', // This attribute is redundant if using Form::text
+        'name' => 'name',
         'placeholder' => 'Name'
+    ]) }}
+                    </div>
+
+                     <div class="col-lg-3 col-md-6 col-12 form-group">
+                        <label>Garage Name:</label>
+                        {{ Form::text('garage_name', request('garage_name', old('garage_name')), [
+        'class' => 'form-control',
+        'name' => 'garage_name',
+        'placeholder' => 'Garage Name'
     ]) }}
                     </div>
 
                     <!-- Mobile Number -->
                     <div class="col-lg-3 col-md-6 col-12 form-group">
                         <label>Mobile Number:</label>
-                        {{ Form::text('mobile', request('mobile', old('mobile')), [ // Fixed variable name typo
+                        {{ Form::text('mobile', request('mobile', old('mobile')), [ 
         'class' => 'form-control',
         'placeholder' => 'Mobile' // Removed incorrect attribute name
     ]) }}
@@ -207,8 +216,6 @@
                         <i class="fa fa-align-justify"></i> Workshop Detail
                         <a class="btn btn-primary text-center float-right"
                             href="{{ asset('/AutoCare/workshop/add') }}">Create New Workshop</a>
-
-
                     </div>
                     <div class="card-body table-responsive"
                         style="font-size: 13px;padding-left:10px;vertical-align:middle;">
@@ -218,6 +225,7 @@
                                     <th style="white-space: nowrap">Job Date</th>
                                     <th style="white-space: nowrap">Job Id</th>
                                     <th style="white-space: nowrap">Name</th>
+                                     <th style="white-space: nowrap">Garage</th>
                                     <th style="white-space: nowrap">Mobile</th>
                                     <th style="white-space: nowrap">Reg. No</th>
                                     <th style="white-space: nowrap">Pymt Method</th>
@@ -232,7 +240,7 @@
                             </thead>
                             <tfoot>
                                 <tr>
-                                    <th colspan="6" style="text-align:right">Total:</th>
+                                    <th colspan="7" style="text-align:right">Total:</th>
                                     <th></th>
                                     <th colspan="6"></th>
                                 </tr>
@@ -287,17 +295,13 @@
                                 </thead>
                                 <tbody>
                                     @php
-                                        // Get current UK datetime formatted for datetime-local input
                                         $ukNow = \Carbon\Carbon::now('Europe/London')->format('Y-m-d\TH:i');
-
-                                        // Determine the value to show for payment_date
                                         $paymentDateValue = old('payment_dateForWorkshop', isset($log) ? $log->payment_date : $ukNow);
                                     @endphp
 
                                     <tr>
                                         <td>
                                             <select name="creditDebitForWorkshop" class="form-control">
-                                                <!-- <option value="0">Credit</option> -->
                                                 <option value="1" selected>Debit</option>
                                             </select>
                                             <input type="hidden" name="workshopIdForPayment">
@@ -344,7 +348,6 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <!-- Payment logs will be dynamically populated here -->
                             </tbody>
                         </table>
                     </div>
@@ -528,20 +531,20 @@
             // for refresh : End
             // Open Discount Modal and Set Values
             $(document).on('click', '.openDiscountModelForWorkshop', function () {
-                var discountWorkshopId = $(this).attr('id'); // Get the workshop ID
-                var balancePrice = $(this).data('balance-total'); // Get the balance price
+                var discountWorkshopId = $(this).attr('id');
+                var balancePrice = $(this).data('balance-total');
 
                 // Set the workshop ID and balance price in the modal
                 $('[name="workshopIdForDiscount"]').val(discountWorkshopId);
-                $('[name="workshopIdForDiscount"]').data('balance-total', balancePrice); // Store balance price in data attribute
-                $('[id="discountWorkshopId"]').html(discountWorkshopId); // Display workshop ID in the modal title
+                $('[name="workshopIdForDiscount"]').data('balance-total', balancePrice);
+                $('[id="discountWorkshopId"]').html(discountWorkshopId);
             });
 
             // Handle Discount Submission
             // Handle Discount Submission
             $(document).on('click', '#DiscountForWorkshop', function () {
-                const discountType = $('#discountType').val(); // 'amount' or 'percentage'
-                const discountValue = parseFloat($('#discountValue').val()); // Discount value entered by the user
+                const discountType = $('#discountType').val();
+                const discountValue = parseFloat($('#discountValue').val());
                 const workshopIdForDiscount = $('[name=workshopIdForDiscount]').val();
                 const balancePrice = parseFloat($('[name=workshopIdForDiscount]').data('balance-total'));
 
@@ -560,7 +563,7 @@
                     discountAmount = (balancePrice * discountValue) / 100;
 
                     // Optional: Cap the maximum discount amount
-                    const maxDiscountAmount = balancePrice; // Ensure the discount does not exceed the balance price
+                    const maxDiscountAmount = balancePrice;
                     discountAmount = Math.min(discountAmount, maxDiscountAmount);
                 }
 
@@ -889,6 +892,7 @@
                     data: function (d) {
                         d.id = $('input[name="id"]').val();
                         d.name = $('input[name="name"]').val();
+                        d.garage_name = $('input[name="garage_name"]').val();
                         d.mobile = $('input[name="mobile"]').val();
                         d.created_at_from = $('input[name="created_at_from"]').val();
                         d.created_at_to = $('input[name="created_at_to"]').val();
@@ -906,6 +910,7 @@
                     { data: 'workshop_date_formatted', name: 'workshops.created_at' },
                     { data: 'id', name: 'workshops.id' },
                     { data: 'customer_name', name: 'workshops.name' },
+                    { data: 'garage_name', name: 'garages.garage_name' },
                     { data: 'mobile', name: 'workshops.mobile' },
                     { data: 'vehicle_reg', name: 'workshops.vehicle_reg_number' },
                     { data: 'payment_method_formatted', name: 'workshops.payment_method' },
@@ -927,21 +932,21 @@
                                 i : 0;
                     };
                     totalDue = api
-                        .column(6)
-                        .data()
-                        .reduce(function (a, b) {
-                            return intVal(a) + intVal(b);
-                        }, 0);
-                    totalGrand = api
                         .column(7)
                         .data()
                         .reduce(function (a, b) {
                             return intVal(a) + intVal(b);
                         }, 0);
-                    $(api.column(6).footer()).html(
+                    totalGrand = api
+                        .column(8)
+                        .data()
+                        .reduce(function (a, b) {
+                            return intVal(a) + intVal(b);
+                        }, 0);
+                    $(api.column(7).footer()).html(
                         '£' + parseFloat(totalDue).toFixed(2)
                     );
-                    $(api.column(7).footer()).html(
+                    $(api.column(8).footer()).html(
                         '£' + parseFloat(totalGrand).toFixed(2)
                     );
                 }

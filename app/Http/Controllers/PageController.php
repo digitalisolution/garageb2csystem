@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Page;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use App\Models\HeaderLink;
 use Illuminate\Support\Facades\Storage;
 
 
@@ -13,14 +14,22 @@ class PageController extends Controller
 {
     public function index()
     {
-        $pages = page::orderBy('sort', 'asc')->get();
-        return view('AutoCare.pages.index', compact('pages'));
+        $viewData['header_link'] = HeaderLink::where("menu_id", '8')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+
+        $viewData['pages'] = page::orderBy('sort', 'asc')->get();
+        return view('AutoCare.pages.index', $viewData);
     }
 
 
     public function create()
     {
-        return view('AutoCare.pages.create');
+        /*$viewData['option1'] = 'Page List';
+        $viewData['optionValue1'] = "AutoCare/pages";
+        $viewData['option2'] = 'Add Page';
+        $viewData['optionValue2'] = "AutoCare/pages/create";*/
+        $viewData['header_link'] = HeaderLink::where("menu_id", '8')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+
+        return view('AutoCare.pages.create', $viewData);
 
     }
 
@@ -67,7 +76,15 @@ class PageController extends Controller
 
     public function edit(Page $page)
     {
-        return view('AutoCare.pages.create', compact('page'));
+        /*$viewData['option1'] = 'Page List';
+        $viewData['optionValue1'] = "AutoCare/pages";
+        $viewData['option2'] = 'Add Page';
+        $viewData['optionValue2'] = "AutoCare/pages/create";*/
+        $viewData['header_link'] = HeaderLink::where("menu_id", '8')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+
+        $viewData['page'] = $page;
+        
+        return view('AutoCare.pages.create', $viewData);
     }
 
     public function update(Request $request, Page $page)

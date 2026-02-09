@@ -1,82 +1,96 @@
 <!-- Footer Section -->
-<footer>
-    <div class="footer-area pt-70 pb-0 bg-dark">
+<footer class="footer_element">
+    <div class="footer-area">
         <div class="container">
-            <div class="col-lg-12 ms-auto me-auto">
-                <div class="row align-items-center">
-                    <div class="col-lg-5 col-md-6">
-                        @if (!is_null($garage->google_reviews_stars) && !is_null($garage->google_reviews_count))
-                        <a href="{{ $garage->google_reviews_link }}" target="_blank" class="google-review-widget">
-                            <img src="frontend/themes/default/img/icon-google-review.png" alt="icon google review">
-                            <span>
-                                {{ $garage->google_reviews_stars }}
-                                @php
-                                    $fullStars = floor($garage->google_reviews_stars); // Full stars
-                                    $halfStar = ($garage->google_reviews_stars - $fullStars) >= 0.5; // Half star check
-                                @endphp
+            <div class="footer-topele mb-5">
+                <div class="foot_logo"><img src="frontend/www-garage-automation-co-uk/img/logo/foot-logo.png" loading="lazy"></div>
+                <a href="{{ $garage->google_map_link }}" target="_blank">{{ $garage->street }}, <br class="hidden-xs">{{ $garage->city }}, {{ $garage->zone }},
+                                        {{ $garage->country }}</a>
+            </div>
+        </div>
+    </div>
+    <div class="footer-area">
+        <div class="container">
+            <div class="row">
+                
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <div class="footer-widget mb-30 ml-30">
+                        <div class="footer-title">
+                            <h3>We are Open</h3>
+                        </div>
+                        <div class="opening-hours-widget">
+                            {!! $garage->garage_opening_time !!}
 
-                                {{-- Full stars --}}
-                                @for ($i = 1; $i <= $fullStars; $i++)
-                                    <i class="fa fa-star"></i>
-                                @endfor
-
-                                {{-- Half star --}}
-                                @if ($halfStar)
-                                    <i class="fa fa-star-half-o"></i>
-                                @endif
-
-                                {{-- Empty stars --}}
-                                @for ($i = ($fullStars + $halfStar + 1); $i <= 5; $i++)
-                                    <i class="fa fa-star-o"></i>
-                                @endfor
-
-                                {{ $garage->google_reviews_count }}+ reviews
-                            </span>
-                            <h3>Google Reviews</h3>
-                        </a>
-                        @endif
+                        </div>
                     </div>
-                    <div class="col-lg-7 col-md-6">
-                        <!-- <h3 class="mb-4">Get in Touch</h3> -->
-                        <div class="row">
-                            <div class="col-lg-6 col-md-6">
-                                <div class="contact-widget">
-                                    <i class="pe-7s-rocket"></i>
-                                    <span><a href="mailto:{{ $garage->email }}">{{ $garage->email }}</a></span>
-                                </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-4">
+                    <div class="footer-widget mb-30 ml-30">
+                        <div class="footer-title">
+                            <h3>Helpful Links</h3>
+                        </div>
+                        <div class="footer-list">
+                            <ul>
+                                <li><a href="about-us">About Us </a></li>
+                                <li><a href="contact">Contact Us </a></li>
+                                <li><a href="terms">Terms and Conditions </a></li>
+                                <li><a href="privacy-policy">Privacy Policy </a></li>
+                                <li><a href="cookies">Cookies Policy</a></li>
+                                <li><a href="sitemap">Sitemap </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-6">
+                    <div class="footer-widget mb-30 ml-30">
+                        <div class="footer-title">
+                            <h3>Tyres Online</h3>
+                        </div>
+                        <div class="footer-list">
+                            <ul>
+                                <li><a href="winter-tyres">Winter Tyres</a></li>
+                                <li><a href="run-flat-tyres">Run Flat Tyres</a></li>
+                                <li><a href="4x4-tyres">4x4 Tyres</a></li>
+                                <li><a href="car-tyres">Car Tyres</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-sm-6">
+                    <div class="footer-widget mb-30 ml-30">
+                        <div class="footer-title">
+                            <h3>Tyre Information</h3>
+                        </div>
+                        <div class="footer-list">
+                            <ul>
+                                <li><a href="brands">Best Tyre Brands</a></li>
+                                <li><a href="#">Filter Registration</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="footer-widget mb-30 ml-30">
+                        <div class="footer-title">
+                            <h3>Contact Us</h3>
+                        </div>
+                        <div class="contact-widget">
+                            <span>
+                                Telephone<br>
+                                <a href="tel:{{ $garage->mobile }}" class="telephone">{{ $garage->mobile }}</a></span>
                             </div>
-                            <div class="col-lg-6 col-md-6">
-                                <div class="contact-widget">
-                                    <i class="pe-7s-call"></i>
-                                    <span><a href="tel:{{ $garage->mobile }}">{{ $garage->mobile }}</a></span>
-                                </div>
-                            </div>
-                            <div class="col-lg-6 col-md-6">
-                                <div class="contact-widget">
-                                    <i class="pe-7s-map-marker"></i>
-                                    <span><a href="{{ $garage->google_map_link }}" target="_blank">{{ $garage->street }}, {{ $garage->city }}, {{ $garage->zone }},
-                                        {{ $garage->country }}</a></span>
-                                </div>
-                            </div>
+                        <div class="contact-widget">
+                            <span>
+                                Email Us<br>
+                                <a href="mailto:{{ $garage->email }}">{{ $garage->email }}</a></span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-    <div class="footer-area bg-dark pt-70 pb-0">
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-2 col-md-4 col-sm-4">
-                    <div class="copyright mb-30">
-                        <!-- <div class="footer-logo mt-0">
-                            <a href="index.html">
-                                <img alt="" src="frontend/themes/default/img/logo/logo.png">
-                            </a>
-                        </div> -->
-                        <p>© 2025 <a href="/">{{ $garage->garage_name }}</a><br> All Rights Reserved</p>
-                    </div>
-                    <div class="footer-widget">
+        <div class="py-3 footer-sub-links">
+            <div class="container">
+                <div class="footer-end">
+                    <div>
+                        <p class="mb-0">© 2025 <a href="/">{{ $garage->garage_name }}</a> All Rights Reserved.</p>
                         <div class="social-list">
                             @if(!empty($garage->social_facebook))
                                 <a href="{{ $garage->social_facebook }}" target="_blank">
@@ -103,69 +117,8 @@
                             @endif
                         </div>
                     </div>
-                </div>
-
-                <div class="col-lg-3 col-md-4 col-sm-4">
-                    <div class="footer-widget mb-30 ml-30">
-                        <div class="footer-title">
-                            <h3>TYRES</h3>
-                        </div>
-                        <div class="footer-list">
-                            <ul>
-                                <li><a href="#">Road Tyres</a></li>
-                                <li><a href="#">SUV Tyres</a></li>
-                                <li><a href="#">Track Tyres</a></li>
-                                <li><a href="#">Drift Tyres</a></li>
-                                <li><a href="#">Off Road Tyres</a></li>
-                                <li><a href="#">Accelera Tyres</a></li>
-                                <li><a href="#">Armstrong Tyres</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6 col-sm-6">
-                    <div class="footer-widget mb-30 ml-30">
-                        <div class="footer-title">
-                            <h3>POPULAR TYRE SIZES</h3>
-                        </div>
-                        <div class="footer-list">
-                            <ul>
-                                <li><a href="#">225 40 R18 tyres</a></li>
-                                <li><a href="#">225 45 R17 tyres</a></li>
-                                <li><a href="#">235 40 R18 tyres</a></li>
-                                <li><a href="#">275 40 R20 tyres</a></li>
-                                <li><a href="#">275 40 R22 tyres</a></li>
-                                <li><a href="#">205 45 R17 tyres</a></li>
-                                <li><a href="#">205 55 R16 tyres</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-4 col-md-6 col-sm-6">
-                    <div class="footer-widget mb-30 ml-30">
-                        <div class="footer-title">
-                            <h3>OPENING HOURS</h3>
-                        </div>
-                        <div class="opening-hours-widget">
-                            {!! $garage->garage_opening_time !!}
-
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="py-3 footer-sub-links">
-            <div class="container">
-                <div class="footer-widget">
-                    <div class="footer-list">
-                        <ul>
-                            <li><a href="about-us">About Us </a></li>
-                            <li><a href="contact">Contact Us </a></li>
-                            <li><a href="terms">Terms and Conditions </a></li>
-                            <li><a href="privacy-policy">Privacy Policy </a></li>
-                            <li><a href="cookies">Cookies Policy</a></li>
-                            <li><a href="sitemap">Sitemap </a></li>
-                        </ul>
+                    <div>
+                        <img src="frontend/themes/default/img/payment.webp" alt="pay icons">
                     </div>
                 </div>
             </div>

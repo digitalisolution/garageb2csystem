@@ -23,6 +23,8 @@ use Illuminate\Support\Facades\DB;
 use App\Models\TyresProduct;
 use Carbon\Carbon;
 use App\Models\Booking;
+use App\Models\OrderTypes;
+use App\Models\Garage;
 use App\Models\GarageDetails;
 use App\Models\RegionCounty;
 use App\Models\VehicleDetail;
@@ -37,6 +39,8 @@ use App\Services\EmailValidationService;
 use App\Services\ApiOrderingService;
 use App\Services\UpdateOrderQtyService;
 use App\Rules\NoTestCustomer;
+use App\Services\RevolutService;
+
 
 class CheckoutController extends Controller
 {
@@ -47,6 +51,7 @@ class CheckoutController extends Controller
     protected $emailValidationService;
     protected $apiOrderingService;
     protected $updateOrderQtyService;
+    protected $revolutService;
 
     /**
      * Constructor to inject dependencies.
@@ -56,19 +61,22 @@ class CheckoutController extends Controller
      * @param EmailValidationService $emailValidationService
      * @param ApiOrderingService $apiOrderingService
      * @param UpdateOrderQtyService $updateOrderQtyService
+     * @param RevolutService $revolutService
      */
     public function __construct(
         DojoService $dojoService,
         PaymentAssistService $paymentAssistService,
         EmailValidationService $emailValidationService,
         ApiOrderingService $apiOrderingService,
-        UpdateOrderQtyService $updateOrderQtyService
+        UpdateOrderQtyService $updateOrderQtyService,
+        RevolutService $revolutService
     ) {
         $this->dojoService = $dojoService;
         $this->paymentAssistService = $paymentAssistService;
         $this->emailValidationService = $emailValidationService;
         $this->apiOrderingService = $apiOrderingService;
         $this->updateOrderQtyService = $updateOrderQtyService;
+        $this->revolutService = $revolutService;
     }
 
     /**
@@ -79,14 +87,24 @@ class CheckoutController extends Controller
      */
     public function index()
     {
-        // Get the cart items from the session
         $cart = session('cart', []);
+        //dd($cart);
         $cartItems = [];
         $total = 0;
         if (empty($cart)) {
-            // Redirect to home with an error message if the cart is empty
             return redirect()->route('home')->with('error', 'Your cart is empty. Please add items to the cart before proceeding to checkout.');
         }
+        $garageId = Session::get('selected_garage_id');
+        $domain = str_replace('.', '-', request()->getHost());
+
+        if (!$garageId) {
+            return redirect()->route('grages')->with('error', 'Please select a garage first.');
+        }
+        $calenderBook = OrderTypes::where('status', 1)->where('calender_book', 1)->get()
+        ->pluck('ordertype_name')
+        ->toArray();
+        $userOrdertype = session('user_ordertype');
+        $garages = Garage::findOrFail($garageId);
         $token = uniqid('checkout_', true);
         Session::put('checkout_token', $token);
         // Process each item in the cart
@@ -94,28 +112,35 @@ class CheckoutController extends Controller
             if (is_array($item) && isset($item['id'], $item['quantity'], $item['type'])) {
                 $product = null;
 
-                // Fetch the product details based on type
                 if ($item['type'] === 'tyre') {
                     $product = TyresProduct::find($item['id']);
                 } elseif ($item['type'] === 'service') {
                     $product = CarService::where('service_id', $item['id'])->first();
                 }
 
-                // If the product exists, prepare cart item details
+                if ($item['type'] === 'tyre') {
+                    $image = $product->tyre_image ?? 'sample-tyre.png';
+                } elseif ($item['type'] === 'service') {
+                    $image = $product->inner_image ?? 'no-img-service.jpg';
+                } else {
+                    $image = null; // fallback
+                }
+
                 if ($product) {
                     $priceField = $item['type'] === 'tyre' ? 'tyre_fullyfitted_price' : 'cost_price';
                     $cartItem = [
                         'product_id' => $product->product_id ?? $product->service_id,
                         'price' => $product->$priceField ?? 0,
                         'model' => $product->tyre_model ?? ($item['type'] === 'service' ? $product->name : ''),
-                        'type' => $item['type'], // Add type for identification
+                        'type' => $item['type'],
+                        'tyre_weight' => $product->tyre_weight ?? '10KG',
+                        'image' => $image,
                         'fitting_type' => $item['fitting_type'] ?? null,
                         'quantity' => $item['quantity'],
                         'tax_class_id' => $product->tax_class_id ?? '',
                         'total' => ($product->$priceField ?? 0) * $item['quantity'],
                     ];
 
-                    // Add `ean` and `sku` only for `tyre` type
                     if ($item['type'] === 'tyre') {
                         $cartItem['ean'] = $product->tyre_ean ?? '';
                         $cartItem['sku'] = $product->tyre_sku ?? '';
@@ -136,14 +161,13 @@ class CheckoutController extends Controller
                 'end' => $booking->end ? $booking->end->format('Y-m-d\TH:i:s') : null,
             ];
         })->filter(function ($event) {
-            return $event['start'] && $event['end']; // Exclude events with invalid dates
+            return $event['start'] && $event['end'];
         });
         $customer = Auth::guard('customer')->user();
         $vehicleDetails = collect();
         $billingDetails = [];
         $counties = RegionCounty::pluck('name', 'zone_id');
         $countries = Countries::pluck('name', 'country_id');
-        // If logged in, fetch customer data
         if ($customer) {
             $vehicleIds = $customer->vehicles()->pluck('vehicle_detail_id');
             $vehicleDetails = VehicleDetail::whereIn('id', $vehicleIds)
@@ -174,12 +198,14 @@ class CheckoutController extends Controller
             ];
 
         }
-        // dd($billingDetails);
-        $bookingDetails = session('bookingDetails', []);
+        $services = CarService::where('garage_id', $garageId)
+        ->where('status', 1)
+        ->get();
+        $userOrdertype = session('user_ordertype');
+        $bookingDetails = $this->getBookingDetails($userOrdertype);
         $shippingData = session('postcode_data', []);
         $VehicleDetails = session('vehicleData', []);
-        // dd($VehicleDetails);
-        // Pass all data to the view
+
         $response = response()->view('checkout', [
             'checkoutToken' => $token,
             'cartItems' => $cartItems,
@@ -195,6 +221,11 @@ class CheckoutController extends Controller
             'countries' => $countries,
             'selectedCountry' => $selectedCountry,
             'vehicleDetails' => $vehicleDetails,
+            'garages' => $garages,
+            'services' => $services,
+            'domain' => $domain,
+            'calenderBook' => $calenderBook,
+            'userOrdertype' => $userOrdertype
         ]);
 
         $this->preventPageCaching($response);
@@ -203,12 +234,10 @@ class CheckoutController extends Controller
     }
     public function refresh()
     {
-        // Get the cart items from the session
         $cart = session('cart', []);
         $cartItems = [];
         $total = 0;
         if (empty($cart)) {
-            // Redirect to home with an error message if the cart is empty
             return redirect()->route('home')->with('error', 'Your cart is empty. Please add items to the cart before proceeding to checkout.');
         }
         $token = uniqid('checkout_', true);
@@ -217,15 +246,11 @@ class CheckoutController extends Controller
         foreach ($cart as $item) {
             if (is_array($item) && isset($item['id'], $item['quantity'], $item['type'])) {
                 $product = null;
-
-                // Fetch the product details based on type
                 if ($item['type'] === 'tyre') {
                     $product = TyresProduct::find($item['id']);
                 } elseif ($item['type'] === 'service') {
                     $product = CarService::where('service_id', $item['id'])->first();
                 }
-
-                // If the product exists, prepare cart item details
                 if ($product) {
                     $priceField = $item['type'] === 'tyre' ? 'tyre_fullyfitted_price' : 'cost_price';
                     $cartItem = [
@@ -233,13 +258,12 @@ class CheckoutController extends Controller
                         'price' => $product->$priceField ?? 0,
                         'model' => $product->tyre_model ?? ($item['type'] === 'service' ? $product->name : ''),
                         'type' => $item['type'],
+                        'tyre_weight' => $product->tyre_weight ?? '10KG',
                         'fitting_type' => $item['fitting_type'] ?? null,
                         'quantity' => $item['quantity'],
                         'tax_class_id' => $product->tax_class_id ?? '',
                         'total' => ($product->$priceField ?? 0) * $item['quantity'],
                     ];
-
-                    // Add `ean` and `sku` only for `tyre` type
                     if ($item['type'] === 'tyre') {
                         $cartItem['ean'] = $product->tyre_ean ?? '';
                         $cartItem['sku'] = $product->tyre_sku ?? '';
@@ -297,7 +321,8 @@ class CheckoutController extends Controller
 
         }
         // dd($billin);
-        $bookingDetails = session('bookingDetails', []);
+        $userOrdertype = session('user_ordertype');
+        $bookingDetails = $this->getBookingDetails($userOrdertype);
         $shippingData = session('postcode_data', []);
         $VehicleDetails = session('vehicleData', []);
 
@@ -319,23 +344,8 @@ class CheckoutController extends Controller
             'vehicleDetails' => $vehicleDetails,
         ]);
     }
-    // public function checkEmailExists(Request $request)
-    // {
-    //     $request->validate([
-    //         'email' => 'required|email',
-    //     ]);
-
-    //     $email = $request->input('email');
-
-    //     // Check if the email exists in the database
-    //     $exists = Customer::where('customer_email', $email)->exists();
-
-    //     return response()->json(['exists' => $exists]);
-    // }
-
     public function autoSaveCustomer(Request $request)
     {
-        // Retrieve customer data from the session
         $customerData = Session::get('customer');
 
         if (!$customerData) {
@@ -343,25 +353,18 @@ class CheckoutController extends Controller
         }
 
         try {
-            // Validate the email using EmailValidationService
             $validationResult = $this->emailValidationService->validateEmail(
                 $customerData['email'],
-                $customerData['email'] // Use the app's default sender email address
+                $customerData['email']
             );
-
-            // If the email is invalid, return an error response
             if (!$validationResult['status']) {
                 throw new \Exception($validationResult['message']);
             }
-
-            // Check if the email already exists in the database
             $existingCustomer = Customer::where('customer_email', $customerData['email'])->first();
 
             if ($existingCustomer) {
-                // Email exists, check if the user is logged in
                 $loggedInCustomer = Auth::guard('customer')->user();
                 if ($loggedInCustomer && $loggedInCustomer->id === $existingCustomer->id) {
-                    // Logged-in user matches the existing customer, update the data
                     $existingCustomer->update([
                         'customer_name' => $customerData['customer_name'],
                         'customer_last_name' => $customerData['last_name'] ?? $existingCustomer->customer_last_name,
@@ -379,8 +382,7 @@ class CheckoutController extends Controller
                     $customerId = $existingCustomer->id;
                 }
             } else {
-                // Email does not exist, create a new customer record
-                $password = Str::random(10); // Generate a random password for the new customer
+                $password = Str::random(10);
 
                 $newCustomer = Customer::create([
                     'customer_name' => $customerData['customer_name'],
@@ -393,10 +395,8 @@ class CheckoutController extends Controller
                     'shipping_address_county' => $customerData['county'],
                     'shipping_address_country' => $customerData['country'],
                     'company_name' => $customerData['company_name'],
-                    'password' => Hash::make($password), // Hash the generated password
+                    'password' => Hash::make($password),
                 ]);
-
-                // Send a welcome email with the generated password
                 try {
                     Mail::to($newCustomer->customer_email)->send(new CustomerPasswordMail($password, $newCustomer->customer_email));
                 } catch (\Exception $e) {
@@ -414,30 +414,43 @@ class CheckoutController extends Controller
         // dd($request);
         $fieldName = $request->input('fieldName');
         $fieldValue = $request->input('fieldValue');
-
-        // Retrieve or create the customer session
         $customerData = Session::get('customer', []);
         $customerData[$fieldName] = $fieldValue;
-
-        // Save updated data in the session
         Session::put('customer', $customerData);
-
-        // Debugging: Check if session data is correct
-        // Log::info('Updated customer session data:', $customerData);
-
-        // Return response with success
         return response()->json(['success' => true, 'session_data' => $customerData]);
+    }
+     protected function getBookingDetails($userOrdertype)
+    {
+        $calenderBook = OrderTypes::where('status', 1)
+            ->pluck('calender_book', 'ordertype_name')
+            ->toArray();
+        $bookingDetails = session('bookingDetails', null);
+
+        if (isset($calenderBook[$userOrdertype]) && $calenderBook[$userOrdertype] == 1) {
+            if (!$bookingDetails) {
+                $bookingDetails = null;
+            }
+        } else {
+            $now = Carbon::now();
+            $bookingDetails = [
+                'start' => $now->copy()->addDays(5)->setTime(12, 30, 0)->format('Y-m-d H:i:s'),
+                'end'   => $now->copy()->addDays(5)->setTime(13, 0, 0)->format('Y-m-d H:i:s'),
+            ];
+        }
+
+        // Save in session
+        session(['bookingDetails' => $bookingDetails]);
+
+        return $bookingDetails;
     }
     public function submit(Request $request)
     {
         // Validate the token
         $storedToken = Session::get('checkout_token');
         $submittedToken = $request->input('checkout_token');
-
-        // if ($storedToken !== $submittedToken) {
-        //     return back()->withErrors(['error' => 'Invalid or expired form submission.'])->withInput();
-        // }
-        $bookingDetails = Session::get('bookingDetails', []);
+        $userOrdertype = session('user_ordertype');
+        $bookingDetails = $this->getBookingDetails($userOrdertype);
+        // dd($bookingDetails);
         if (empty($bookingDetails) || !isset($bookingDetails['start']) || !isset($bookingDetails['end'])) {
             return back()->withErrors(['booking_slot' => 'Booking slot is not selected. Please select a booking slot before submitting the order.'])->withInput();
         }
@@ -448,7 +461,6 @@ class CheckoutController extends Controller
         $rules = $this->getValidationRules();
         $data = $request->all();
 
-        // If new_reg_number is provided, remove reg_number
         if (!empty($data['new_reg_number'])) {
             unset($data['reg_number']);
         }
@@ -460,10 +472,6 @@ class CheckoutController extends Controller
         }
 
         $validated = $validator->validated();
-        // Log::info('Request validated:', $validated);
-
-        // Fetch county and country names
-
 
         $workshopDefaults = $this->getWorkshopDefaults();
         $workshopData = $this->prepareWorkshopData($validated, $workshopDefaults);
@@ -472,22 +480,12 @@ class CheckoutController extends Controller
             DB::beginTransaction();
 
             $customerId = $this->handleCustomer($validated);
-            // Log::info('Customer saved:', ['id' => $customerId]);
-
             $workshopData['customer_id'] = $customerId;
             $workshop = $this->saveWorkshop($workshopData);
             $workshopId = $workshop['id'];
-            // Log::info('Workshop saved:', ['id' => $workshop->id]);
-
             $this->saveCartItems($workshop->id);
-            // Log::info('Cart items saved.');
-
             $this->saveCalendarBooking($workshop);
-            // Log::info('Calendar details saved.');
             $cartItems = Session::get('cart', []);
-            // dd($cartItems);
-            // $this->updateStockQty($cartItems);
-
             DB::commit();
 
             if (isset($validated['payment_method']) && $validated['payment_method'] === 'global_payment') {
@@ -510,6 +508,12 @@ class CheckoutController extends Controller
                     'total' => $workshop->grandTotal,
                 ]);
             }
+if (isset($validated['payment_method']) && $validated['payment_method'] === 'revolut') {
+    return $this->revolutService->processPaymentWebsite([
+        'workshop_id' => $workshop->id,
+    ]);
+}
+
             if (isset($validated['payment_method']) && $validated['payment_method'] === 'pay_at_fitting_center') {
                 if ($workshop->status !== 'failed') {
                     $this->processOrder($validated, $workshop, $workshop->id);
@@ -525,7 +529,6 @@ class CheckoutController extends Controller
             ;
         }
     }
-
     protected function getValidationRules()
     {
         return [
@@ -560,21 +563,17 @@ class CheckoutController extends Controller
             'serviceGST' => 0,
         ];
     }
-
     protected function prepareWorkshopData(array $validated, array $defaults)
     {
         // Get cart items and booking details from session
         $cartTotalPrice = Session::get('cartTotalPrice', []);
         $cartItems = Session::get('cart', []);
         $localTimezone = 'Europe/London';
-        $bookingDetails = Session::get('bookingDetails', []);
-        // Initialize fitting type variable
+        $userOrdertype = session('user_ordertype');
+        $bookingDetails = $this->getBookingDetails($userOrdertype);
         $fittingType = null;
-
-        // Extract fitting_type from cart items
         foreach ($cartItems as $item) {
             if (isset($item['fitting_type'])) {
-                // Use the first fitting_type encountered
                 if (!$fittingType) {
                     $fittingType = $item['fitting_type'];
                 }
@@ -590,34 +589,28 @@ class CheckoutController extends Controller
 
         // Get current UK time
         $currentDateTimeUk = now($localTimezone);
-
-        // Retrieve vehicle details from session
         $VehicleDetails = Session::get('vehicleData', []);
-
-        // Determine the status based on payment method
-        $status = 'booked'; // Default status
+        $status = 'booked';
         if (
             isset($validated['payment_method']) &&
             $validated['payment_method'] !== 'pay_at_fitting_center'
         ) {
-            $status = 'failed'; // Set status to "failed" for other payment methods
+            $status = 'failed';
         }
-        // Determine which registration number to use
         $vehicleRegNumber = $validated['new_reg_number'] ?? $validated['reg_number'];
-
-        // Validate that at least one registration number exists
         if (!$vehicleRegNumber) {
             throw new \Exception('Either reg_number or new_reg_number must be provided.');
         }
         $countyName = RegionCounty::where('zone_id', $validated['county'])->value('name');
         $countryName = Countries::where('country_id', $validated['country'])->value('name');
-
-        // Add county and country names to validated data
+        $verification_code = Str::upper(Str::random(4));
         $validated['county_name'] = $countyName;
         $validated['country_name'] = $countryName;
-        // Return prepared workshop data
+        $garageId = Session::get('selected_garage_id');
         return array_merge($defaults, [
             'name' => $validated['customer_name'] ?? 'Unnamed Workshop',
+            'last_name' => $validated['last_name'] ?? null,
+            'garage_id' => $garageId,
             'email' => $validated['email'] ?? null,
             'address' => $validated['address'] ?? null,
             'city' => $validated['city'] ?? null,
@@ -639,6 +632,7 @@ class CheckoutController extends Controller
             'workshop_origin' => 'Website',
             'fitting_type' => $fittingType ?? 'fully_fitted',
             'status' => $status,
+            'verification_code' => $verification_code,
         ]);
     }
     protected function handleCustomer(array $validated)
@@ -648,10 +642,8 @@ class CheckoutController extends Controller
         if (!$customerId) {
             $validationResult = $this->emailValidationService->validateEmail(
                 $validated['email'],
-                $validated['email'] // Use the app's default sender email address
+                $validated['email']
             );
-
-            // If the email is invalid, return an error response
             if (!$validationResult['status']) {
                 throw new \Exception($validationResult['message']);
             }
@@ -712,21 +704,13 @@ class CheckoutController extends Controller
         $this->attachVehicleToCustomer($customerId, $vehicleRegNumber);
         return $customerId;
     }
-    /**
-     * Create a relationship between the customer and the vehicle.
-     *
-     * @param int $customerId
-     * @param string|null $vehicleRegNumber
-     * @return void
-     */
     private function attachVehicleToCustomer(int $customerId, ?string $vehicleRegNumber): void
     {
         // dd($vehicleRegNumber);
         if ($vehicleRegNumber) {
-            // Find or create the vehicle by registration number
             $vehicle = VehicleDetail::firstOrCreate(
                 ['vehicle_reg_number' => $vehicleRegNumber],
-                ['make' => '', 'model' => '', 'year' => ''] // Default values for new vehicles
+                ['make' => '', 'model' => '', 'year' => '']
             );
 
             // Attach the vehicle to the customer
@@ -739,7 +723,6 @@ class CheckoutController extends Controller
         // dd($workshopData);
         return Workshop::create($workshopData);
     }
-
     protected function saveCartItems($workshopId)
     {
         $cartItems = Session::get('cart', []);
@@ -749,7 +732,8 @@ class CheckoutController extends Controller
         $shippingPostcode = $postcodeData['postcode'] ?? null;
         $shippingType = $postcodeData['ship_type'] ?? 'job';
         $shippingPriceWithoutVAT = 0;
-
+        $garageId = Session::get('selected_garage_id');
+        // dd($garageId);
         // Determine the shipping price based on ship_type
         if ($shippingType === 'job') {
             $shippingPriceWithoutVAT = $shippingPricePerJob ?? 0;
@@ -766,6 +750,7 @@ class CheckoutController extends Controller
                 if ($item['type'] === 'tyre') {
                     $tyreData = [
                         'workshop_id' => $workshopId,
+                        'garage_id' => $garageId,
                         'ref_type' => 'workshop',
                         'product_ean' => $item['ean'],
                         'product_sku' => $item['sku'],
@@ -774,6 +759,7 @@ class CheckoutController extends Controller
                         'fitting_type' => $item['fitting_type'],
                         'tax_class_id' => $item['tax_class_id'],
                         'description' => $item['desc'],
+                        'tyre_weight' => $item['tyre_weight'],
                         'model' => $item['model'],
                         'price' => $item['price'],
                         'margin_rate' => $item['price'],
@@ -790,6 +776,7 @@ class CheckoutController extends Controller
                 if ($item['type'] === 'service') {
                     $serviceData = [
                         'workshop_id' => $workshopId,
+                        'garage_id' => $garageId,
                         'service_id' => $item['id'],
                         'ref_type' => 'workshop',
                         'service_name' => $item['model'],
@@ -811,11 +798,12 @@ class CheckoutController extends Controller
             }
         }
     }
-
     protected function saveCalendarBooking($workshopData)
     {
-        // Retrieve the booking details from the session
-        $slotDetails = Session::get('bookingDetails', []);
+        // dd($workshopData);
+        // $slotDetails = Session::get('bookingDetails', []);
+        $userOrdertype = session('user_ordertype');
+        $slotDetails = $this->getBookingDetails($userOrdertype);
         $workshopId = $workshopData->id;
         $workshopName = $workshopData->name;
 
@@ -836,8 +824,6 @@ class CheckoutController extends Controller
             'end' => $endUtc->format('Y-m-d H:i:s'),
         ]);
     }
-
-
     protected function processOrder(array $validated, $workshop, $orderId)
     {
         if ($validated['payment_method'] === 'pay_at_fitting_center' && $workshop['status'] !== 'failed') {
@@ -846,8 +832,6 @@ class CheckoutController extends Controller
             $this->sendOrderConfirmationEmail($validated, $orderId);
         }
     }
-
-
     protected function sendOrderConfirmationEmail(array $validated, $orderId)
     {
         $nameRule = new NoTestCustomer();
@@ -894,7 +878,6 @@ class CheckoutController extends Controller
             ]);
         }
     }
-
     public function orderSuccess(Request $request)
     {
         $this->clearCartAndCheckoutSession();
@@ -908,7 +891,6 @@ class CheckoutController extends Controller
 
         return $response;
     }
-
     public function orderFailure(Request $request)
     {
         $this->clearCartAndCheckoutSession();
@@ -922,7 +904,6 @@ class CheckoutController extends Controller
 
         return $response;
     }
-
     private function clearCartAndCheckoutSession()
     {
         $keysToClear = [

@@ -139,7 +139,7 @@ $status =  strtoupper($workshop->status);
             $itemTotal = $product->price * $product->quantity;
 
             // Handle callout charges for mobile-fitted tyres (add only once per job)
-            if ($product->fitting_type === 'mobile_fitted' && !$calloutAdded) {
+          if (in_array($product->fitting_type, ['mobile_fitted', 'mailorder']) && !$calloutAdded) {
                 $shippingPrice = $product->shipping_price ?? 0;
                 $calloutCharges += $shippingPrice; // Add to callout charges
 
@@ -156,7 +156,7 @@ $status =  strtoupper($workshop->status);
             $itemTotal = $product->service_price * $product->service_quantity;
 
             // Handle callout charges for jobs (add only once per job)
-            if ($product->fitting_type === 'mobile_fitted' && !$calloutAdded) {
+            if (in_array($product->fitting_type, ['mobile_fitted', 'mailorder']) && !$calloutAdded) {
                 $shippingPrice = $product->shipping_price ?? 0;
                 $calloutCharges += $shippingPrice; // Add to callout charges
 
@@ -263,6 +263,22 @@ $status =  strtoupper($workshop->status);
                                         </p>
                                         </td>
                                         </tr>
+                                         @elseif ($workshopProducts->contains('fitting_type', 'mailorder'))
+                                        <tr>
+                                        <td width="40%"></td>
+                                        <td align="right" width="34%">
+                                        <p
+                                        style="margin-top:14px;font-family:Arial;font-size:12px;text-align:right;color:#3f3f3f;padding-top:0px;margin-top:0;margin-bottom:3px">
+                                        <span style="color:#3f3f3f;text-align:right">Callout Charges ({{ $workshopProducts->firstWhere('fitting_type', 'mailorder')->shipping_postcode ?? 'N/A' }})</span>
+                                        </p>
+                                        </td>
+                                        <td>
+                                        <p
+                                        style="margin-top:14px;font-family:Arial;font-size:12px;text-align:right;color:#3f3f3f;padding-top:0px;margin-top:0;margin-bottom:3px">
+                                        <span style="padding-right:0px">£{{ number_format($calloutCharges, 2) }}</span>
+                                        </p>
+                                        </td>
+                                        </tr>
                                         @endif
 
                                       <tr>
@@ -355,6 +371,9 @@ $status =  strtoupper($workshop->status);
                                 <strong>Fitting Address:</strong><br>
                                 @if ($workshopProducts->isNotEmpty() && $workshopProducts->contains('fitting_type', 'mobile_fitted'))
                                     <!-- Workshop Address (Mobile Fitting) -->
+                                    {{ $workshop->address }}<br>
+                                    {{ $workshop->city }},{{ $workshop->county }}, {{ $workshop->zone }}, {{ $workshop->country }}
+                                @elseif ($workshopProducts->isNotEmpty() && $workshopProducts->contains('fitting_type', 'mailorder'))
                                     {{ $workshop->address }}<br>
                                     {{ $workshop->city }},{{ $workshop->county }}, {{ $workshop->zone }}, {{ $workshop->country }}
                                 @else

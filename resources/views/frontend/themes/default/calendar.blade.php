@@ -63,10 +63,11 @@
         line-height: normal;
         text-align: center;
     }
+    .fc .fc-col-header-cell-cushion{padding:2px 6px; line-height:normal;}
     @media screen and (max-width:600px){
         .fc table {font-size: 0.85em;line-height: 1.7em;}
         .fc-col-header-cell-cushion{font-weight:600;}
-        .fc .fc-col-header-cell-cushion{padding:2px 2px;}
+        .fc .fc-col-header-cell-cushion{padding:2px 2px; line-height:normal;}
     }
 </style>
 <h3 class="cart-page-title">Booking Calendar</h3>

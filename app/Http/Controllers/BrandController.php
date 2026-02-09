@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\tyre_brands;
+use App\Models\HeaderLink;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Storage;
@@ -12,13 +13,25 @@ class BrandController extends Controller
 {
     public function index()
     {
-        $brands = tyre_brands::orderBy('name', 'asc')->get();
-        return view('AutoCare.brand.index', compact('brands'));
+        //$brands = tyre_brands::orderBy('name', 'asc')->get();
+        $viewData['brands'] = tyre_brands::orderBy('name', 'asc')->get();
+        /*$viewData['option1'] = 'Search Brand';
+        $viewData['optionValue1'] = "AutoCare/brand";
+        $viewData['option2'] = 'Add Brand';
+        $viewData['optionValue2'] = "AutoCare/brand/create";*/
+        $viewData['header_link'] = HeaderLink::where("menu_id", '5')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+
+        return view('AutoCare.brand.index', $viewData);
     }
 
     public function create()
     {
-        return view('AutoCare.brand.create');
+        /*$viewData['option1'] = 'Search Brand';
+        $viewData['optionValue1'] = "AutoCare/brand";
+        $viewData['option2'] = 'Add Brand';
+        $viewData['optionValue2'] = "AutoCare/brand/create";*/
+        $viewData['header_link'] = HeaderLink::where("menu_id", '5')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+        return view('AutoCare.brand.create',$viewData);
     }
 
     public function store(Request $request)
@@ -84,7 +97,14 @@ class BrandController extends Controller
 
     public function edit(tyre_brands $brand)
     {
-        return view('AutoCare.brand.create', compact('brand'));
+        /*$viewData['option1'] = 'Search Brand';
+        $viewData['optionValue1'] = "AutoCare/brand";
+        $viewData['option2'] = 'Add Brand';
+        $viewData['optionValue2'] = "AutoCare/brand/create";*/
+        $viewData['header_link'] = HeaderLink::where("menu_id", '5')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+        $viewData['brand'] = $brand;
+        
+        return view('AutoCare.brand.create', $viewData);
     }
 
     public function update(Request $request, tyre_brands $brand)

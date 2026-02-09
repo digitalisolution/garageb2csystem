@@ -10,16 +10,12 @@ use App\Models\CarService;
 class CartTop extends ViewComponent
 {
     public $cartItems;
-    public $shippingData; // Add a property for shipping data
+    public $shippingData;
 
     public function __construct()
     {
-        // Log cart items for debugging purposes
-        // \Log::info('Cart Items: ', Session::get('cart', []));
-
-        // Retrieve cart items and shipping data
         $this->cartItems = $this->getCartItems();
-        $this->shippingData = Session::get('postcode_data', []); // Get shipping data from session
+        $this->shippingData = Session::get('postcode_data', []);
     }
 
     private function getCartItems()
@@ -38,10 +34,19 @@ class CartTop extends ViewComponent
                     continue;
                 }
 
+                if ($item['type'] === 'tyre') {
+                    $image = $product->tyre_image ?? 'sample-tyre.png';
+                } elseif ($item['type'] === 'service') {
+                    $image = $product->inner_image ?? 'no-img-service.jpg';
+                } else {
+                    $image = null; // fallback
+                }
+
                 if ($product) {
                     $cartItems[] = [
                         'id' => $product->id,
                         'type' => $item['type'],
+                        'image' => $image,
                         'desc' => $product->description ?? '',
                         'model' => $product->model ?? ($item['type'] === 'service' ? $product->name : ''),
                         'price' => $product->tyre_fullyfitted_price ?? $product->cost_price,
@@ -70,8 +75,17 @@ class CartTop extends ViewComponent
             if ($item['tax_class_id'] == 9) {
                 $vatTotal += $item['price'] * $item['quantity'] * 0.2;
             }
-
             if ($item['fitting_type'] === 'mobile_fitted') {
+                $shippingType = $this->shippingData['ship_type'] ?? 'job';
+                $shippingPrice = $this->shippingData['ship_price'] ?? 0;
+
+                if ($shippingType === 'job') {
+                    $shippingPricePerJob = max($shippingPricePerJob, $shippingPrice);
+                } elseif ($shippingType === 'tyre' && $item['type'] === 'tyre') {
+                    $shippingPricePerTyre += $shippingPrice * $item['quantity'];
+                }
+            }
+            if ($item['fitting_type'] === 'mailorder') {
                 $shippingType = $this->shippingData['ship_type'] ?? 'job';
                 $shippingPrice = $this->shippingData['ship_price'] ?? 0;
 

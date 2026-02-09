@@ -48,6 +48,15 @@ $status =  strtoupper($workshop->status);
                       style="width:640px;max-width:640px;padding-right:20px;padding-left:20px;background-color:#fff;padding-top:20px">
                       <tbody>
                         <tr>
+                          <td>
+                            <div style="font-size:16px;text-align:left;">
+                              Hello,<br>
+                              Here is your <strong>one time Verification Code</strong> to share your garage service center to verify your service will <strong>completed perfectly!</strong><br>
+                            <span style="display:inline-block; padding:15px 25px; font-size:22px; background-color:#f3f4f6; border:1px dashed #9ca3af; border-radius:4px; font-weight:bold;color:green;margin-top:15px;margin-bottom:50px;text-align:center;width:91%;">Verification Code:- {{  $workshop->verification_code }}</span>
+                          </div>
+                          </td>
+                        </tr>
+                        <tr>
                           <td align="left">
                             <table width="350" border="0" cellpadding="0" cellspacing="0" align="left">
                               <tbody>
@@ -124,59 +133,46 @@ $status =  strtoupper($workshop->status);
     $totalAmount = 0;
     $subTotal = 0;
     $vatValue = 0;
-    $calloutCharges = 0; // Track total callout charges
-    $calloutVat = 0; // Track total VAT for callout charges
-    $calloutAdded = false; // Flag to ensure callout charges are added only once
+    $calloutCharges = 0;
+    $calloutVat = 0;
+    $calloutAdded = false;
 @endphp
 
 @foreach ($workshopProducts as $product)
     @php
-        // Initialize variables for this product
         $itemTotal = 0;
 
         if ($product->product_type === 'tyre') {
-            // Calculate item total for tyres
             $itemTotal = $product->price * $product->quantity;
-
-            // Handle callout charges for mobile-fitted tyres (add only once per job)
-            if ($product->fitting_type === 'mobile_fitted' && !$calloutAdded) {
+           if (in_array($product->fitting_type, ['mobile_fitted', 'mailorder']) && !$calloutAdded) {
                 $shippingPrice = $product->shipping_price ?? 0;
-                $calloutCharges += $shippingPrice; // Add to callout charges
-
-                // Calculate VAT for shipping if shipping_tax_id is 9
+                $calloutCharges += $shippingPrice; 
                 if ($product->shipping_tax_id == 9) {
-                    $shippingVat = $shippingPrice * 0.20; // 20% VAT
-                    $calloutVat += $shippingVat; // Add to total VAT
+                    $shippingVat = $shippingPrice * 0.20;
+                    $calloutVat += $shippingVat;
                 }
 
-                $calloutAdded = true; // Mark callout charges as added
+                $calloutAdded = true;
             }
         } elseif ($product->product_type === 'service') {
-            // Calculate item total for services
             $itemTotal = $product->service_price * $product->service_quantity;
-
-            // Handle callout charges for jobs (add only once per job)
-            if ($product->fitting_type === 'mobile_fitted' && !$calloutAdded) {
+           if (in_array($product->fitting_type, ['mobile_fitted', 'mailorder']) && !$calloutAdded) {
                 $shippingPrice = $product->shipping_price ?? 0;
-                $calloutCharges += $shippingPrice; // Add to callout charges
-
-                // Calculate VAT for shipping if shipping_tax_id is 9
+                $calloutCharges += $shippingPrice;
                 if ($product->shipping_tax_id == 9) {
-                    $shippingVat = $shippingPrice * 0.20; // 20% VAT
-                    $calloutVat += $shippingVat; // Add to total VAT
+                    $shippingVat = $shippingPrice * 0.20;
+                    $calloutVat += $shippingVat;
                 }
 
-                $calloutAdded = true; // Mark callout charges as added
+                $calloutAdded = true;
             }
         }
 
-        // Calculate VAT for the product itself
         if ($product->tax_class_id == 9) {
-            $currentVatValue = $itemTotal * 0.20; // 20% VAT
+            $currentVatValue = $itemTotal * 0.20;
             $vatValue += $currentVatValue;
         }
 
-        // Update sub-total (excluding callout charges)
         $subTotal += $itemTotal;
     @endphp
 
@@ -263,6 +259,22 @@ $status =  strtoupper($workshop->status);
                                         </p>
                                         </td>
                                         </tr>
+                                         @elseif ($workshopProducts->contains('fitting_type', 'mailorder'))
+                                        <tr>
+                                        <td width="40%"></td>
+                                        <td align="right" width="34%">
+                                        <p
+                                        style="margin-top:14px;font-family:Arial;font-size:12px;text-align:right;color:#3f3f3f;padding-top:0px;margin-top:0;margin-bottom:3px">
+                                        <span style="color:#3f3f3f;text-align:right">Callout Charges ({{ $workshopProducts->firstWhere('fitting_type', 'mailorder')->shipping_postcode ?? 'N/A' }})</span>
+                                        </p>
+                                        </td>
+                                        <td>
+                                        <p
+                                        style="margin-top:14px;font-family:Arial;font-size:12px;text-align:right;color:#3f3f3f;padding-top:0px;margin-top:0;margin-bottom:3px">
+                                        <span style="padding-right:0px">£{{ number_format($calloutCharges, 2) }}</span>
+                                        </p>
+                                        </td>
+                                        </tr>
                                         @endif
 
                                       <tr>
@@ -336,9 +348,8 @@ $status =  strtoupper($workshop->status);
                                   Details: <span
                                     style="text-transform:uppercase;">({{ $workshop->vehicle_reg_number }})</span>
                                 </span>
-                                <br> <span
-                                  style="font-family:Arial;font-size:12px;line-height:1.42;color:#212121">Appointment
-                                  Details: @if($bookings->isNotEmpty())
+                                <br> 
+                                <span style="font-family:Arial;font-size:12px;line-height:1.42;color:#212121">Appointment Details: @if($bookings->isNotEmpty())
                     @foreach($bookings as $booking)
             Start: {{ \Carbon\Carbon::parse($booking->start)->format('Y-m-d H:i') }}<br>
             End: {{ \Carbon\Carbon::parse($booking->end)->format('Y-m-d H:i') }}
@@ -352,13 +363,16 @@ $status =  strtoupper($workshop->status);
                                 {{ str_replace('_',' ',$workshop->payment_method) ?? 'Pay at Fitting Center' }}<br>
                                 <strong>Payment Status:</strong>
                                 {{ $workshop->payment_status === 1 ? 'Paid' : 'Unpaid' }}<br>
-                                <strong>Fitting Address:</strong><br>
                                 @if ($workshopProducts->isNotEmpty() && $workshopProducts->contains('fitting_type', 'mobile_fitted'))
-                                    <!-- Workshop Address (Mobile Fitting) -->
+                                <strong>Fitting Address:</strong><br>
+                                    {{ $workshop->address }}<br>
+                                    {{ $workshop->city }},{{ $workshop->county }}, {{ $workshop->zone }}, {{ $workshop->country }}
+                                @elseif ($workshopProducts->isNotEmpty() && $workshopProducts->contains('fitting_type', 'mailorder'))
+                                <strong>Delivery Address:</strong><br>
                                     {{ $workshop->address }}<br>
                                     {{ $workshop->city }},{{ $workshop->county }}, {{ $workshop->zone }}, {{ $workshop->country }}
                                 @else
-                                    <!-- Garage Address (Default) -->
+                                <strong>Fitting Address:</strong><br>
                                     {{ $garage->garage_name }}<br>
                                     {{ $garage->street }}, {{ $garage->city }},{{ $garage->county }}, {{ $garage->zone }}, {{ $garage->country }}
                                     <br>
@@ -427,7 +441,8 @@ $status =  strtoupper($workshop->status);
                           <td align="center" valign="top" style="color:#212121;">
                             <p
                               style="font-family:Arial;font-size:14px;font-weight:bold;line-height:1.86;color:#212121;padding-top:15px;">
-                              Thank you for choosing our service!</p><br>
+                              Thank you for choosing our service!</p>
+                            
                           </td>
                         </tr>
                       </tbody>

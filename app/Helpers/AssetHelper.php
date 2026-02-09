@@ -11,7 +11,7 @@ if (!function_exists('theme_asset')) {
     function theme_asset($type, $fileName)
     {
         $domain = request()->getHost();
-        $theme = config('app.current_theme', 'default'); // Default theme fallback
+        $theme = config('app.current_theme', 'default');
         $sanitizedDomain = str_replace('.', '-', $domain);
 
         // Domain-specific asset path
@@ -31,9 +31,7 @@ if (!function_exists('theme_asset')) {
         if (\Illuminate\Support\Facades\File::exists($fallbackPath)) {
             return asset("frontend/themes/default/{$type}/{$fileName}");
         }
-
-        // If nothing is found, return a placeholder or empty string
-        return asset("frontend/themes/default/{$type}/style.{$type}");
+        return '';
     }
 
     

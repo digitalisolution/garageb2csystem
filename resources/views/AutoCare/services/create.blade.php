@@ -1,5 +1,4 @@
 @extends('samples')
-
 @section('content')
     <div class="container-fluid">
         <div class="bg-white p-3">
@@ -34,14 +33,14 @@
                 <div class="row">
                     <!-- Name Field -->
                     <div class="col-lg-3 col-md-6 col-12 form-group">
-                        <label for="name">Name</label>
+                        <label for="name">Name<span class="text-red">*</span></label>
                         <input type="text" name="name" id="name" class="form-control"
                             value="{{ $service->name ?? old('name') }}" required>
                     </div>
 
                     <!-- Slug Field -->
                     <div class="col-lg-3 col-md-6 col-12 form-group">
-                        <label for="slug">Slug</label>
+                        <label for="slug">Slug<span class="text-red">*</span></label>
                         <input type="text" name="slug" id="slug" class="form-control"
                             value="{{ $service->slug ?? old('slug') }}" required>
                     </div>
@@ -52,10 +51,18 @@
                         <input type="text" name="service_lead_time" id="service_lead_time" class="form-control"
                             value="{{ $service->service_lead_time ?? old('service_lead_time') }}">
                     </div>
+                   <div class="col-lg-3 col-md-6 col-12 form-group">
+    <label for="garage_name">Garage Name <span class="text-red">*</span></label>
+    <input type="text" id="garage_name" class="form-control"
+           value="{{ $garages->garage_name }}" readonly>
+
+    {{-- Hidden input to actually submit garage_id --}}
+    <input type="hidden" name="garage_id" value="{{ $garages->id }}">
+</div>
 
                     <!-- Display Status Field -->
                     <div class="col-lg-3 col-md-6 col-12 form-group">
-                        <label for="display_status">Display Status</label>
+                        <label for="display_status">Display Status<span class="text-red">*</span></label>
                         <select name="display_status" id="display_status" class="form-control" required>
                             <option value="1" {{ isset($service) && $service->display_status == 1 ? 'selected' : '' }}>
                                 Displayed</option>
@@ -144,7 +151,7 @@
 
                     <!-- Price Type Field -->
                     <div class="col-lg-3 col-md-6 col-12 form-group">
-                        <label for="price_type">Price Type</label>
+                        <label for="price_type">Price Type<span class="text-red">*</span></label>
                         <select name="price_type" id="price_type" class="form-control" required>
                             <option value="fixed-price" {{ old('price_type', $service->price_type ?? '') == 'fixed-price' ? 'selected' : '' }}>Fixed Price</option>
                             <option value="call-now" {{ old('price_type', $service->price_type ?? '') == 'call-now' ? 'selected' : '' }}>Call Now</option>
@@ -156,13 +163,13 @@
 
                     <!-- Cost Price Field -->
                     <div class="col-lg-3 col-md-6 col-12 form-group">
-                        <label for="cost_price">Cost Price</label>
+                        <label for="cost_price">Cost Price<span class="text-red">*</span></label>
                         <input type="number" name="cost_price" id="cost_price" class="form-control"
                             value="{{ $service->cost_price ?? old('cost_price') }}" required step="0.01" min="0">
                     </div>
 
                     <div class="col-lg-3 col-md-6 col-12 form-group">
-                        <label for="tax_class_id">VAT:</label>
+                        <label for="tax_class_id">VAT<span class="text-red">*</span></label>
                         <select name="tax_class_id" id="tax_class_id" class="form-control" required>
                             <option value="9" {{ isset($service) && $service->tax_class_id == 9 ? 'selected' : '' }}>VAT
                             </option>
@@ -173,7 +180,7 @@
 
                     <!-- Status Field -->
                     <div class="col-lg-3 col-md-6 col-12 form-group">
-                        <label for="status">Status</label>
+                        <label for="status">Status<span class="text-red">*</span></label>
                         <select name="status" id="status" class="form-control" required>
                             <option value="1" {{ isset($service) && $service->status == 1 ? 'selected' : '' }}>Active</option>
                             <option value="0" {{ isset($service) && $service->status == 0 ? 'selected' : '' }}>Inactive
@@ -201,7 +208,7 @@
 
                     <!-- Exclude Sitemap Field -->
                     <div class="col-lg-3 col-md-6 col-12 form-group">
-                        <label for="exclude_sitemap">Exclude from Sitemap</label>
+                        <label for="exclude_sitemap">Exclude from Sitemap<span class="text-red">*</span></label>
                         <select name="exclude_sitemap" id="exclude_sitemap" class="form-control" required>
                             <option value="1" {{ isset($service) && $service->exclude_sitemap == 1 ? 'selected' : '' }}>Yes
                             </option>

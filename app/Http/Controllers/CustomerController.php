@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Models\RegionCounty;
 use App\Models\Workshop;
+use App\Models\CustomerGroup;
 use DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -27,8 +28,8 @@ class CustomerController extends Controller
     }
     public function save(Request $request, $id = null)
     {
-        $viewData['pageTitle'] = 'Customer Dretail';
-        $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
+        $viewData['pageTitle'] = 'Customer Detail';
+        $viewData['header_link'] = HeaderLink::where("menu_id", '4')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
         $viewData['counties'] = RegionCounty::where('status', 1)->get();
         $getFormAutoFillup = array();
         if (isset($id) && $id != null) {
@@ -58,7 +59,7 @@ class CustomerController extends Controller
     public function update(Request $request, $id = null)
     {
         $viewData['pageTitle'] = 'customer Dretail';
-        $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
+        $viewData['header_link'] = HeaderLink::where("menu_id", '4')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
         // $viewData['customer'] = Customer::orderBy('id','desc')->get();
         $viewData['counties'] = RegionCounty::where('status', 1)->get();
         $getFormAutoFillup = array();
@@ -83,11 +84,10 @@ class CustomerController extends Controller
         return view('AutoCare.customer', $viewData)->with($getFormAutoFillup);
     }
 
-
     public function view(Request $request)
     {
         // Fetch header links
-        $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
+        $viewData['header_link'] = HeaderLink::where("menu_id", '4')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
     
         if ($request->isMethod('post')) {
             $viewData['pageTitle'] = 'customer';
@@ -150,7 +150,7 @@ class CustomerController extends Controller
     }
     public function trash(Request $request, $id)
     {
-        $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
+        $viewData['header_link'] = HeaderLink::where("menu_id", '4')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
 
         if (($id != null) && (Customer::where('id', $id)->delete())) {
             $request->session()->flash('message.level', 'warning');
@@ -170,13 +170,13 @@ class CustomerController extends Controller
     }
     public function trashedList()
     {
-        $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
+        $viewData['header_link'] = HeaderLink::where("menu_id", '4')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
         $TrashedParty = Customer::orderBy('deleted_at', 'desc')->onlyTrashed()->simplePaginate(10);
         return view('AutoCare.customer.delete', compact('TrashedParty', 'TrashedParty'));
     }
     public function permanemetDelete(Request $request, $id)
     {
-        $viewData['header_link'] = HeaderLink::where("menu_id", '3')->select("link_title", "link_name")->orderBy('id', 'desc')->get();
+        $viewData['header_link'] = HeaderLink::where("menu_id", '4')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
         if (($id != null) && (Customer::where('id', $id)->forceDelete())) {
             $request->session()->flash('message.level', 'warning');
             $request->session()->flash('message.content', "customer was deleted Permanently and Can't rollback in Future!");
@@ -187,15 +187,15 @@ class CustomerController extends Controller
         return view('AutoCare.customer', compact('TrashedParty', 'TrashedParty'));
     }
 
-
-
     // Fetch and display customer details
     public function details($id)
     {
         $customer = Customer::findOrFail($id); // Fetch customer by ID
         $counties = RegionCounty::where('status', 1)->get(); // Fetch active counties
+        $groups = CustomerGroup::orderBy('name')->get();
+        $viewData['header_link'] = HeaderLink::where("menu_id", '4')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
 
-        return view('AutoCare.customer.details', compact('customer', 'counties'));
+        return view('AutoCare.customer.details', array_merge($viewData, compact('customer', 'groups', 'counties')));
     }
 
 
@@ -209,6 +209,7 @@ class CustomerController extends Controller
             'customer_alt_number' => 'nullable|string|min:10|max:15',
             'company_name' => 'nullable|string|max:100',
             'company_website' => 'nullable|string|max:100',
+            'customer_group_id' => 'nullable|exists:customer_groups,id',
         ]);
 
         $customer = Customer::findOrFail($id);
@@ -220,6 +221,7 @@ class CustomerController extends Controller
             'customer_alt_number',
             'company_name',
             'company_website',
+            'customer_group_id',
         ]));
 
         return redirect()->back()->with('success', 'Profile updated successfully!');
@@ -312,9 +314,9 @@ class CustomerController extends Controller
         $invoices = Invoice::where('customer_id', $customer->id)->where('is_void', false)
             ->with('items')->get(); // Assuming a relationship exists in the Customer model
 
-        $viewData['header_link'] = HeaderLink::where("menu_id", '3')
+        $viewData['header_link'] = HeaderLink::where("menu_id", '4')
             ->select("link_title", "link_name")
-            ->orderBy('id', 'desc')
+            ->orderBy('id', 'ASC')
             ->get();
 
         // Calculate invoice counts for each status
@@ -403,9 +405,9 @@ class CustomerController extends Controller
         $customer = Customer::findOrFail($id);
         $vehicles = $customer->vehicles()->paginate(10); // Fetch vehicles linked to this customer
         // dd($vehicles);
-        $viewData['header_link'] = HeaderLink::where("menu_id", '3')
+        $viewData['header_link'] = HeaderLink::where("menu_id", '4')
             ->select("link_title", "link_name")
-            ->orderBy('id', 'desc')
+            ->orderBy('id', 'ASC')
             ->get();
 
         return view('AutoCare.customer.vehicles', compact('customer', 'vehicles', 'viewData'));

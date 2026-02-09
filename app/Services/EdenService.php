@@ -114,7 +114,6 @@ class EdenService
         $rows = [$header];
 
         foreach ($products as $product) {
-
             $jobData = $jobid ? ($product['job_data'] ?? []) : [
                 'item_type' => 'Product',
                 'payment_method' => '',
@@ -147,7 +146,7 @@ class EdenService
                         $product['ean'] ?? '',
                         $product['description']?? '',
                         $product['quantity'] ?? 1,
-                        $product['price']*1.2 ?? '',
+                        $product['cost_price'] ?? '',
                         $product['supplier'] ?? '',
                         $workshop->payment_method,
                         '',
@@ -179,9 +178,9 @@ class EdenService
 
         ftp_pasv($connId, true);
         @ftp_mkdir($connId, $remoteDir);
-        @ftp_mkdir($connId, "{$remoteDir}/processed");
+        @ftp_mkdir($connId, "{$remoteDir}");
 
-        $uploadSuccess = ftp_put($connId, "{$remoteDir}/processed/{$remoteFileName}", $localPath, FTP_BINARY);
+        $uploadSuccess = ftp_put($connId, "{$remoteDir}/{$remoteFileName}", $localPath, FTP_BINARY);
 
         ftp_close($connId);
         return $uploadSuccess;

@@ -54,6 +54,27 @@
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ asset('/') }}AutoCare/customer/add ">Manage</a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('customer-groups.index') }}">Customer Groups</a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="nav-item nav-dropdown">
+                        <a class="nav-link nav-dropdown-toggle" href="javascript:void(0);"><i
+                                class="fa fa-user"></i>Garages</a>
+                        <ul class="nav-dropdown-items">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ asset('/') }}AutoCare/garages/show ">Manage</a>
+                            </li>
+                        </ul>
+                    </li>
+                     <li class="nav-item nav-dropdown">
+                        <a class="nav-link nav-dropdown-toggle" href="javascript:void(0);"><i
+                                class="fa fa-user"></i>Garages Payout</a>
+                        <ul class="nav-dropdown-items">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ asset('/') }}AutoCare/payouts">Manage</a>
+                            </li>
                         </ul>
                     </li>
                     <li class="nav-item nav-dropdown">
@@ -264,12 +285,17 @@
                             User</a>
                         <ul class="nav-dropdown-items">
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ asset('/employee') }}">Add User</a>
+                                <a class="nav-link" href="{{ asset('AutoCare/employee-list') }}">User List</a>
                             </li>
                         </ul>
                         <ul class="nav-dropdown-items">
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ asset('/employee-list') }}">User List</a>
+                                <a class="nav-link" href="{{ asset('/AutoCare/roles') }}">Role List</a>
+                            </li>
+                        </ul>
+                        <ul class="nav-dropdown-items">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ asset('/AutoCare/permissions') }}">Permission List</a>
                             </li>
                         </ul>
                     </li>

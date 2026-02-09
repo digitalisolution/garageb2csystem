@@ -2,16 +2,20 @@
 
 namespace App\Services;
 
-use App\Models\VrmApiResponse; // Shared database model
+use App\Models\VrmApiResponse;
+use App\Services\CreditLogService;
 use Illuminate\Support\Facades\Log;
 
 class VehicleLookupService
 {
     protected $ukVehicleApiService;
+    protected $creditLogService;
 
-    public function __construct(UkVehicleApiService $ukVehicleApiService)
+    public function __construct(UkVehicleApiService $ukVehicleApiService, CreditLogService $creditLogService)
     {
         $this->ukVehicleApiService = $ukVehicleApiService;
+        $this->creditLogService = $creditLogService;
+
     }
 
     /**
@@ -23,14 +27,13 @@ class VehicleLookupService
      */
     public function lookupVehicleDetailsForPackages(string $vrm, array $packages): array
     {
-
         $mergedData = [];
-        $normalizedVrm = strtoupper($vrm);
+        $normalizedVrm = strtoupper(preg_replace('/\s+/', '', $vrm));
+        $userId = $userId ?? 1;
 
         try {
-            // Fetch existing records for the normalized VRM
+            
             $existingRecords = VrmApiResponse::where('vrm', $normalizedVrm)
-                // Only consider recent records
                 ->get();
             $existingDataByPackage = [];
             foreach ($existingRecords as $record) {
@@ -39,11 +42,8 @@ class VehicleLookupService
 
             foreach ($packages as $packageName) {
                 if (isset($existingDataByPackage[$packageName])) {
-                    // Use cached data
                     $mergedData[$packageName] = $existingDataByPackage[$packageName];
-                    // dd($mergedData[$packageName]);
                 } else {
-                    // Fetch new data from the API
                     $apiResponse = $this->ukVehicleApiService->fetchVehicleData($normalizedVrm, $packageName);
                     if (!$apiResponse['success']) {
                         return [
@@ -52,11 +52,10 @@ class VehicleLookupService
                         ];
                     }
 
-                    // Save the full API response into the database
                     VrmApiResponse::updateOrCreate(
                         ['vrm' => $normalizedVrm, 'data_package' => $packageName],
                         [
-                            'api_response' => json_encode($apiResponse['data']), // Save full API response
+                            'api_response' => json_encode($apiResponse['data']),
                             'added_date' => now(),
                         ]
                     );
@@ -65,15 +64,44 @@ class VehicleLookupService
                 }
             }
 
-            // Merge all package data into a single response
             $finalResponse = $this->mergePackageData($mergedData);
-            // dd($finalResponse);
+
+            $currentBalance = $this->creditLogService->getAvailableCredit('vrm');
+
+            if ($currentBalance <= 0) {
+                return [
+                    'success' => false,
+                    'error' => 'Your VRM credits have expired. Please purchase more credits.',
+                    'alert_type' => 'critical',
+                    'balance' => $currentBalance,
+                ];
+            }
+
+            $lowCreditWarning = $currentBalance <= 10;
+
+            // Deduct credit
+            $creditResult = $this->creditLogService->useVrmCredit(
+                credit_type: 'vrm',
+                vrm: $normalizedVrm,
+                userId: $userId,
+                reason: "Used 1 vrm credit for {$normalizedVrm}",
+                origin: 'api'
+            );
+
+            if ($lowCreditWarning) {
+                Log::warning('Low VRM credits', $creditResult);
+                $creditResult['error'] = '⚠️ Your credits are getting low. Please recharge soon.';
+                $creditResult['alert_type'] = 'warning';
+            }
+
+            $mergedData['credit_status'] = $creditResult;
+
             return [
                 'success' => true,
                 'data' => $finalResponse,
             ];
         } catch (\Exception $e) {
-            Log::error('Error processing vehicle details: ', ['message' => $e->getMessage()]);
+            Log::error('Error processing vehicle details: ', ['error' => $e->getMessage()]);
             return [
                 'success' => false,
                 'error' => 'An unexpected error occurred while processing the request.',
@@ -92,13 +120,10 @@ class VehicleLookupService
         $mergedData = [];
 
         foreach ($packageDataArray as $packageName => $packageData) {
-            // Iterate through each section in the package data
             foreach ($packageData as $sectionName => $sectionData) {
                 if (!isset($mergedData[$sectionName])) {
-                    // If the section doesn't exist in the merged data, initialize it
                     $mergedData[$sectionName] = $sectionData;
                 } else {
-                    // Merge the section data with the existing data
                     $mergedData[$sectionName] = $this->deepMergeArrays($mergedData[$sectionName], $sectionData);
                 }
             }
@@ -120,10 +145,8 @@ class VehicleLookupService
 
         foreach ($array2 as $key => $value) {
             if (is_array($value) && isset($merged[$key]) && is_array($merged[$key])) {
-                // Recursively merge arrays
                 $merged[$key] = $this->deepMergeArrays($merged[$key], $value);
             } else {
-                // Overwrite or add the value
                 $merged[$key] = $value;
             }
         }

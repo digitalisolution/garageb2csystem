@@ -12,34 +12,37 @@
           <table width="100%" border="0" cellspacing="1" cellpadding="3" bgcolor="#ddd">
             <tr>
               <td bgcolor="#fff"><strong>Name:</strong></td>
-              <td bgcolor="#fff">{{ $name }} {{ $last_name }}</td>
+              <td bgcolor="#fff">{{ $customer['name'] }} {{ $customer['last_name'] }}</td>
             </tr>
             <tr>
               <td bgcolor="#fff"><strong>Email:</strong></td>
-              <td bgcolor="#fff">{{ $email }}</td>
+              <td bgcolor="#fff">{{ $customer['email'] }}</td>
             </tr>
             <tr>
               <td bgcolor="#fff"><strong>Phone:</strong></td>
-              <td bgcolor="#fff">{{ $phone }}</td>
+              <td bgcolor="#fff">{{ $customer['phone'] }}</td>
+            </tr>
+            <tr>
+              <td bgcolor="#fff"><strong>Company:</strong></td>
+              <td bgcolor="#fff">{{ $customer['company_name'] }}</td>
             </tr>
             <tr>
               <td bgcolor="#fff"><strong>Registered At:</strong></td>
-              <td bgcolor="#fff">{{ $registered_at }}</td>
+              <td bgcolor="#fff">{{ $customer['registered_at'] }}</td>
             </tr>
             <tr>
               <td bgcolor="#fff"><strong>Address:</strong></td>
-              <td bgcolor="#fff">{{ $address_street }}, {{ $address_city }}, {{ $address_postcode }}, {{ $address_county }}, {{ $address_country }}</td>
+              <td bgcolor="#fff">{{ $customer['address_street'] }}, {{ $customer['address_city'] }}, {{ $customer['address_postcode'] }}, {{ $customer['address_county'] }}, {{ $customer['address_country'] }}</td>
             </tr>
             <tr>
               <td bgcolor="#fff"><strong>IP Address:</strong></td>
-              <td bgcolor="#fff">{{ $ip_address }}</td>
+              <td bgcolor="#fff">{{ $customer['ip_address'] }}</td>
             </tr>
-
           </table>
         <p style="margin-top:25px;">We are looking into their request and a member of the team will be in touch within 2–3 working days.</p>
       </div>
         <div style="background:#ddd;padding:30px;text-align:center;">
-        Best regards,<br>Garage Admin
+        Best regards,<br>{{ $garage->garage_name ?? $garage->name ?? 'Garage Admin' }}
         </div>
         </div>
     </div>

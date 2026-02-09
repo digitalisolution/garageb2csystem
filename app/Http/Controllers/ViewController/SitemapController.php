@@ -8,7 +8,9 @@ use App\Models\TyresProduct;
 use App\Models\MetaSettings;
 use App\Models\Page;
 use App\Models\Blog;
-use App\Models\BlogCategory;
+use App\Models\OrderTypes;
+use App\Services\DistanceService;
+use App\Http\Controllers\ViewController\TyresProductController;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
@@ -26,17 +28,19 @@ class SitemapController extends Controller
             'title' => 'sitemap',
             'content' => 'Welcome to sitemap',
         ];
-        $tyresProductController = new TyresProductController();
+        $distanceService = app(DistanceService::class);
+        $tyresProductController = new TyresProductController($distanceService);
+
         $tyreSizesResponse = $tyresProductController->getTyreSizes();
+        $orderTypes = OrderTypes::where('status', 1)->pluck('ordertype_name')->toArray();
+        $fittingType = $orderTypes[0] ?? 'fully_fitted';
         $google_tag_manager = MetaSettings::where('name', 'google_tag_manager')->value('content') ?? '';
         $tag_manager = MetaSettings::where('name', 'tag_manager')->value('content') ?? '';
         $analytics = MetaSettings::where('name', 'analytics')->value('content') ?? '';
-        // Decode the JSON response into an array
         $tyreSizes = json_decode($tyreSizesResponse->getContent(), true);
         $infoPages = \DB::table('pages')->where('status', 1)->where('exclude_sitemap', 0)->get();
         $blogsList = \DB::table('blogs')->where('status', 1)->get();
-        // Reference the view in the 'view' folder
-        return view('sitemap', compact('servicesList', 'infoPages', 'tyreSizes', 'tyreBrandList', 'blogsList', 'google_tag_manager', 'tag_manager', 'analytics'));
+        return view('sitemap', compact('servicesList', 'infoPages', 'fittingType','tyreSizes', 'tyreBrandList', 'blogsList', 'google_tag_manager', 'tag_manager', 'analytics'));
     }
 
     public function sitemapIndex()
@@ -54,9 +58,10 @@ class SitemapController extends Controller
         if ($hasPages) {
             $sitemapContent .= '<sitemap><loc>' . url('sitemap-pages.xml') . '</loc></sitemap>';
         }
-    
+    $distanceService = app(DistanceService::class);
+        $tyresProductController = new TyresProductController($distanceService);
         // Check if there are tyre sizes with data
-        $tyresProductController = new TyresProductController();
+        // $tyresProductController = new TyresProductController();
         $tyreSizesResponse = $tyresProductController->getTyreSizes();
         $tyreSizes = json_decode($tyreSizesResponse->getContent(), true);
     
@@ -108,7 +113,8 @@ class SitemapController extends Controller
     }
     public function sitemapTyreSizes()
     {
-        $tyresProductController = new TyresProductController();
+        $distanceService = app(DistanceService::class);
+        $tyresProductController = new TyresProductController($distanceService);
         $tyreSizesResponse = $tyresProductController->getTyreSizes();
         $tyreSizes = json_decode($tyreSizesResponse->getContent(), true);
 

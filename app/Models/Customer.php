@@ -23,6 +23,7 @@ class Customer extends Authenticatable implements CanResetPassword
 	protected $fillable = [
 		'customer_name',
 		'customer_last_name',
+		'customer_group_id',
 		'customer_contact_number',
 		'customer_alt_number',
 		'customer_email',
@@ -53,6 +54,11 @@ class Customer extends Authenticatable implements CanResetPassword
 	public function invoices()
 	{
 		return $this->hasMany(Invoice::class, 'customer_id');
+	}
+
+	public function group()
+	{
+		return $this->belongsTo(CustomerGroup::class, 'customer_group_id');
 	}
 
 	public function Workshop()

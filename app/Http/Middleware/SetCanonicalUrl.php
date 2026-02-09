@@ -18,14 +18,9 @@ class SetCanonicalUrl
     public function handle(Request $request, Closure $next)
     {
         // Define the canonical URL
-        $canonicalUrl = URL::full();  // This will get the full URL of the current page
-        // Share the canonical URL with all views
-        // Customize canonical URL for tyre search
-        $canonicalUrl = URL::full();
-
-    // Only apply trailing slash on homepage
+         $canonicalUrl = URL::current();
         if ($request->is('/')) {
-            $canonicalUrl = url('/') . '/';  // Ensure trailing slash
+            $canonicalUrl = url('/') . '/'; 
         }
 
         if ($request->is('search') && $request->filled(['width', 'profile', 'diameter'])) {

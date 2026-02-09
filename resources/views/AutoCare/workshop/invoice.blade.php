@@ -248,12 +248,12 @@ if (isset($workshop->due_out)) {
                                     <td align="right"><strong>£{{ number_format($totalAmount, 2) }}</strong></td>
                                 </tr>
                                 @endforeach
-                                @if( !empty($tyre) && $tyre->fitting_type === 'mobile_fitted')
+                                @if( !empty($tyre) && $tyre->fitting_type === 'mobile_fitted' || 'mailorder')
                                 <tr>
                                     <!-- <td>{{ $itemIndex++ }}</td> -->
                                      <td>
 
-                                         <td><strong>Mobile Fitting CallOut Charge({{$tyre->shipping_postcode}})</strong></td>
+                                        <td><strong>{{ str_replace('_', ' ', ucfirst($tyre->fitting_type)) }} CallOut Charge({{$tyre->shipping_postcode}})</strong></td>
                                      </td>
                                         <td colspan="" align="center"><strong>£{{ number_format($tyre->shipping_price, 2) }}</strong></td>
                                         <td colspan="" align="center"><strong>{{ $vatText }}</strong></td>
@@ -296,10 +296,9 @@ if (isset($workshop->due_out)) {
                                 <thead>
                                     <tr>
                                         <td><strong>Sub Total</strong></td>
-                                        @if($tyre->fitting_type === 'mobile_fitted')
+                                        @if($tyre->fitting_type === 'mobile_fitted' || 'mailorder')
                                             <td><strong>CallOut Charge({{$tyre->shipping_postcode}})</strong></td>
                                         @endif
-
                                         <td><strong>VAT</strong></td>
                                         <td><strong>Total</strong></td>
                                         <td><strong>Discount{{ $workshop->formatted_discount }}</strong></td>
@@ -320,7 +319,7 @@ if (isset($workshop->due_out)) {
                                             //$balancePrice = $grandTotal - ($installmentPayment + $paid_price + $discount_price);
                                         @endphp
                                         <td>£{{ number_format($subTotal, 2) }}</td>
-                                        @if($tyre->fitting_type === 'mobile_fitted')
+                                        @if($tyre->fitting_type === 'mobile_fitted' || 'mailorder')
                                             <td>£{{ number_format($tyre->shipping_price, 2) }}</td>
                                         @endif
 
