@@ -4,13 +4,12 @@
         $role_id = Auth::user()->role_id;
     @endphp
     <div class="container-fluid">
-        <div class="bg-white p-3">
-            <div class="animated fadeIn">
-                <div class="dashboard_bank">
-                    @if ($role_id == 1 || $role_id == 4 )
-                        <div class="card text-white bg-dash1">
-                            <div class="card-body pb-0">
-                                <div class="btn-group float-right">
+        <div class="bg-white p-3 mb-3">
+            <div class="dashboard_bank">
+                     @if(auth()->user()->hasPermission('dashboard.view'))
+                        <div class="card text-white bg-dash1 mb-0">
+                            <div class="card-body text-center">
+                                <!-- <div class="btn-group float-right">
                                     <button type="button" class="btn btn-transparent dropdown-toggle p-0" data-toggle="dropdown"
                                         aria-haspopup="true" aria-expanded="false">
                                         <i class="icon-settings"></i>
@@ -19,9 +18,10 @@
                                         <a class="dropdown-item" href="{{ url('/') }}/AutoCare/workshop/search">Search
                                             Workshop</a>
                                     </div>
-                                </div>
-                                <a href="{{ url('/') }}/AutoCare/workshop/add">
-                                    <p style="color:white">Job Sheet</p>s
+                                </div> -->
+                                <a class="text-white" href="{{ url('/') }}/AutoCare/workshop/add">
+                                    <img src="img/icon/jobsheet-icon.webp" alt="job sheet">
+                                    <h5 class="mb-0 mt-2">Job Sheet</h5>
                                 </a>
 
                             </div>
@@ -30,34 +30,34 @@
                             </div>
                         </div>
                         <!--/.col-->
-                        <div class="card text-white bg-dash2">
-                            <div class="card-body pb-0">
-                                <button type="button" class="btn btn-transparent p-0 float-right">
+                        <div class="card text-white bg-dash2 mb-0">
+                            <div class="card-body text-center">
+                                <!-- <button type="button" class="btn btn-transparent p-0 float-right">
                                     <i class="icon-location-pin"></i>
-                                </button>
-                                <h4 class="mb-0">{{ $totalPendingJob }}</h4>
-                                <p>Pending Job</p>
+                                </button> -->
+                                <img src="img/icon/pendingjob-icon.webp" alt="Pending Job">
+                                <h5 class="mb-0 mt-2">{{ $totalPendingJob }} Pending Job</h5>
                             </div>
                             <div class="chart-wrapper px-3 hidden">
                                 <canvas id="card-chart2" class="chart" height="70"></canvas>
                             </div>
                         </div>
                         <!--/.col-->
-                        <div class="card text-white bg-dash2">
-                            <div class="card-body pb-0">
-                                
-                                <div class="btn-group float-right">
-                                    <button type="button" class="btn btn-transparent dropdown-toggle p-0" data-toggle="dropdown"
+                        <div class="card text-white bg-dash3 mb-0">
+                            <div class="card-body text-center">
+                                <!--<div class="btn-group float-right">
+                                     <button type="button" class="btn btn-transparent dropdown-toggle p-0" data-toggle="dropdown"
                                         aria-haspopup="true" aria-expanded="false">
                                         <i class="icon-location-pin"></i>
-                                    </button>
+                                    </button> 
                                     <div class="dropdown-menu dropdown-menu-right">
-                                        <a class="dropdown-item" href="{{ url('/') }}/AutoCare/workshop/search-invoice">Invoices List</a>
+                                        <a class="dropdown-item" href="{{ url('/') }}/AutoCare/workshop/search-invoice">
+                                        Invoices List</a>
                                     </div>
-                                </div>
-                                <h4 class="mb-0">{{ $totalInvoices }}</h4>
-                                <a href="{{ url('/') }}/AutoCare/workshop/search-invoice">
-                                    <p style="color:white">Invoices</p>
+                                </div>-->
+                                <a class="text-white" href="{{ url('/') }}/AutoCare/workshop/search-invoice">
+                                    <img src="img/icon/invoice-icon.webp" alt="Invoices">
+                                    <h5 class="mb-0 mt-2">{{ $totalInvoices }} Invoices</h5>
                                 </a>
                             </div>
                             <div class="chart-wrapper px-3 hidden">
@@ -65,31 +65,31 @@
                             </div>
                         </div>
                         <!--/.col-->
-                        <div class="card text-white bg-dash4">
-                            <div class="card-body pb-0">
-                                <div class="btn-group float-right">
-                                    <button type="button" class="btn btn-transparent dropdown-toggle p-0" data-toggle="dropdown"
+                        <div class="card text-white bg-dash4 mb-0">
+                            <div class="card-body text-center">
+                                <!--<div class="btn-group float-right">
+                                     <button type="button" class="btn btn-transparent dropdown-toggle p-0" data-toggle="dropdown"
                                         aria-haspopup="true" aria-expanded="false">
                                         <i class="icon-settings"></i>
-                                    </button>
+                                    </button> 
                                     <div class="dropdown-menu dropdown-menu-right">
-                                        <a class="dropdown-item" href="{{ url('/') }}/AutoCare/customer/add">Customer
-                                            List</a>
-                                    </div>
-                                </div>
-                                <h4 class="mb-0">{{ $TotalCustomers }}</h4>
-                                <a href="{{ url('/') }}/AutoCare/customer/add">
-                                    <p style="color:white">Customer</p>
+                                        <a class="dropdown-item" href="{{ url('/') }}/AutoCare/customer/add">
+                                        Customer List</a>
+                                    </div>-->
+                                <a class="text-white" href="{{ url('/') }}/AutoCare/customer/add">
+                                    <img src="img/icon/customer-icon.webp" alt="Customer List">
+                                    <h5 class="mb-0 mt-2">{{ $TotalCustomers }} Customer</h5>
                                 </a>
+                            </div>
                             </div>
                             <div class="chart-wrapper px-3 hidden">
                                 <canvas id="card-chart4" class="chart" height="70"></canvas>
                             </div>
                         </div>
-
-                   
                     <!--/.col-->
                 </div>
+        <div class="bg-white p-3">
+            <div class="animated fadeIn">
                 <!--/.row-->
                 <h3 class="cart-page-title">Booking Calendar</h3>
                 <div id="calendar"></div>
@@ -166,6 +166,7 @@
                             <table class="table table-sm table-bordered mb-0">
                                 <thead class="thead-dark">
                                     <tr>
+                                        <th>Garage Name</th>
                                         <th>Start Date</th>
                                         <th>End Date</th>
                                         <th>Start Time</th>
@@ -174,6 +175,7 @@
                                 </thead>
                                 <tbody>
                                     <tr>
+                                        <td><span id="bookingGarageName"></span></td>
                                         <td><span id="bookingStartDate"></span></td>
                                         <td><span id="bookingEndDate"></span></td>
                                         <td><span id="bookingStartTime"></span></td>

@@ -885,7 +885,8 @@
                         d.origin = $('select[name="origin"]').val();
                         d.convert_to_invoice = $('select[name="convert_to_invoice"]').val();
                         d.status = $('select[name="status"]').val();
-                        d.payment_method = $('select[name="payment_method"]').val();
+                        // d.payment_method = $('select[name="payment_method"]').val();
+                        d.fitting_type = $('select[name="fitting_type"]').val();
                         d.is_void = $('select[name="is_void"]').val();
                         d.payment_status = $('select[name="payment_status"]').val();
                         d.vehicle_reg_number_for_search = $('input[name="vehicle_reg_number_for_search"]').val();

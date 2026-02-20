@@ -199,7 +199,7 @@
                                 aria-hidden="true"></i>Calendar</a>
                         <ul class="nav-dropdown-items">
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ asset('/AutoCare/calendar/1/edit') }}">Manage</a>
+                                <a class="nav-link" href="{{ asset('/AutoCare/calendar') }}">Manage</a>
                             </li>
                         </ul>
                     </li>

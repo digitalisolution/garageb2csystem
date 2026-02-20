@@ -8,9 +8,9 @@
 </head>
 
 <body>
-@php
-$status =  strtoupper($workshop->status);
-@endphp 
+  @php
+    $status = strtoupper($workshop->status);
+  @endphp
   <div style="margin:0;padding:0;width:100%;background-color:#F0F0F0;" marginwidth="0" marginheight="0">
     <table style="width:100%!important">
       <tbody>
@@ -72,14 +72,15 @@ $status =  strtoupper($workshop->status);
                                       Order ID <span style="font-weight:bold;color:#000">{{ $workshop->id }}</span></p>
                                     <p
                                       style="font-family:Arial;color:#747474;font-size:11px;font-weight:normal;text-align:right;font-style:normal;line-height:14px;font-stretch:normal;margin-top:0px;padding-top:0px;color:#878787;margin-bottom:7px">
-                                      Workshop Status <span
-                                        style="font-weight:bold;color:#000">({{ $status }})</span></p>
+                                      Workshop Status <span style="font-weight:bold;color:#000">({{ $status }})</span>
+                                    </p>
                                     @if ($workshopProducts->isNotEmpty())
-                    <p
-                      style="font-family:Arial;color:#747474;font-size:11px;font-weight:normal;text-align:right;font-style:normal;line-height:14px;font-stretch:normal;margin-top:0px;padding-top:0px;color:#878787;margin-bottom:7px">
-                      Order Products <span style="font-weight:bold;color:#000">
-                        ({{ strtoupper(str_replace('_',' ',$workshopProducts->first()->fitting_type ?? '' ))}})</span></p>
-                  @endif
+                                      <p
+                                        style="font-family:Arial;color:#747474;font-size:11px;font-weight:normal;text-align:right;font-style:normal;line-height:14px;font-stretch:normal;margin-top:0px;padding-top:0px;color:#878787;margin-bottom:7px">
+                                        Order Products <span style="font-weight:bold;color:#000">
+                                          ({{ strtoupper(str_replace('_', ' ', $workshopProducts->first()->fitting_type ?? ''))}})</span>
+                                      </p>
+                                    @endif
                                   </td>
                                 </tr>
 
@@ -95,223 +96,268 @@ $status =  strtoupper($workshop->status);
                               <tbody>
                                 <!-- Order Products -->
                                 @if ($workshopProducts->isNotEmpty())
-                                  <tr>
-                                    <td colspan="4" style="text-align: left; font-weight: bold; font-size:17px;">
-                                    Order Products
+                                                  <tr>
+                                                    <td colspan="4" style="text-align: left; font-weight: bold; font-size:17px;">
+                                                      Order Products
+                                                    </td>
+                                                  </tr>
+                                                  <tr>
+                                                    <td align="left">
+                                                      <table width="100%" border="0" cellpadding="0" cellspacing="0" align="left">
+                                                        <thead>
+                                                          <th
+                                                            style="font-family:Arial;font-size:14px;font-weight:normal;font-style:normal;font-stretch:normal;line-height:20px;color:#212121;text-decoration:none!important;word-spacing:0.2em;display:inline-block;width:70%;text-align:left;font-weight:bold;border-bottom:solid 1px #ccc;padding-top:5px;padding-bottom:5px;">
+                                                            Description</th>
+                                                          <th
+                                                            style="font-family:Arial;font-size:14px;font-weight:normal;font-style:normal;font-stretch:normal;line-height:20px;color:#212121;text-decoration:none!important;word-spacing:0.2em;display:inline-block;width:10%;text-align:center;font-weight:bold;border-bottom:solid 1px #ccc;padding-top:5px;padding-bottom:5px;">
+                                                            Qty</th>
+                                                          <th
+                                                            style="font-family:Arial;font-size:14px;font-weight:normal;font-style:normal;font-stretch:normal;line-height:20px;color:#212121;text-decoration:none!important;word-spacing:0.2em;display:inline-block;width:10%;text-align:right;font-weight:bold;border-bottom:solid 1px #ccc;padding-top:5px;padding-bottom:5px;">
+                                                            Price</th>
+                                                          <th
+                                                            style="font-family:Arial;font-size:14px;font-weight:normal;font-style:normal;font-stretch:normal;line-height:20px;color:#212121;text-decoration:none!important;word-spacing:0.2em;display:inline-block;width:10%;text-align:right;font-weight:bold;border-bottom:solid 1px #ccc;padding-top:5px;padding-bottom:5px;">
+                                                            Total</th>
+                                                        </thead>
+                                                        <tbody>
+                                                          <tr>
+
+                                                            @php
+                                                              $totalAmount = 0;
+                                                              $subTotal = 0;
+                                                              $vatValue = 0;
+                                                              $calloutCharges = 0;
+                                                              $garageFittingCharges = 0;
+                                                              $garageFittingVAT = 0;
+                                                              $calloutVat = 0;
+                                                              $calloutAdded = false;
+                                                            @endphp
+
+                                                            @foreach ($workshopProducts as $product)
+                                                                @php
+                                                                  // Initialize variables for this product
+                                                                  $itemTotal = 0;
+
+                                                                  if ($product->product_type === 'tyre') {
+                                                                    // Calculate item total for tyres
+                                                                    $itemTotal = $product->price * $product->quantity;
+
+                                                                    // Handle callout charges for mobile-fitted tyres (add only once per job)
+                                                                    if (in_array($product->fitting_type, ['mobile_fitted', 'mailorder']) && !$calloutAdded) {
+                                                                      $shippingPrice = $product->shipping_price ?? 0;
+                                                                      $calloutCharges += $shippingPrice; // Add to callout charges
+
+                                                                      // Calculate VAT for shipping if shipping_tax_id is 9
+                                                                      if ($product->shipping_tax_id == 9) {
+                                                                        $shippingVat = $shippingPrice * 0.20; // 20% VAT
+                                                                        $calloutVat += $shippingVat; // Add to total VAT
+                                                                      }
+
+                                                                      $calloutAdded = true; // Mark callout charges as added
+                                                                    }
+                                                                  } elseif ($product->product_type === 'service') {
+                                                                    // Calculate item total for services
+                                                                    $itemTotal = $product->service_price * $product->service_quantity;
+
+                                                                    // Handle callout charges for jobs (add only once per job)
+                                                                    if (in_array($product->fitting_type, ['mobile_fitted', 'mailorder']) && !$calloutAdded) {
+                                                                      $shippingPrice = $product->shipping_price ?? 0;
+                                                                      $calloutCharges += $shippingPrice; // Add to callout charges
+
+                                                                      // Calculate VAT for shipping if shipping_tax_id is 9
+                                                                      if ($product->shipping_tax_id == 9) {
+                                                                        $shippingVat = $shippingPrice * 0.20; // 20% VAT
+                                                                        $calloutVat += $shippingVat; // Add to total VAT
+                                                                      }
+
+                                                                      $calloutAdded = true; // Mark callout charges as added
+                                                                    }
+                                                                  }
+
+                                                                  if ($product->fitting_type === 'fully_fitted') {
+                                                                    $fittingPrice = $product->garage_fitting_charges ?? 0;
+
+                                                                    if ($fittingPrice > 0) {
+                                                                      $currentFittingCharge = $fittingPrice;
+                                                                      $garageFittingCharges += $currentFittingCharge;
+
+                                                                      if (isset($product->garage_vat_class) && $product->garage_vat_class == 9) {
+                                                                        $garageFittingVAT += ($currentFittingCharge * 0.20);
+                                                                      }
+                                                                    }
+                                                                  }
+
+                                                                  // Calculate VAT for the product itself
+                                                                  if ($product->tax_class_id == 9) {
+                                                                    $currentVatValue = $itemTotal * 0.20; // 20% VAT
+                                                                    $vatValue += $currentVatValue;
+                                                                  }
+
+                                                                  // Update sub-total (excluding callout charges)
+                                                                  $subTotal += $itemTotal;
+                                                                @endphp
+
+                                                                <!-- Product Row -->
+                                                              <tr>
+                                                                <td valign="middle" align="left"
+                                                                  style="font-family:Arial;font-size:14px;font-weight:normal;font-style:normal;font-stretch:normal;color:#212121;text-decoration:none!important;word-spacing:0.2em;display:inline-block;width:70%;border-bottom:solid 1px #ccc;padding-top:5px;padding-bottom:5px;vertical-align:middle;height:65px;">
+                                                                  {{ $product->description ?? $product->service_name ?? 'No description' }}<br>
+                                                                  <small>
+                                                                    @if($product->product_type === 'tyre')
+                                                                      ({{ $product->supplier }}), EAN:
+                                                                      ({{ $product->product_ean ?? $product->product_sku }})
+                                                                      @if($product->fitting_type === 'mobile_fitted')
+                                                                      @endif
+                                                                    @endif
+                                                                  </small>
+                                                                </td>
+                                                                <td valign="middle" align="left"
+                                                                  style="font-family:Arial;font-size:14px;font-weight:normal;font-style:normal;font-stretch:normal;color:#212121;text-decoration:none!important;word-spacing:0.2em;display:inline-block;width:10%;text-align:center;border-bottom:solid 1px #ccc;padding-top:5px;padding-bottom:5px;vertical-align:middle;height:65px;">
+                                                                  @if($product->product_type === 'tyre')
+                                                                    {{ $product->quantity ?? '0' }}
+                                                                  @elseif($product->product_type === 'service')
+                                                                    {{ $product->service_quantity ?? '0' }}
+                                                                  @endif
+                                                                </td>
+                                                                <td valign="middle" align="left"
+                                                                  style="font-family:Arial;font-size:14px;font-weight:normal;font-style:normal;font-stretch:normal;color:#212121;text-decoration:none!important;word-spacing:0.2em;display:inline-block;width:10%;text-align:right;border-bottom:solid 1px #ccc;padding-top:5px;padding-bottom:5px;vertical-align:middle;height:65px;">
+                                                                  £{{ number_format($product->price ?? $product->service_price ?? 0, 2) }}
+                                                                </td>
+                                                                <td valign="middle" align="left"
+                                                                  style="font-family:Arial;font-size:14px;font-weight:normal;font-style:normal;font-stretch:normal;color:#212121;text-decoration:none!important;word-spacing:0.2em;display:inline-block;width:10%;text-align:right;border-bottom:solid 1px #ccc;padding-top:5px;padding-bottom:5px;vertical-align:middle;height:65px;">
+                                                                  £{{ number_format($itemTotal, 2) }}
+                                                                </td>
+                                                              </tr>
+                                                            @endforeach
+                                                  </tr>
+                                                </tbody>
+                                              </table>
+                                            </td>
+                                          </tr>
+                                        </tbody>
+                                      </table>
                                     </td>
                                   </tr>
                                   <tr>
-                                    <td align="left">
-                                    <table width="100%" border="0" cellpadding="0" cellspacing="0" align="left">
-                                      <thead>
-                                      <th
-                                        style="font-family:Arial;font-size:14px;font-weight:normal;font-style:normal;font-stretch:normal;line-height:20px;color:#212121;text-decoration:none!important;word-spacing:0.2em;display:inline-block;width:70%;text-align:left;font-weight:bold;border-bottom:solid 1px #ccc;padding-top:5px;padding-bottom:5px;">
-                                        Description</th>
-                                      <th
-                                        style="font-family:Arial;font-size:14px;font-weight:normal;font-style:normal;font-stretch:normal;line-height:20px;color:#212121;text-decoration:none!important;word-spacing:0.2em;display:inline-block;width:10%;text-align:center;font-weight:bold;border-bottom:solid 1px #ccc;padding-top:5px;padding-bottom:5px;">
-                                        Qty</th>
-                                      <th
-                                        style="font-family:Arial;font-size:14px;font-weight:normal;font-style:normal;font-stretch:normal;line-height:20px;color:#212121;text-decoration:none!important;word-spacing:0.2em;display:inline-block;width:10%;text-align:right;font-weight:bold;border-bottom:solid 1px #ccc;padding-top:5px;padding-bottom:5px;">
-                                        Price</th>
-                                      <th
-                                        style="font-family:Arial;font-size:14px;font-weight:normal;font-style:normal;font-stretch:normal;line-height:20px;color:#212121;text-decoration:none!important;word-spacing:0.2em;display:inline-block;width:10%;text-align:right;font-weight:bold;border-bottom:solid 1px #ccc;padding-top:5px;padding-bottom:5px;">
-                                        Total</th>
-                                      </thead>
-                                      <tbody>
-                                      <tr>
+                                    <td>
+                                      <table border="0" width="600" cellpadding="0" cellspacing="0">
+                                        <tbody>
+                                          <tr>
+                                            <td>
+                                              <table width="100%" cellspacing="0" cellpadding="0"
+                                                style="margin:0;padding-top:20px;padding-bottom:20px;max-width:600px;background:#ffffff">
+                                                <tbody>
+                                                  <tr style="color:#212121;display:block;margin:0 auto;clear:both">
+                                                    <td align="left" valign="top" style="color:#212121;display:block">
+                                                      <table width="100%" style="margin-bottom:0px;border-bottom:1px solid #f0f0f0">
+                                                        <tbody>
+                                                          <tr>
+                                                            <td width="40%"></td>
+                                                            <td align="right" width="34%">
+                                                              <p
+                                                                style="margin-top:14px;font-family:Arial;font-size:12px;text-align:right;color:#3f3f3f;padding-top:0px;margin-top:0;margin-bottom:3px">
+                                                                <span style="color:#3f3f3f;text-align:right">Sub Total</span>
+                                                              </p>
+                                                            </td>
+                                                            <td>
+                                                              <p
+                                                                style="margin-top:14px;font-family:Arial;font-size:12px;text-align:right;color:#3f3f3f;padding-top:0px;margin-top:0;margin-bottom:3px">
+                                                                <span style="padding-right:0px">£{{ number_format($subTotal, 2) }} </span>
+                                                              </p>
+                                                            </td>
+                                                          </tr>
+                                                          @if ($workshopProducts->contains('fitting_type', 'mobile_fitted'))
+                                                            <tr>
+                                                              <td width="40%"></td>
+                                                              <td align="right" width="34%">
+                                                                <p
+                                                                  style="margin-top:14px;font-family:Arial;font-size:12px;text-align:right;color:#3f3f3f;padding-top:0px;margin-top:0;margin-bottom:3px">
+                                                                  <span style="color:#3f3f3f;text-align:right">Callout Charges
+                                                                    ({{ $workshopProducts->firstWhere('fitting_type', 'mobile_fitted')->shipping_postcode ?? 'N/A' }})</span>
+                                                                </p>
+                                                              </td>
+                                                              <td>
+                                                                <p
+                                                                  style="margin-top:14px;font-family:Arial;font-size:12px;text-align:right;color:#3f3f3f;padding-top:0px;margin-top:0;margin-bottom:3px">
+                                                                  <span
+                                                                    style="padding-right:0px">£{{ number_format($calloutCharges, 2) }}</span>
+                                                                </p>
+                                                              </td>
+                                                            </tr>
+                                                          @elseif ($workshopProducts->contains('fitting_type', 'mailorder'))
+                                                            <tr>
+                                                              <td width="40%"></td>
+                                                              <td align="right" width="34%">
+                                                                <p
+                                                                  style="margin-top:14px;font-family:Arial;font-size:12px;text-align:right;color:#3f3f3f;padding-top:0px;margin-top:0;margin-bottom:3px">
+                                                                  <span style="color:#3f3f3f;text-align:right">Callout Charges
+                                                                    ({{ $workshopProducts->firstWhere('fitting_type', 'mailorder')->shipping_postcode ?? 'N/A' }})</span>
+                                                                </p>
+                                                              </td>
+                                                              <td>
+                                                                <p
+                                                                  style="margin-top:14px;font-family:Arial;font-size:12px;text-align:right;color:#3f3f3f;padding-top:0px;margin-top:0;margin-bottom:3px">
+                                                                  <span
+                                                                    style="padding-right:0px">£{{ number_format($calloutCharges, 2) }}</span>
+                                                                </p>
+                                                              </td>
+                                                            </tr>
+                                                          @endif
 
-@php
-    $totalAmount = 0;
-    $subTotal = 0;
-    $vatValue = 0;
-    $calloutCharges = 0; // Track total callout charges
-    $calloutVat = 0; // Track total VAT for callout charges
-    $calloutAdded = false; // Flag to ensure callout charges are added only once
-@endphp
-
-@foreach ($workshopProducts as $product)
-    @php
-        // Initialize variables for this product
-        $itemTotal = 0;
-
-        if ($product->product_type === 'tyre') {
-            // Calculate item total for tyres
-            $itemTotal = $product->price * $product->quantity;
-
-            // Handle callout charges for mobile-fitted tyres (add only once per job)
-          if (in_array($product->fitting_type, ['mobile_fitted', 'mailorder']) && !$calloutAdded) {
-                $shippingPrice = $product->shipping_price ?? 0;
-                $calloutCharges += $shippingPrice; // Add to callout charges
-
-                // Calculate VAT for shipping if shipping_tax_id is 9
-                if ($product->shipping_tax_id == 9) {
-                    $shippingVat = $shippingPrice * 0.20; // 20% VAT
-                    $calloutVat += $shippingVat; // Add to total VAT
-                }
-
-                $calloutAdded = true; // Mark callout charges as added
-            }
-        } elseif ($product->product_type === 'service') {
-            // Calculate item total for services
-            $itemTotal = $product->service_price * $product->service_quantity;
-
-            // Handle callout charges for jobs (add only once per job)
-            if (in_array($product->fitting_type, ['mobile_fitted', 'mailorder']) && !$calloutAdded) {
-                $shippingPrice = $product->shipping_price ?? 0;
-                $calloutCharges += $shippingPrice; // Add to callout charges
-
-                // Calculate VAT for shipping if shipping_tax_id is 9
-                if ($product->shipping_tax_id == 9) {
-                    $shippingVat = $shippingPrice * 0.20; // 20% VAT
-                    $calloutVat += $shippingVat; // Add to total VAT
-                }
-
-                $calloutAdded = true; // Mark callout charges as added
-            }
-        }
-
-        // Calculate VAT for the product itself
-        if ($product->tax_class_id == 9) {
-            $currentVatValue = $itemTotal * 0.20; // 20% VAT
-            $vatValue += $currentVatValue;
-        }
-
-        // Update sub-total (excluding callout charges)
-        $subTotal += $itemTotal;
-    @endphp
-
-    <!-- Product Row -->
-    <tr>
-        <td valign="middle" align="left"
-            style="font-family:Arial;font-size:14px;font-weight:normal;font-style:normal;font-stretch:normal;color:#212121;text-decoration:none!important;word-spacing:0.2em;display:inline-block;width:70%;border-bottom:solid 1px #ccc;padding-top:5px;padding-bottom:5px;vertical-align:middle;height:65px;">
-            {{ $product->description ?? $product->service_name ?? 'No description' }}<br>
-            <small>
-                @if($product->product_type === 'tyre')
-                  ({{ $product->supplier }}), EAN: ({{ $product->product_ean ?? $product->product_sku }})
-                    @if($product->fitting_type === 'mobile_fitted')
-                    @endif
-                @endif
-            </small>
-        </td>
-        <td valign="middle" align="left"
-            style="font-family:Arial;font-size:14px;font-weight:normal;font-style:normal;font-stretch:normal;color:#212121;text-decoration:none!important;word-spacing:0.2em;display:inline-block;width:10%;text-align:center;border-bottom:solid 1px #ccc;padding-top:5px;padding-bottom:5px;vertical-align:middle;height:65px;">
-            @if($product->product_type === 'tyre')
-                {{ $product->quantity ?? '0' }}
-            @elseif($product->product_type === 'service')
-                {{ $product->service_quantity ?? '0' }}
-            @endif
-        </td>
-        <td valign="middle" align="left"
-            style="font-family:Arial;font-size:14px;font-weight:normal;font-style:normal;font-stretch:normal;color:#212121;text-decoration:none!important;word-spacing:0.2em;display:inline-block;width:10%;text-align:right;border-bottom:solid 1px #ccc;padding-top:5px;padding-bottom:5px;vertical-align:middle;height:65px;">
-            £{{ number_format($product->price ?? $product->service_price ?? 0, 2) }}
-        </td>
-        <td valign="middle" align="left"
-            style="font-family:Arial;font-size:14px;font-weight:normal;font-style:normal;font-stretch:normal;color:#212121;text-decoration:none!important;word-spacing:0.2em;display:inline-block;width:10%;text-align:right;border-bottom:solid 1px #ccc;padding-top:5px;padding-bottom:5px;vertical-align:middle;height:65px;">
-            £{{ number_format($itemTotal, 2) }}
-        </td>
-    </tr>
-@endforeach
-                                  </tr>
-                                  </tbody>
-                                </table>
-                                </td>
-                              </tr>
-                              </tbody>
-                            </table>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td>
-                            <table border="0" width="600" cellpadding="0" cellspacing="0">
-                              <tbody>
-                              <tr>
-                                <td>
-                                <table width="100%" cellspacing="0" cellpadding="0"
-                                  style="margin:0;padding-top:20px;padding-bottom:20px;max-width:600px;background:#ffffff">
-                                  <tbody>
-                                  <tr style="color:#212121;display:block;margin:0 auto;clear:both">
-                                    <td align="left" valign="top" style="color:#212121;display:block">
-                                    <table width="100%" style="margin-bottom:0px;border-bottom:1px solid #f0f0f0">
-                                      <tbody>
-                                      <tr>
-                                        <td width="40%"></td>
-                                        <td align="right" width="34%">
-                                        <p
-                                          style="margin-top:14px;font-family:Arial;font-size:12px;text-align:right;color:#3f3f3f;padding-top:0px;margin-top:0;margin-bottom:3px">
-                                          <span style="color:#3f3f3f;text-align:right">Sub Total</span></p>
-                                        </td>
-                                        <td>
-                                        <p
-                                          style="margin-top:14px;font-family:Arial;font-size:12px;text-align:right;color:#3f3f3f;padding-top:0px;margin-top:0;margin-bottom:3px">
-                                          <span style="padding-right:0px">£{{ number_format($subTotal, 2) }} </span>
-                                        </p>
-                                        </td>
-                                      </tr>
-                                        @if ($workshopProducts->contains('fitting_type', 'mobile_fitted'))
-                                        <tr>
-                                        <td width="40%"></td>
-                                        <td align="right" width="34%">
-                                        <p
-                                        style="margin-top:14px;font-family:Arial;font-size:12px;text-align:right;color:#3f3f3f;padding-top:0px;margin-top:0;margin-bottom:3px">
-                                        <span style="color:#3f3f3f;text-align:right">Callout Charges ({{ $workshopProducts->firstWhere('fitting_type', 'mobile_fitted')->shipping_postcode ?? 'N/A' }})</span>
-                                        </p>
-                                        </td>
-                                        <td>
-                                        <p
-                                        style="margin-top:14px;font-family:Arial;font-size:12px;text-align:right;color:#3f3f3f;padding-top:0px;margin-top:0;margin-bottom:3px">
-                                        <span style="padding-right:0px">£{{ number_format($calloutCharges, 2) }}</span>
-                                        </p>
-                                        </td>
-                                        </tr>
-                                         @elseif ($workshopProducts->contains('fitting_type', 'mailorder'))
-                                        <tr>
-                                        <td width="40%"></td>
-                                        <td align="right" width="34%">
-                                        <p
-                                        style="margin-top:14px;font-family:Arial;font-size:12px;text-align:right;color:#3f3f3f;padding-top:0px;margin-top:0;margin-bottom:3px">
-                                        <span style="color:#3f3f3f;text-align:right">Callout Charges ({{ $workshopProducts->firstWhere('fitting_type', 'mailorder')->shipping_postcode ?? 'N/A' }})</span>
-                                        </p>
-                                        </td>
-                                        <td>
-                                        <p
-                                        style="margin-top:14px;font-family:Arial;font-size:12px;text-align:right;color:#3f3f3f;padding-top:0px;margin-top:0;margin-bottom:3px">
-                                        <span style="padding-right:0px">£{{ number_format($calloutCharges, 2) }}</span>
-                                        </p>
-                                        </td>
-                                        </tr>
-                                        @endif
-
-                                      <tr>
-                                        <td width="40%"></td>
-                                        <td align="right" width="34%">
-                                        <p
-                                          style="margin-top:14px;font-family:Arial;font-size:12px;text-align:right;color:#3f3f3f;padding-top:0px;margin-top:0;margin-bottom:3px">
-                                          <span style="color:#3f3f3f;text-align:right">VAT</span></p>
-                                        </td>
-                                        <td>
-                                        <p
-                                          style="margin-top:14px;font-family:Arial;font-size:12px;text-align:right;color:#3f3f3f;padding-top:0px;margin-top:0;margin-bottom:3px">
-                                          <span style="padding-right:0px">£{{ number_format($vatValue + $calloutVat, 2) }} </span>
-                                        </p>
-                                        </td>
-                                      </tr>
-                                      <tr>
-                                        <td width="40%"></td>
-                                        <td align="right" width="34%">
-                                        <p
-                                          style="margin-top:0px;font-family:Arial;font-size:14px;text-align:right;color:#3f3f3f;line-height:14px;padding-top:0px;margin-bottom:0">
-                                          <span style="color:#212121;text-align:right;font-weight:bold">Total
-                                          Amount</span></p>
-                                        </td>
-                                        <td>
-                                        <p
-                                          style="margin-top:0px;font-family:Arial;font-size:14px;text-align:right;color:#3f3f3f;padding-top:0px;margin-bottom:0">
-                                          <span
-                                          style="padding-right:0px;font-weight:bold">£{{ number_format($subTotal + $calloutCharges + $vatValue + $calloutVat, 2) }}
-                                          </span></p>
-                                        </td>
-                                      </tr>
-                @endif
+                                                          @if ($garageFittingCharges > 0)
+                                                            <tr>
+                                                              <td width="40%"></td>
+                                                              <td align="right" width="34%">
+                                                                <p
+                                                                  style="margin-top:14px;font-family:Arial;font-size:12px;text-align:right;color:#3f3f3f;padding-top:0px;margin-top:0;margin-bottom:3px">
+                                                                  <span style="color:#3f3f3f;text-align:right">Garage Fitting
+                                                                    Charges:</span>
+                                                                </p>
+                                                              </td>
+                                                              <td>
+                                                                <p
+                                                                  style="margin-top:14px;font-family:Arial;font-size:12px;text-align:right;color:#3f3f3f;padding-top:0px;margin-top:0;margin-bottom:3px">
+                                                                  <span
+                                                                    style="padding-right:0px">£{{ number_format($garageFittingCharges, 2) }}</span>
+                                                                </p>
+                                                              </td>
+                                                            </tr>
+                                                          @endif
+                                                          <tr>
+                                                            <td width="40%"></td>
+                                                            <td align="right" width="34%">
+                                                              <p
+                                                                style="margin-top:14px;font-family:Arial;font-size:12px;text-align:right;color:#3f3f3f;padding-top:0px;margin-top:0;margin-bottom:3px">
+                                                                <span style="color:#3f3f3f;text-align:right">VAT</span>
+                                                              </p>
+                                                            </td>
+                                                            <td>
+                                                              <p
+                                                                style="margin-top:14px;font-family:Arial;font-size:12px;text-align:right;color:#3f3f3f;padding-top:0px;margin-top:0;margin-bottom:3px">
+                                                                <span
+                                                                  style="padding-right:0px">£{{ number_format($vatValue + $calloutVat, 2) }}
+                                                                </span>
+                                                              </p>
+                                                            </td>
+                                                          </tr>
+                                                          <tr>
+                                                            <td width="40%"></td>
+                                                            <td align="right" width="34%">
+                                                              <p
+                                                                style="margin-top:0px;font-family:Arial;font-size:14px;text-align:right;color:#3f3f3f;line-height:14px;padding-top:0px;margin-bottom:0">
+                                                                <span style="color:#212121;text-align:right;font-weight:bold">Total
+                                                                  Amount</span>
+                                                              </p>
+                                                            </td>
+                                                            <td>
+                                                              <p
+                                                                style="margin-top:0px;font-family:Arial;font-size:14px;text-align:right;color:#3f3f3f;padding-top:0px;margin-bottom:0">
+                                                                <span
+                                                                  style="padding-right:0px;font-weight:bold">£{{ number_format($subTotal + $calloutCharges + $garageFittingCharges + $vatValue + $calloutVat + $garageFittingVAT, 2) }}
+                                                                </span>
+                                                              </p>
+                                                            </td>
+                                                          </tr>
+                                @endif
                                       </tbody>
                                     </table>
                                   </td>
@@ -355,33 +401,37 @@ $status =  strtoupper($workshop->status);
                                 <br> <span
                                   style="font-family:Arial;font-size:12px;line-height:1.42;color:#212121">Appointment
                                   Details: @if($bookings->isNotEmpty())
-                    @foreach($bookings as $booking)
-            Start: {{ \Carbon\Carbon::parse($booking->start)->format('Y-m-d H:i') }}<br>
-            End: {{ \Carbon\Carbon::parse($booking->end)->format('Y-m-d H:i') }}
-          @endforeach
-                  @else
-            No Appointments Found
-          @endif </span><br>                               <p
+                                    @foreach($bookings as $booking)
+                                      Start: {{ \Carbon\Carbon::parse($booking->start)->format('Y-m-d H:i') }}<br>
+                                      End: {{ \Carbon\Carbon::parse($booking->end)->format('Y-m-d H:i') }}
+                                    @endforeach
+                                  @else
+                                    No Appointments Found
+                                  @endif </span><br>
+                              <p
                                 style="font-family:Arial;font-size:14px;font-weight:bold;line-height:20px;color:#212121;margin-top:0px;margin-bottom:4px;margin-top:15px;">
                                 Payment Method</p>
-                                <strong>Payment Method:</strong>
-                                {{ str_replace('_',' ',$workshop->payment_method) ?? 'Pay at Fitting Center' }}<br>
-                                <strong>Payment Status:</strong>
-                                {{ $workshop->payment_status === 1 ? 'Paid' : 'Unpaid' }}<br>
-                                <strong>Fitting Address:</strong><br>
-                                @if ($workshopProducts->isNotEmpty() && $workshopProducts->contains('fitting_type', 'mobile_fitted'))
-                                    <!-- Workshop Address (Mobile Fitting) -->
-                                    {{ $workshop->address }}<br>
-                                    {{ $workshop->city }},{{ $workshop->county }}, {{ $workshop->zone }}, {{ $workshop->country }}
-                                @elseif ($workshopProducts->isNotEmpty() && $workshopProducts->contains('fitting_type', 'mailorder'))
-                                    {{ $workshop->address }}<br>
-                                    {{ $workshop->city }},{{ $workshop->county }}, {{ $workshop->zone }}, {{ $workshop->country }}
-                                @else
-                                    <!-- Garage Address (Default) -->
-                                    {{ $garage->garage_name }}<br>
-                                    {{ $garage->street }}, {{ $garage->city }},{{ $garage->county }}, {{ $garage->zone }}, {{ $garage->country }}
-                                    <br>
-                                  @endif
+                              <strong>Payment Method:</strong>
+                              {{ str_replace('_', ' ', $workshop->payment_method) ?? 'Pay at Fitting Center' }}<br>
+                              <strong>Payment Status:</strong>
+                              {{ $workshop->payment_status === 1 ? 'Paid' : 'Unpaid' }}<br>
+                              <strong>Fitting Address:</strong><br>
+                              @if ($workshopProducts->isNotEmpty() && $workshopProducts->contains('fitting_type', 'mobile_fitted'))
+                                <!-- Workshop Address (Mobile Fitting) -->
+                                {{ $workshop->address }}<br>
+                                {{ $workshop->city }},{{ $workshop->county }}, {{ $workshop->zone }},
+                                {{ $workshop->country }}
+                              @elseif ($workshopProducts->isNotEmpty() && $workshopProducts->contains('fitting_type', 'mailorder'))
+                                {{ $workshop->address }}<br>
+                                {{ $workshop->city }},{{ $workshop->county }}, {{ $workshop->zone }},
+                                {{ $workshop->country }}
+                              @else
+                                <!-- Garage Address (Default) -->
+                                {{ $garage->garage_name }}<br>
+                                {{ $garage->street }}, {{ $garage->city }},{{ $garage->county }}, {{ $garage->zone }},
+                                {{ $garage->country }}
+                                <br>
+                              @endif
                               </p>
                             </div>
                           </td>
@@ -416,12 +466,12 @@ $status =  strtoupper($workshop->status);
                                 style="font-family:Arial;font-size:14px;font-weight:bold;line-height:20px;color:#212121;margin-top:0px;margin-bottom:4px;margin-top:15px;">
                                 Opening Time</p>
                               @if(!empty($garage->garage_opening_time))
-                  @foreach(explode(',', $garage->garage_opening_time) as $openingTime)
-            {{ trim($openingTime) }}<br>
-          @endforeach
-                @else
-            No opening hours available
-          @endif
+                                @foreach(explode(',', $garage->garage_opening_time) as $openingTime)
+                                  {{ trim($openingTime) }}<br>
+                                @endforeach
+                              @else
+                                No opening hours available
+                              @endif
                             </div>
 
                           </td>

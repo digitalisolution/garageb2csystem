@@ -13078,3 +13078,16 @@ z-index: 2;overflow: hidden;background-repeat: no-repeat;background-size: 13px;b
 .garage_description img{max-height:80px;max-width:100%;}
 .tyre_exp{border:solid 1px #222; padding:10px 20px;border-radius:5px;}
 .grg_name_fitters{display: none;}
+.fc-timegrid-bg-harness {text-wrap-mode: wrap;line-height: 15px;}
+
+.fc-daygrid-day.fc-day-other {
+    background: #f5f5f5;
+}
+
+.fc-daygrid-day.fc-day-other .fc-daygrid-day-events {
+    pointer-events: none;
+}
+
+.fc-daygrid-day.fc-day-other .fc-event {
+    display: none !important;
+}

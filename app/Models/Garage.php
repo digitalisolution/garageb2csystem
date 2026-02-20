@@ -51,6 +51,8 @@ class Garage extends Authenticatable
         'garage_revoult_counterparty_id',
         'commission_type',
         'commission_price',
+        'garage_fitting_charges',
+        'garage_fitting_vat_class',
         'card_processing_fee',
     ];
 
@@ -212,5 +214,11 @@ class Garage extends Authenticatable
         }
         return 1;
     }
+
+    public function calendarSettings()
+    {
+        return $this->hasMany(CalendarSetting::class, 'garage_id');
+    }
+
 
 }

@@ -16,12 +16,15 @@ class CartTop extends ViewComponent
     {
         $this->cartItems = $this->getCartItems();
         $this->shippingData = Session::get('postcode_data', []);
+        $this->garageVatClass = Session::get('garageVatClass');
     }
 
     private function getCartItems()
     {
         $cart = Session::get('cart', []);
         // dd($cart);
+        $garageFittingCharge = Session::get('garageFittingCharge');
+        $garageVatClass = Session::get('garageVatClass');
         $cartItems = [];
 
         foreach ($cart as $item) {
@@ -39,7 +42,7 @@ class CartTop extends ViewComponent
                 } elseif ($item['type'] === 'service') {
                     $image = $product->inner_image ?? 'no-img-service.jpg';
                 } else {
-                    $image = null; // fallback
+                    $image = null;
                 }
 
                 if ($product) {
@@ -54,6 +57,8 @@ class CartTop extends ViewComponent
                         'total' => ($product->tyre_fullyfitted_price ?? $product->cost_price) * $item['quantity'],
                         'fitting_type' => $item['fitting_type'] ?? null,
                         'tax_class_id' => $product->tax_class_id ?? 0,
+                        'garageVatClass' => $garageVatClass,
+                        'garageFittingCharge' => $garageFittingCharge,
                     ];
                 }
             }
@@ -69,12 +74,15 @@ class CartTop extends ViewComponent
         $shippingPricePerJob = 0;
         $shippingPricePerTyre = 0;
         $shippingVAT = 0;
+        $garageFittingCharges = 0;
+        $garageFittingVAT = 0;
 
         foreach ($this->cartItems as $item) {
             $subTotal += $item['price'] * $item['quantity'];
             if ($item['tax_class_id'] == 9) {
                 $vatTotal += $item['price'] * $item['quantity'] * 0.2;
             }
+           
             if ($item['fitting_type'] === 'mobile_fitted') {
                 $shippingType = $this->shippingData['ship_type'] ?? 'job';
                 $shippingPrice = $this->shippingData['ship_price'] ?? 0;
@@ -95,15 +103,23 @@ class CartTop extends ViewComponent
                     $shippingPricePerTyre += $shippingPrice * $item['quantity'];
                 }
             }
+            if ($item['fitting_type'] === 'fully_fitted') {
+                $garageFittingCharges += $item['garageFittingCharge'];
+            }
         }
 
         if (($this->shippingData['includes_vat'] ?? 0) == 9) {
             $shippingVAT = ($shippingPricePerJob + $shippingPricePerTyre) * 0.2;
-            $vatTotal = $vatTotal + $shippingVAT;
+            $vatTotal += $shippingVAT;
+        }
+
+        if (($this->garageVatClass) == 9) {
+            $garageFittingVAT = $garageFittingCharges * 0.2;
+            $vatTotal += $garageFittingVAT;
         }
 
 
-        $grandTotal = $subTotal + $vatTotal + $shippingPricePerJob + $shippingPricePerTyre;
+        $grandTotal = $subTotal + $vatTotal + $shippingPricePerJob + $shippingPricePerTyre + $garageFittingCharges;
 
         return $this->ViewComponent('cart-top', [
             'cartItems' => $this->cartItems,
@@ -114,6 +130,7 @@ class CartTop extends ViewComponent
             'shippingPricePerJob' => $shippingPricePerJob,
             'shippingPricePerTyre' => $shippingPricePerTyre,
             'shippingVAT' => $shippingVAT,
+            'garageFittingCharges' => $garageFittingCharges,
         ]);
     }
 }

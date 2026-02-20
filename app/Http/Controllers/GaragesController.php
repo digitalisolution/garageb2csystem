@@ -381,6 +381,8 @@ class GaragesController extends Controller
             'garage_revoult_counterparty_id' => 'nullable|string|max:50',
             'commission_type' => 'required|in:Fixed,Percentage',
             'commission_price' => 'required|numeric|min:0',
+            'garage_fitting_charges' => 'required|numeric|min:0',
+            'garage_fitting_vat_class' => 'required|integer|in:0,9',
             'card_processing_fee' => 'required|numeric|min:0',
 
         ]);

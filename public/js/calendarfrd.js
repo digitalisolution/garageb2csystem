@@ -63931,13 +63931,13 @@ function _toConsumableArray(r) { return _arrayWithoutHoles(r) || _iterableToArra
 function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function _iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
 function _arrayWithoutHoles(r) { if (Array.isArray(r)) return _arrayLikeToArray(r); }
+function _createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = _unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
 function _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest(); }
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-function _iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
-function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
-function _createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = _unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
 function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
 function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function _iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
 function asyncGeneratorStep(n, t, e, r, o, a, c) { try { var i = n[a](c), u = i.value; } catch (n) { return void e(n); } i.done ? t(u) : Promise.resolve(u).then(r, o); }
 function _asyncToGenerator(n) { return function () { var t = this, e = arguments; return new Promise(function (r, o) { var a = n.apply(t, e); function _next(n) { asyncGeneratorStep(a, r, o, _next, _throw, "next", n); } function _throw(n) { asyncGeneratorStep(a, r, o, _next, _throw, "throw", n); } _next(void 0); }); }; }
 __webpack_require__(/*! ./bootstrap */ "./resources/js/bootstrap.js");
@@ -63947,7 +63947,6 @@ __webpack_require__(/*! ./bootstrap */ "./resources/js/bootstrap.js");
 
 
 
- // Import Bootstrap Modal
 
 document.addEventListener('DOMContentLoaded', function () {
   var calendarEl = document.getElementById('calendar');
@@ -63956,12 +63955,11 @@ document.addEventListener('DOMContentLoaded', function () {
       var businessHours = formatBusinessHours(data.businessHours);
       var _calculateSlotTimes = calculateSlotTimes(businessHours),
         slotMinTime = _calculateSlotTimes.slotMinTime,
-        slotMaxTime = _calculateSlotTimes.slotMaxTime; // Calculate dynamic slot times
+        slotMaxTime = _calculateSlotTimes.slotMaxTime;
       var blockedEvents = createBlockedEvents(data);
-      var slotDuration = data.duration || 30; // Default to 30 minutes if duration is not provided
+      var slotDuration = data.duration || 30;
       var validRangeStart = data.businessHours[0].validRangeStart;
       var validRangeEnd = data.businessHours[0].validRangeEnd;
-      // console.log(data);
       initializeCalendar(calendarEl, businessHours, blockedEvents, slotMinTime, slotMaxTime, slotDuration, validRangeStart, validRangeEnd);
     })["catch"](function (error) {
       console.error('Error loading calendar settings:', error);
@@ -63972,15 +63970,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
 /**
  * Fetch calendar settings from the server.
- * @returns {Promise<Object>} Calendar settings data.
+ * @returns {Promise<Object>}
  */
 function fetchCalendarSettings() {
   return _fetchCalendarSettings.apply(this, arguments);
 }
 /**
  * Format business hours for FullCalendar.
- * @param {Array} businessHours - Business hours data.
- * @returns {Array} Formatted business hours.
+ * @param {Array} businessHours
+ * @returns {Array}
  */
 function _fetchCalendarSettings() {
   _fetchCalendarSettings = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee() {
@@ -64007,8 +64005,7 @@ function _fetchCalendarSettings() {
 function formatBusinessHours(businessHours) {
   return businessHours.filter(function (hour) {
     return !hour.closed;
-  }) // Exclude closed days
-  .map(function (hour) {
+  }).map(function (hour) {
     return {
       daysOfWeek: hour.daysOfWeek,
       startTime: hour.startTime,
@@ -64024,15 +64021,14 @@ function formatBusinessHours(businessHours) {
  */
 
 function calculateSlotTimes(businessHours) {
-  var slotMinTime = '23:59'; // Initialize with the latest possible time
-  var slotMaxTime = '00:00'; // Initialize with the earliest possible time
-
+  var slotMinTime = '23:59';
+  var slotMaxTime = '00:00';
   businessHours.forEach(function (hour) {
     if (hour.startTime < slotMinTime) {
-      slotMinTime = hour.startTime; // Update to the earliest start time
+      slotMinTime = hour.startTime;
     }
     if (hour.endTime > slotMaxTime) {
-      slotMaxTime = hour.endTime; // Update to the latest end time
+      slotMaxTime = hour.endTime;
     }
   });
   return {
@@ -64049,8 +64045,6 @@ function calculateSlotTimes(businessHours) {
 
 function createBlockedEvents(data) {
   var blockedEvents = [];
-
-  // Convert blocked date times into events
   if (data.blockedTimes && data.blockedTimes.days) {
     var daysMapping = {
       Sunday: 0,
@@ -64063,30 +64057,26 @@ function createBlockedEvents(data) {
     };
     data.blockedTimes.days.forEach(function (day, index) {
       if (day === "all") {
-        // If "all", block the time for all days of the week
         blockedEvents.push({
           title: data.blockedTimes.block_title[index],
           daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
-          // All days
           startTime: data.blockedTimes.from[index],
           endTime: data.blockedTimes.to[index],
           backgroundColor: 'red',
           borderColor: 'red',
-          display: 'background' // Ensure blocked times are displayed as background events
+          display: 'background'
         });
       } else {
-        // Block the time for a specific day
         var dayNumber = daysMapping[day];
         if (dayNumber !== undefined) {
           blockedEvents.push({
             title: data.blockedTimes.block_title[index],
             daysOfWeek: [dayNumber],
-            // Convert day name to number
             startTime: data.blockedTimes.from[index],
             endTime: data.blockedTimes.to[index],
             backgroundColor: 'red',
             borderColor: 'red',
-            display: 'background' // Ensure blocked times are displayed as background events
+            display: 'background'
           });
         } else {
           console.error("Invalid day name: ".concat(day));
@@ -64094,25 +64084,52 @@ function createBlockedEvents(data) {
       }
     });
   }
-
-  // Convert holidays into blocked events
+  if (data.blockedSpecificDateTimes.date) {
+    data.blockedSpecificDateTimes.date.forEach(function (date, index) {
+      var title = data.blockedSpecificDateTimes.block_title[index] || 'Blocked';
+      var from = data.blockedSpecificDateTimes.from[index];
+      var to = data.blockedSpecificDateTimes.to[index];
+      if (date && from && to) {
+        var formatTo12Hour = function formatTo12Hour(timeStr) {
+          if (!timeStr) return '';
+          var _timeStr$split = timeStr.split(':'),
+            _timeStr$split2 = _slicedToArray(_timeStr$split, 2),
+            hourStr = _timeStr$split2[0],
+            minuteStr = _timeStr$split2[1];
+          var hour = parseInt(hourStr, 10);
+          var minute = minuteStr.padStart(2, '0');
+          var ampm = hour >= 12 ? 'PM' : 'AM';
+          hour = hour % 12 || 12;
+          return "".concat(hour, ":").concat(minute, " ").concat(ampm);
+        };
+        var formattedFrom = formatTo12Hour(from);
+        var formattedTo = formatTo12Hour(to);
+        var displayTitle = "".concat(title, " (").concat(formattedFrom, " - ").concat(formattedTo, ")");
+        blockedEvents.push({
+          title: displayTitle,
+          start: "".concat(date, "T").concat(from),
+          end: "".concat(date, "T").concat(to),
+          backgroundColor: 'rgba(255, 0, 0, 0.3)',
+          borderColor: 'rgba(255, 0, 0, 0.4)',
+          display: 'background',
+          allDay: false
+        });
+      }
+    });
+  }
   if (data.holidays && data.holidays.holidayDate) {
     data.holidays.holidayDate.forEach(function (date, index) {
       blockedEvents.push({
         title: data.holidays.holiday_name[index],
         start: date,
         end: date,
-        // Holidays are all-day events
         backgroundColor: '#ffcc00',
         borderColor: '#ffcc00',
         allDay: true,
-        // Mark as all-day event
-        display: 'background' // Ensure holidays are displayed as background events
+        display: 'background'
       });
     });
   }
-
-  // Convert blockFittingTypeDays into blocked events
   if (data.blockFittingTypeDays) {
     var _daysMapping = {
       Sunday: 0,
@@ -64130,7 +64147,6 @@ function createBlockedEvents(data) {
       var endTime = block.to;
       var title = block.block_title;
       if (day === 'all') {
-        // Block for all days of the week
         blockedEvents.push({
           title: title,
           daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
@@ -64158,8 +64174,30 @@ function createBlockedEvents(data) {
       }
     });
   }
-
-  // Handle blockServicePerhours
+  if (data.blockFittingTypeDateTime && Array.isArray(data.blockFittingTypeDateTime)) {
+    data.blockFittingTypeDateTime.forEach(function (block) {
+      if (!block.date || !block.from || !block.to) {
+        console.warn('Invalid blockFittingTypeDateTime entry:', block);
+        return;
+      }
+      var startTime = block.from;
+      var endTime = block.to;
+      var jobType = block.jobtype || null;
+      var title = block.block_title || "Job Blocked";
+      blockedEvents.push({
+        title: "".concat(title),
+        start: "".concat(block.date, "T").concat(startTime),
+        end: "".concat(block.date, "T").concat(endTime),
+        backgroundColor: "rgba(255, 0, 0, 0.3)",
+        borderColor: "rgba(255, 0, 0, 0.4)",
+        display: "background",
+        extendedProps: {
+          type: "job",
+          jobType: jobType
+        }
+      });
+    });
+  }
   if (data.blockServicePerhours) {
     var _daysMapping2 = {
       Sunday: 0,
@@ -64187,6 +64225,25 @@ function createBlockedEvents(data) {
       }
     });
   }
+  if (data.blockServiceDateTime && Array.isArray(data.blockServiceDateTime)) {
+    data.blockServiceDateTime.forEach(function (block) {
+      if (!block.date || !block.from || !block.to) {
+        console.log('Invalid blockServiceDateTime entry:', block);
+        return;
+      }
+      blockedEvents.push({
+        title: block.block_title || 'Blocked',
+        start: "".concat(block.date, "T").concat(block.from),
+        end: "".concat(block.date, "T").concat(block.to),
+        backgroundColor: 'rgba(255, 0, 0, 0.3)',
+        borderColor: 'rgba(255, 0, 0, 0.3)',
+        display: 'background',
+        allDay: false,
+        service_type: block.service_type || null,
+        job_type: block.job_type || null
+      });
+    });
+  }
   if (data.fullyBookedSlots) {
     data.fullyBookedSlots.forEach(function (slot) {
       blockedEvents.push({
@@ -64199,11 +64256,28 @@ function createBlockedEvents(data) {
       });
     });
   }
-
-  // console.log("Blocked Events:", blockedEvents); // Debugging: Log blocked events
+  if (data.motBookedSlots) {
+    data.motBookedSlots.forEach(function (slot) {
+      blockedEvents.push({
+        title: 'MOT Fully Booked',
+        start: "".concat(slot.date, "T").concat(slot.start),
+        end: "".concat(slot.date, "T").concat(slot.end),
+        backgroundColor: 'rgba(241, 183, 101, 0.92)',
+        borderColor: 'rgba(255, 136, 0, 0.6)',
+        display: 'background',
+        extendedProps: {
+          serviceType: 'mot'
+        }
+      });
+    });
+  }
   return blockedEvents;
 }
-
+function timeStringToMinutes(t) {
+  if (!t) return null;
+  var parts = t.split(':').map(Number);
+  return parts[0] * 60 + (parts[1] || 0);
+}
 /**
  * Check if the selected slot overlaps with any blocked events.
  * @param {Date} start - The start date and time of the selected slot.
@@ -64211,20 +64285,61 @@ function createBlockedEvents(data) {
  * @param {Array} blockedEvents - Array of blocked events.
  * @returns {boolean} True if the slot is blocked, otherwise false.
  */
-function isSlotBlocked(selectedStart, selectedEnd, blockedSlots, currentJobType) {
+
+function isSlotBlocked(selectedStart, selectedEnd, blockedSlots) {
+  var currentJobType = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
+  var currentServiceType = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : null;
+  var selectedDay = selectedStart.getDay();
+  var selectedStartMinutes = selectedStart.getHours() * 60 + selectedStart.getMinutes();
+  var selectedEndMinutes = selectedEnd.getHours() * 60 + selectedEnd.getMinutes();
   var _iterator = _createForOfIteratorHelper(blockedSlots),
     _step;
   try {
     for (_iterator.s(); !(_step = _iterator.n()).done;) {
       var slot = _step.value;
-      if (slot.job_type && slot.job_type !== currentJobType) {
+      if (slot.job_type && currentJobType && slot.job_type !== currentJobType) continue;
+      if (slot.service_type && currentServiceType && slot.service_type !== currentServiceType) continue;
+      if (slot.extendedProps && slot.extendedProps.serviceType === 'mot' && currentServiceType !== 'mot') {
         continue;
       }
-      var blockedStart = new Date(slot.start);
-      var blockedEnd = new Date(slot.end);
-      if (selectedStart >= blockedStart && selectedStart < blockedEnd || selectedEnd > blockedStart && selectedEnd <= blockedEnd || selectedStart <= blockedStart && selectedEnd >= blockedEnd // full overlap
-      ) {
-        return true;
+      if (slot.start && slot.end) {
+        var blockedStart = new Date(slot.start);
+        var blockedEnd = new Date(slot.end);
+        if (isNaN(blockedStart) || isNaN(blockedEnd)) {
+          continue;
+        }
+        if (selectedStart >= blockedStart && selectedStart < blockedEnd || selectedEnd > blockedStart && selectedEnd <= blockedEnd || selectedStart <= blockedStart && selectedEnd >= blockedEnd) {
+          return true;
+        }
+      }
+      if (Array.isArray(slot.daysOfWeek) && (slot.startTime || slot.start) && (slot.endTime || slot.end)) {
+        if (!slot.daysOfWeek.includes(selectedDay)) {
+          continue;
+        }
+        var blockStartMinutes = null;
+        var blockEndMinutes = null;
+        if (slot.startTime && slot.endTime) {
+          blockStartMinutes = timeStringToMinutes(slot.startTime);
+          blockEndMinutes = timeStringToMinutes(slot.endTime);
+        } else if (slot.start && slot.end) {
+          var s = new Date(slot.start);
+          var e = new Date(slot.end);
+          if (!isNaN(s) && !isNaN(e)) {
+            blockStartMinutes = s.getHours() * 60 + s.getMinutes();
+            blockEndMinutes = e.getHours() * 60 + e.getMinutes();
+          }
+        }
+        if (blockStartMinutes !== null && blockEndMinutes !== null) {
+          if (blockEndMinutes <= blockStartMinutes) {
+            if (selectedStartMinutes >= blockStartMinutes && selectedStartMinutes <= 24 * 60 - 1 || selectedEndMinutes >= 0 && selectedEndMinutes <= blockEndMinutes) {
+              return true;
+            }
+          } else {
+            if (selectedStartMinutes >= blockStartMinutes && selectedStartMinutes < blockEndMinutes || selectedEndMinutes > blockStartMinutes && selectedEndMinutes <= blockEndMinutes || selectedStartMinutes <= blockStartMinutes && selectedEndMinutes >= blockEndMinutes) {
+              return true;
+            }
+          }
+        }
       }
     }
   } catch (err) {
@@ -64243,10 +64358,8 @@ function getLondonDate() {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
-    hour12: false // 24-hour format
+    hour12: false
   }).format(new Date());
-
-  // Extract components and construct Date object
   var _londonTimeString$mat = londonTimeString.match(/\d+/g),
     _londonTimeString$mat2 = _slicedToArray(_londonTimeString$mat, 6),
     day = _londonTimeString$mat2[0],
@@ -64292,7 +64405,6 @@ function calculateBlockedTimes(businessHours) {
           startTime: earliestTime,
           endTime: startTime,
           backgroundColor: 'rgba(255, 0, 0, 0.2)',
-          // Light red for blocked times
           borderColor: 'rgba(255, 0, 0, 0.2)',
           display: 'background'
         });
@@ -64305,7 +64417,6 @@ function calculateBlockedTimes(businessHours) {
           startTime: endTime,
           endTime: latestTime,
           backgroundColor: 'rgba(255, 0, 0, 0.2)',
-          // Light red for blocked times
           borderColor: 'rgba(255, 0, 0, 0.2)',
           display: 'background'
         });
@@ -64317,7 +64428,6 @@ function calculateBlockedTimes(businessHours) {
         startTime: earliestTime,
         endTime: latestTime,
         backgroundColor: 'rgba(255, 0, 0, 0.2)',
-        // Light red for blocked times
         borderColor: 'rgba(255, 0, 0, 0.2)',
         display: 'background'
       });
@@ -64347,7 +64457,7 @@ function initializeCalendar(calendarEl, businessHours, blockedEvents, slotMinTim
   var calendar = new _fullcalendar_core__WEBPACK_IMPORTED_MODULE_1__.Calendar(calendarEl, {
     plugins: [_fullcalendar_daygrid__WEBPACK_IMPORTED_MODULE_2__["default"], _fullcalendar_timegrid__WEBPACK_IMPORTED_MODULE_3__["default"], _fullcalendar_interaction__WEBPACK_IMPORTED_MODULE_4__["default"]],
     initialView: 'timeGridWeek',
-    timeZone: 'Europe/London',
+    timeZone: 'local',
     initialDate: today,
     firstDay: currentDayIndex,
     validRange: {
@@ -64357,7 +64467,6 @@ function initializeCalendar(calendarEl, businessHours, blockedEvents, slotMinTim
       start: today,
       end: formattedEnd
     },
-    scrollTime: "".concat(now.getHours(), ":00:00"),
     slotMinTime: slotMinTime,
     slotMaxTime: slotMaxTime,
     slotDuration: "00:".concat(slotDuration, ":00"),
@@ -64380,10 +64489,8 @@ function initializeCalendar(calendarEl, businessHours, blockedEvents, slotMinTim
       end: new Date(validRangeStart),
       display: 'background',
       backgroundColor: '#f8d7da',
-      // Light red to indicate blocked area
       overlap: false
     }]),
-    // Include blocked slots
     displayEventTime: false,
     dayHeaderContent: function dayHeaderContent(arg) {
       var date = new Date(arg.date);
@@ -64394,28 +64501,25 @@ function initializeCalendar(calendarEl, businessHours, blockedEvents, slotMinTim
       }).replace(',', '');
     },
     selectAllow: function selectAllow(info) {
-      return info.start >= new Date(validRangeStart); // Prevent past slots
+      return info.start >= new Date(validRangeStart);
     },
     select: function select(info) {
-      console.log(info);
+      var _document$getElementB, _document$getElementB2;
       var start = info.start;
       var startTime = info.startStr;
       var endTime = info.endStr;
-      var end = new Date(start.getTime() + slotDuration * 60000); // Force selection of only one slot
-
-      if (isSlotBlocked(start, end, blockedEvents)) {
-        alert('This slot is blocked and cannot be booked.');
+      var end = new Date(start.getTime() + slotDuration * 60000);
+      var currentJobType = ((_document$getElementB = document.getElementById('job_type_select')) === null || _document$getElementB === void 0 ? void 0 : _document$getElementB.value) || null;
+      var currentServiceType = ((_document$getElementB2 = document.getElementById('service_type_select')) === null || _document$getElementB2 === void 0 ? void 0 : _document$getElementB2.value) || null;
+      if (isSlotBlocked(start, end, blockedEvents, currentJobType, currentServiceType)) {
+        alert('This slot is blocked for the selected job or service type.');
         return;
       }
       if (start < new Date()) {
         alert('You cannot select a past slot.');
         return;
       }
-
-      // Remove previous selection before adding new one
       if (selectedEvent) selectedEvent.remove();
-
-      // Add only ONE slot, preventing drag selection
       selectedEvent = calendar.addEvent({
         title: "".concat(formatTimeFromISO(startTime), " - Available"),
         start: start,
@@ -64433,12 +64537,12 @@ function initializeCalendar(calendarEl, businessHours, blockedEvents, slotMinTim
 }
 function formatDateTimeFromISO(isoString) {
   return luxon__WEBPACK_IMPORTED_MODULE_5__.DateTime.fromISO(isoString, {
-    zone: 'Europe/London'
+    zone: 'local'
   }).toFormat('dd LLL yyyy, hh:mm a');
 }
 function formatTimeFromISO(isoString) {
   return luxon__WEBPACK_IMPORTED_MODULE_5__.DateTime.fromISO(isoString, {
-    zone: 'Europe/London'
+    zone: 'local'
   }).toFormat('hh:mm a');
 }
 
@@ -64448,13 +64552,16 @@ function formatTimeFromISO(isoString) {
  * @param {Date} end - The end date and time of the selected slot.
  */
 function saveSelectedSlot(start, end) {
-  var startLocal = start.toISOString(); // Convert to ISO string for consistency
-  var endLocal = end.toISOString();
+  var formatLocalDate = function formatLocalDate(dateObj) {
+    return "".concat(dateObj.getFullYear(), "-") + "".concat(String(dateObj.getMonth() + 1).padStart(2, '0'), "-") + "".concat(String(dateObj.getDate()).padStart(2, '0'), " ") + "".concat(String(dateObj.getHours()).padStart(2, '0'), ":") + "".concat(String(dateObj.getMinutes()).padStart(2, '0'), ":00");
+  };
+  var startLocal = formatLocalDate(start);
+  var endLocal = formatLocalDate(end);
   fetch('/save-selected-slot', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content // Add CSRF token
+      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
     },
     body: JSON.stringify({
       start: startLocal,

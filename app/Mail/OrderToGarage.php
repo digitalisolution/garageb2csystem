@@ -76,17 +76,27 @@ class OrderToGarage extends Mailable
         // Prepare data for the email view
         $viewData = [
             'workshop' => $this->workshop,
-            'workshopProducts' => $workshopProducts, // Combined tyres and services
-            'bookings' => $this->bookings, // Include bookings in the view data
+            'workshopProducts' => $workshopProducts,
+            'bookings' => $this->bookings,
             'customer' => $this->customer,
         ];
 
+        $status = $this->workshop->status ?? 'pending';
+        $subject = match (strtolower($status)) {
+            'pending'     => 'Your Booking Request Has Been Pending',
+            'booked'   => 'Your Order Submitted Successfully',
+            'processing' => 'We’re Working on Your Order',
+            'completed'   => 'Your Order is Complete – Thank You!',
+            'cancelled'   => 'Your Booking Has Been Cancelled',
+            'failed'    => 'Update: Your Booking Request',
+            default       => 'Update Regarding Your Order #' . $this->orderId,
+        };
         // Log the view data
         // Log::info('View data prepared for email.', $viewData);
 
         // Return the email with the view and subject
         return $this->view('emails.garage_order_submitted', $viewData)
-            ->subject("Order Submitted Successfully")
+            ->subject($subject)
             ->replyTo($this->workshop->email, $this->workshop->name );
     }
 }

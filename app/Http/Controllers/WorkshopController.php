@@ -758,8 +758,11 @@ class WorkshopController extends Controller
         if ($request->filled('status')) {
             $workshopQuery->where('status', 'like', '%' . $request->status . '%');
         }
-        if ($request->filled('payment_method')) {
-            $workshopQuery->where('payment_method', 'like', '%' . $request->payment_method . '%');
+        // if ($request->filled('payment_method')) {
+        //     $workshopQuery->where('payment_method', 'like', '%' . $request->payment_method . '%');
+        // }
+         if ($request->filled('fitting_type')) {
+            $workshopQuery->where('fitting_type', 'like', '%' . $request->fitting_type . '%');
         }
         if ($request->filled('is_void')) {
             $workshopQuery->where('is_void', $request->is_void);
@@ -803,7 +806,8 @@ class WorkshopController extends Controller
                 'workshops.name',
                 'workshops.mobile',
                 'workshops.vehicle_reg_number',
-                'workshops.payment_method',
+                // 'workshops.payment_method',
+                'workshops.fitting_type',
                 'workshops.balance_price',
                 'workshops.grandTotal',
                 'workshops.payment_status',
@@ -860,8 +864,11 @@ class WorkshopController extends Controller
             $workshopQuery->where('workshops.status', $request->status);
         }
 
-        if ($request->filled('payment_method')) {
-            $workshopQuery->where('workshops.payment_method', $request->payment_method);
+        // if ($request->filled('payment_method')) {
+        //     $workshopQuery->where('workshops.payment_method', $request->payment_method);
+        // }
+        if ($request->filled('fitting_type')) {
+            $workshopQuery->where('workshops.fitting_type', $request->fitting_type);
         }
 
         if ($request->filled('is_void')) {
@@ -896,8 +903,11 @@ class WorkshopController extends Controller
                 return strtoupper($workshop->vehicle_reg_number ?? '');
             })
             // Payment Method (formatted)
-            ->addColumn('payment_method_formatted', function ($workshop) {
-                return strtoupper(str_replace('_', ' ', $workshop->payment_method ?? ''));
+            // ->addColumn('payment_method_formatted', function ($workshop) {
+            //     return strtoupper(str_replace('_', ' ', $workshop->payment_method ?? ''));
+            // })
+             ->addColumn('fitting_type_formatted', function ($workshop) {
+                return strtoupper(str_replace('_', ' ', $workshop->fitting_type ?? ''));
             })
             // Amount Due (formatted)
             ->addColumn('amount_due', function ($workshop) {
@@ -1128,7 +1138,8 @@ class WorkshopController extends Controller
                 'customer_name',
                 'garage_name',
                 'vehicle_reg',
-                'payment_method_formatted',
+                // 'payment_method_formatted',
+                'fitting_type_formatted',
                 'amount_due',
                 'grand_total',
                 'payment_status_badge',
@@ -1177,9 +1188,9 @@ class WorkshopController extends Controller
         if ($request->filled('status')) {
             $invoiceQuery->where('status', 'like', '%' . $request->status . '%');
         }
-        if ($request->filled('payment_method')) {
-            $invoiceQuery->where('payment_method', 'like', '%' . $request->payment_method . '%');
-        }
+        // if ($request->filled('payment_method')) {
+        //     $invoiceQuery->where('payment_method', 'like', '%' . $request->payment_method . '%');
+        // }
         if ($request->filled('is_void')) {
             $invoiceQuery->where('is_void', $request->is_void);
         }
@@ -1230,7 +1241,8 @@ class WorkshopController extends Controller
                 'invoices.email',
                 'invoices.mobile',
                 'invoices.vehicle_reg_number',
-                'invoices.payment_method',
+                // 'invoices.payment_method',
+                'invoices.fitting_type',
                 'invoices.grandTotal',
                 'invoices.paid_price',
                 'invoices.discount_price',
@@ -1283,8 +1295,12 @@ class WorkshopController extends Controller
             $invoiceQuery->where('invoices.status', $request->status);
         }
 
-        if ($request->filled('payment_method')) {
-            $invoiceQuery->where('invoices.payment_method', $request->payment_method);
+        // if ($request->filled('payment_method')) {
+        //     $invoiceQuery->where('invoices.payment_method', $request->payment_method);
+        // }
+
+        if ($request->filled('fitting_type')) {
+            $invoiceQuery->where('invoices.fitting_type', $request->fitting_type);
         }
 
         if ($request->filled('is_void')) {
@@ -1319,8 +1335,11 @@ class WorkshopController extends Controller
                 return strtoupper($invoice->vehicle_reg_number ?? '');
             })
             // Payment Method (formatted)
-            ->addColumn('payment_method_formatted', function ($invoice) {
-                return strtoupper(str_replace('_', ' ', $invoice->payment_method ?? ''));
+            // ->addColumn('payment_method_formatted', function ($invoice) {
+            //     return strtoupper(str_replace('_', ' ', $invoice->payment_method ?? ''));
+            // })
+             ->addColumn('fitting_type_formatted', function ($invoice) {
+                return strtoupper(str_replace('_', ' ', $invoice->fitting_type ?? ''));
             })
             // Amount Due (formatted)
             ->addColumn('amount_due', function ($invoice) {
@@ -1522,7 +1541,8 @@ class WorkshopController extends Controller
                 'workshop_date_formatted',
                 'customer_name',
                 'vehicle_reg',
-                'payment_method_formatted',
+                // 'payment_method_formatted',
+                'fitting_type_formatted',
                 'amount_due',
                 'discount',
                 'paid_price',

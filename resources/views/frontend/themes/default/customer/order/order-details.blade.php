@@ -116,7 +116,7 @@ $domain = str_replace('.', '-', $domain);
 $domainLogoPath = public_path("frontend/{$domain}/img/logo/{$garage->logo}");
 $themeLogoPath = public_path("frontend/themes/{$garage->theme}/img/logo/{$garage->logo}");
 $defaultLogoPath = public_path("frontend/themes/theme/img/logo/logo.png");
-                ?>
+?>
                 <div class="col-sm-4 text-right">
                     @if(!empty($garage->logo))
                         <img id="logo" src="{{ asset('frontend/' . $domain . '/img/logo/' . $garage->logo) }}"
@@ -131,10 +131,10 @@ $defaultLogoPath = public_path("frontend/themes/theme/img/logo/logo.png");
                     @endif
 
                     <h5 class="mt-2"><strong>Job No:</strong> JOB-{{ $workshop->id }}</h5>
-                      @if($WorkshopTyre)
-                     @foreach($WorkshopTyre as $tyre)
-                     @endforeach
-                    <h5 class="mt-2"><strong></strong>{{ strtoupper(str_replace('_',' ',$tyre->fitting_type)) }}</h5>
+                    @if($WorkshopTyre)
+                        @foreach($WorkshopTyre as $tyre)
+                        @endforeach
+                        <h5 class="mt-2"><strong></strong>{{ strtoupper(str_replace('_', ' ', $tyre->fitting_type)) }}</h5>
                     @endif
                     @if($workshop->payment_status == 1)
                         <span class="badge-green">Paid</span>
@@ -149,18 +149,18 @@ $defaultLogoPath = public_path("frontend/themes/theme/img/logo/logo.png");
             </div>
         </header>
         @php
-if (isset($workshop->workshop_date)) {
-    $workshop_date = strtotime($workshop->workshop_date);
-    $workshop_date = date('d/m/Y', $workshop_date);
-} else {
-    $workshop_date = "";
-}
-if (isset($workshop->due_out)) {
-    $due_out = strtotime($workshop->due_out);
-    $due_out = date('d/m/Y', $due_out);
-} else {
-    $due_out = "";
-}
+            if (isset($workshop->workshop_date)) {
+                $workshop_date = strtotime($workshop->workshop_date);
+                $workshop_date = date('d/m/Y', $workshop_date);
+            } else {
+                $workshop_date = "";
+            }
+            if (isset($workshop->due_out)) {
+                $due_out = strtotime($workshop->due_out);
+                $due_out = date('d/m/Y', $due_out);
+            } else {
+                $due_out = "";
+            }
         @endphp
         <!-- Main Content -->
         <main>
@@ -182,7 +182,7 @@ if (isset($workshop->due_out)) {
                     </address>
                 </div>
                 <div class="col-sm-6"> <strong>Delivery Address:</strong>
-                 <h4 class="text-4 mb-1">{{$workshop->name}} {{$workshop->last_name}}</h4>
+                    <h4 class="text-4 mb-1">{{$workshop->name}} {{$workshop->last_name}}</h4>
                     <address>
                         {{ $workshop->address }}, {{ $workshop->city }}, {{ $workshop->county }}, {{ $workshop->zone }}
                         <br />
@@ -209,58 +209,58 @@ if (isset($workshop->due_out)) {
                         </tr>
                     </thead>
                     <tbody>
-                         <tr>
-                        <!-- Registration Number -->
-                        <td class="text-uppercase">
-                            {{ $WorkshopVehicle->isNotEmpty() && $WorkshopVehicle[0]->vehicle_reg_number
+                        <tr>
+                            <!-- Registration Number -->
+                            <td class="text-uppercase">
+                                {{ $WorkshopVehicle->isNotEmpty() && $WorkshopVehicle[0]->vehicle_reg_number
     ? $WorkshopVehicle[0]->vehicle_reg_number
     : ($getIndivisualWorkshopDetail['vehicle_reg_number'] ?? '--') }}
-                        </td>
-        
-                        <!-- Make -->
-                        <td>
-                            {{ $WorkshopVehicle->isNotEmpty() && $WorkshopVehicle[0]->vehicle_make
+                            </td>
+
+                            <!-- Make -->
+                            <td>
+                                {{ $WorkshopVehicle->isNotEmpty() && $WorkshopVehicle[0]->vehicle_make
     ? $WorkshopVehicle[0]->vehicle_make
     : ($getIndivisualWorkshopDetail['vehicle_make'] ?? '--') }}
-                        </td>
-        
-                        <!-- Model / Year -->
-                        <td>
-                            {{ $WorkshopVehicle->isNotEmpty() && $WorkshopVehicle[0]->vehicle_model
+                            </td>
+
+                            <!-- Model / Year -->
+                            <td>
+                                {{ $WorkshopVehicle->isNotEmpty() && $WorkshopVehicle[0]->vehicle_model
     ? $WorkshopVehicle[0]->vehicle_model
     : ($getIndivisualWorkshopDetail['vehicle_model'] ?? '--') }}
-                            /
-                            {{ $WorkshopVehicle->isNotEmpty() && $WorkshopVehicle[0]->vehicle_year
+                                /
+                                {{ $WorkshopVehicle->isNotEmpty() && $WorkshopVehicle[0]->vehicle_year
     ? $WorkshopVehicle[0]->vehicle_year
     : ($getIndivisualWorkshopDetail['vehicle_first_registered'] ?? '--') }}
-                        </td>
-        
-                        <!-- Registration Date -->
-                        <td>
-                            {{ $WorkshopVehicle->isNotEmpty() && $WorkshopVehicle[0]->vehicle_first_registered
+                            </td>
+
+                            <!-- Registration Date -->
+                            <td>
+                                {{ $WorkshopVehicle->isNotEmpty() && $WorkshopVehicle[0]->vehicle_first_registered
     ? \Carbon\Carbon::parse($WorkshopVehicle[0]->vehicle_first_registered)->format('d/m/Y')
     : '--' }}
-                        </td>
-        
-                        <!-- VIN -->
-                        <td>
-                            {{ $WorkshopVehicle->isNotEmpty() && $WorkshopVehicle[0]->vehicle_vin
+                            </td>
+
+                            <!-- VIN -->
+                            <td>
+                                {{ $WorkshopVehicle->isNotEmpty() && $WorkshopVehicle[0]->vehicle_vin
     ? $WorkshopVehicle[0]->vehicle_vin
     : ($getIndivisualWorkshopDetail['vehicle_vin'] ?? '--') }}
-                        </td>
-        
-                        <!-- Mileage -->
-                        <td>
-                            {{ $WorkshopVehicle->isNotEmpty() ? '--' : ($getIndivisualWorkshopDetail['vehicle_mileage'] ?? '--') }}
-                        </td>
-        
-                        <!-- MOT Expiry Date -->
-                        <td>
-                            {{ $WorkshopVehicle->isNotEmpty() && $WorkshopVehicle[0]->vehicle_mot_expiry_date
+                            </td>
+
+                            <!-- Mileage -->
+                            <td>
+                                {{ $WorkshopVehicle->isNotEmpty() ? '--' : ($getIndivisualWorkshopDetail['vehicle_mileage'] ?? '--') }}
+                            </td>
+
+                            <!-- MOT Expiry Date -->
+                            <td>
+                                {{ $WorkshopVehicle->isNotEmpty() && $WorkshopVehicle[0]->vehicle_mot_expiry_date
     ? \Carbon\Carbon::parse($WorkshopVehicle[0]->vehicle_mot_expiry_date)->format('d/m/Y')
     : '--' }}
-                        </td>
-                    </tr>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -268,155 +268,199 @@ if (isset($workshop->due_out)) {
             <br />
 
             @php
-$total_service_price = 0;
-$total_product_price = 0;
-$total_Tax_Amount = 0;
-$grandTotal = 0;
-$discount_price = $discount_price ?? 0;
-$installmentPayment = $installmentPayment ?? 0;
-$paid_price = $paid_price ?? 0;
-$itemIndex = 1;
+                $total_service_price = 0;
+                $total_product_price = 0;
+                $total_Tax_Amount = 0;
+                $grandTotal = 0;
+                $discount_price = $discount_price ?? 0;
+                $installmentPayment = $installmentPayment ?? 0;
+                $paid_price = $paid_price ?? 0;
+                $itemIndex = 1;
             @endphp
 
             @if (!empty($WorkshopTyre) || !empty($WorkshopService))
-                            <table class="table border mb-0">
-                                <thead>
-                                    <tr class="bg-light">
-                                        <th>#</th>
-                                        <th>Item</th>
-                                        <th>Rate</th>
-                                        <th>VAT %</th>
-                                        <th>Qty</th>
-                                        <th>Item Total</th>
-                                        <th>Amount (Inc. Tax)</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($WorkshopTyre as $tyre)
-                                                                            @php
-                                        $quantity = $tyre->quantity ?? 1;
-                                        $vatRate = $tyre->tax_class_id == 9 ? 0.2 : 0;
-                                        $vatText = $vatRate > 0 ? 'VAT 20%' : 'VAT 0%';
-                                        $price = $tyre->margin_rate ?? 0;
-                                        $itemTotal = $price * $quantity;
-                                        $vatAmount = $itemTotal * $vatRate;
-                                        $totalAmount = $itemTotal + $vatAmount;
-                                        $total_Tax_Amount += $vatAmount;
-                                        $total_product_price += $itemTotal;
-                                                                            @endphp
-                                                                            <tr>
-                                                                                <td>{{ $itemIndex++ }}</td>
-                                                                                <td>{{ $tyre->description }} <br>({{ $tyre->product_ean }})</td>
-                                                                                <td align="center">£{{ number_format($price, 2) }}</td>
-                                                                                <td>{{ $vatText }}</td>
-                                                                                <td align="center">{{ $quantity }}</td>
-                                                                                <td align="center">£{{ number_format($itemTotal, 2) }}</td>
-                                                                                <td align="right"><strong>£{{ number_format($totalAmount, 2) }}</strong></td>
-                                                                            </tr>
-                                    @endforeach
+                <table class="table border mb-0">
+                    <thead>
+                        <tr class="bg-light">
+                            <th>#</th>
+                            <th>Item</th>
+                            <th>Rate</th>
+                            <th>VAT %</th>
+                            <th>Qty</th>
+                            <th>Item Total</th>
+                            <th>Amount (Inc. Tax)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($WorkshopTyre as $tyre)
+                            @php
+                                $quantity = $tyre->quantity ?? 1;
+                                $vatRate = $tyre->tax_class_id == 9 ? 0.2 : 0;
+                                $vatText = $vatRate > 0 ? 'VAT 20%' : 'VAT 0%';
+                                $garageVatClass = $tyre->garage_vat_class == 9 ? 0.2 : 0;
+                                $garageVatText = $garageVatClass > 0 ? 'VAT 20%' : 'VAT 0%';
+                                $garageFittingCharges = $tyre->garage_fitting_charges;
+                                $price = $tyre->margin_rate ?? 0;
+                                $itemTotal = $price * $quantity;
+                                $vatAmount = $itemTotal * $vatRate;
+                                $totalAmount = $itemTotal + $vatAmount;
+                                $total_Tax_Amount += $vatAmount;
+                                $total_product_price += $itemTotal;
+                            @endphp
+                            <tr>
+                                <td>{{ $itemIndex++ }}</td>
+                                <td>{{ $tyre->description }} <br>({{ $tyre->product_ean }})</td>
+                                <td align="center">£{{ number_format($price, 2) }}</td>
+                                <td>{{ $vatText }}</td>
+                                <td align="center">{{ $quantity }}</td>
+                                <td align="center">£{{ number_format($itemTotal, 2) }}</td>
+                                <td align="right"><strong>£{{ number_format($totalAmount, 2) }}</strong></td>
+                            </tr>
+                        @endforeach
+                        @if(!empty($tyre) && in_array($tyre->fitting_type, ['mobile_fitted', 'mailorder']))
+                            <tr>
+                                <!-- <td>{{ $itemIndex++ }}</td> -->
+                                <td>
+                                <td><strong>{{ str_replace('_', ' ', ucfirst($tyre->fitting_type)) }} CallOut
+                                        Charge({{$tyre->shipping_postcode}})</strong></td>
+                                </td>
+                                <td colspan="" align="center"><strong>£{{ number_format($tyre->shipping_price, 2) }}</strong>
+                                </td>
+                                <td colspan="" align="center"><strong>{{ $vatText }}</strong></td>
+                                <td colspan="" align="center"><strong>1</strong></td>
+                                <td colspan="" align="center"><strong>£{{ number_format($tyre->shipping_price, 2) }}</strong>
+                                </td>
+                                <td colspan="" align="right">
+                                    <strong>£{{ number_format($tyre->shipping_price + ($tyre->shipping_price * $vatRate), 2) }}</strong>
+                                </td>
+                            </tr>
+                        @endif
+                        @if(!empty($tyre) && in_array($tyre->fitting_type, ['fully_fitted']))
+                            <tr>
+                                <!-- <td>{{ $itemIndex++ }}</td> -->
+                                <td>
+                                <td><strong>Garage Fitting Charge</strong></td>
+                                </td>
+                                <td align="center">
+                                    <strong>£{{ number_format($quantity > 0 ? $garageFittingCharges / $quantity : 0, 2) }}</strong>
+                                </td>
+                                <td colspan="" align="center"><strong>{{ $garageVatText }}</strong></td>
+                                <td colspan="" align="center"><strong>{{ $quantity }}</strong></td>
+                                <td colspan="" align="center"><strong>£{{ number_format($garageFittingCharges, 2) }}</strong>
+                                </td>
+                                <td colspan="" align="right">
+                                    <strong>£{{ number_format($garageFittingCharges + ($garageFittingCharges * $garageVatClass), 2) }}</strong>
+                                </td>
+                            </tr>
+                        @endif
 
-                                    @foreach($WorkshopService as $service)
-                                                    @php
-                $quantity = $service->service_quantity ?? 1;
-                $vatRate = $service->tax_class_id == 9 ? 0.2 : 0;
-                $vatText = $vatRate > 0 ? 'VAT 20%' : 'VAT 0%';
-                $price = $service->service_price ?? 0;
-                $itemTotal = $price * $quantity;
-                $vatAmount = $itemTotal * $vatRate;
-                $totalAmount = $itemTotal + $vatAmount;
-                $total_Tax_Amount += $vatAmount;
-                $total_service_price += $itemTotal;
-                                                    @endphp
-                                                    <tr>
-                                                        <td>{{ $itemIndex++ }}</td>
-                                                        <td>{{ $service->service_name }}</td>
-                                                        <td>£{{ number_format($price, 2) }}</td>
-                                                        <td>{{ $vatText }}</td>
-                                                        <td>{{ $quantity }}</td>
-                                                        <td>£{{ number_format($itemTotal, 2) }}</td>
-                                                        <td align="right"><strong>£{{ number_format($totalAmount, 2) }}</strong></td>
-                                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
+                        @foreach($WorkshopService as $service)
+                            @php
+                                $quantity = $service->service_quantity ?? 1;
+                                $vatRate = $service->tax_class_id == 9 ? 0.2 : 0;
+                                $vatText = $vatRate > 0 ? 'VAT 20%' : 'VAT 0%';
+                                $price = $service->service_price ?? 0;
+                                $itemTotal = $price * $quantity;
+                                $vatAmount = $itemTotal * $vatRate;
+                                $totalAmount = $itemTotal + $vatAmount;
+                                $total_Tax_Amount += $vatAmount;
+                                $total_service_price += $itemTotal;
+                            @endphp
+                            <tr>
+                                <td>{{ $itemIndex++ }}</td>
+                                <td>{{ $service->service_name }}</td>
+                                <td>£{{ number_format($price, 2) }}</td>
+                                <td>{{ $vatText }}</td>
+                                <td>{{ $quantity }}</td>
+                                <td>£{{ number_format($itemTotal, 2) }}</td>
+                                <td align="right"><strong>£{{ number_format($totalAmount, 2) }}</strong></td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             @endif
 
-              @if (!empty($WorkshopTyre) && isset($tyre))
-                        <div class="table-responsive">
-                            <table class="table border mb-0">
-                                <thead>
-                                    <tr>
-                                        <td><strong>Sub Total</strong></td>
-                                        @if($tyre->fitting_type === 'mobile_fitted')
-                                            <td><strong>CallOut Charge({{$tyre->shipping_postcode}})</strong></td>
-                                        @endif
+            @if (!empty($WorkshopTyre) && isset($tyre))
+                <div class="table-responsive">
+                    <table class="table border mb-0">
+                        <thead>
+                            <tr>
+                                <td><strong>Sub Total</strong></td>
+                                @if($tyre->fitting_type === 'mobile_fitted')
+                                    <td><strong>CallOut Charge({{$tyre->shipping_postcode}})</strong></td>
+                                @endif
 
-                                        <td><strong>VAT</strong></td>
-                                        <td><strong>Total</strong></td>
-                                        <td><strong>Discount{{ $workshop->formatted_discount }}</strong></td>
-                                        <td><strong>Amount Due</strong></td>
-                                        <td align="right"><strong>Amount Paid</strong></td>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        @php
-                                            $shippingVatRates = $tyre->shipping_tax_id == 9 ? 0.2 : 0;
-                                            $shippingVatRate = $tyre->shipping_price * $shippingVatRates;
-                                            $shippingVatPrice = $total_Tax_Amount + $shippingVatRate;
-                                            $shippingTotalPrice = $tyre->shipping_price + $shippingVatRate;
+                                <td><strong>VAT</strong></td>
+                                <td><strong>Total</strong></td>
+                                <td><strong>Discount{{ $workshop->formatted_discount }}</strong></td>
+                                <td><strong>Amount Due</strong></td>
+                                <td align="right"><strong>Amount Paid</strong></td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                @php
+                                    $shippingVatRates = $tyre->shipping_tax_id == 9 ? 0.2 : 0;
+                                    $garageVatRates = $tyre->garage_vat_class == 9 ? 0.2 : 0;
+                                    $shippingVatRate = $tyre->shipping_price * $shippingVatRates;
+                                    $garageFittingVat = $tyre->garage_fitting_charges * $garageVatRates;
+                                    $shippingVatPrice = $total_Tax_Amount + $shippingVatRate + $garageFittingVat;
+                                    $shippingTotalPrice = $tyre->shipping_price + $shippingVatRate + $garageFittingVat;
 
-                                            $subTotal = $total_product_price + $total_service_price;
-                                            $grandTotal = $subTotal + $total_Tax_Amount + $shippingTotalPrice;
-                                            //$balancePrice = $grandTotal - ($installmentPayment + $paid_price + $discount_price);
-                                        @endphp
-                                        <td>£{{ number_format($subTotal, 2) }}</td>
-                                        @if($tyre->fitting_type === 'mobile_fitted')
-                                            <td>£{{ number_format($tyre->shipping_price, 2) }}</td>
-                                        @endif
+                                    $subTotal = $total_product_price + $total_service_price;
+                                    $grandTotal = $subTotal + $total_Tax_Amount + $shippingTotalPrice;
+                                    //$balancePrice = $grandTotal - ($installmentPayment + $paid_price + $discount_price);
+                                @endphp
+                                <td>£{{ number_format($subTotal, 2) }}</td>
+                                @if(!empty($tyre) && in_array($tyre->fitting_type, ['mobile_fitted', 'mailorder']))
+                                    <td>£{{ number_format($tyre->shipping_price, 2) }}</td>
+                                @endif
+                                @if(!empty($tyre) && in_array($tyre->fitting_type, ['fully_fitted']))
+                                    <td>£{{ number_format($garageFittingCharges, 2) }}</td>
+                                @endif
 
-                                        <td>£{{ number_format($shippingVatPrice, 2) }}</td>
-                                        <td>£{{ number_format($workshop->grandTotal, 2) }}</td>
-                                        <td>£{{ number_format($workshop->discount_price, 2) }}</td>
-                                        <td><strong>£{{ number_format($workshop->balance_price, 2) }}</strong></td>
-                                        <td align="right"><strong>£{{ number_format($workshop->paid_price, 2) }}</strong></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                                <td>£{{ number_format($shippingVatPrice, 2) }}</td>
+                                <td>£{{ number_format($workshop->grandTotal, 2) }}</td>
+                                <td>£{{ number_format($workshop->discount_price, 2) }}</td>
+                                <td><strong>£{{ number_format($workshop->balance_price, 2) }}</strong></td>
+                                <td align="right"><strong>£{{ number_format($workshop->paid_price, 2) }}</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             @else
 
-                        <div class="table-responsive">
-                            <table class="table border mb-0">
-                                <thead>
-                                    <tr>
-                                        <td><strong>Sub Total</strong></td>
-                                        <td><strong>VAT</strong></td>
-                                        <td><strong>Total</strong></td>
-                                        <td><strong>Discount</strong></td>
-                                        <td><strong>Amount Due</strong></td>
-                                        <td align="right"><strong>Amount Paid</strong></td>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        @php
+                <div class="table-responsive">
+                    <table class="table border mb-0">
+                        <thead>
+                            <tr>
+                                <td><strong>Sub Total</strong></td>
+                                <td><strong>VAT</strong></td>
+                                <td><strong>Total</strong></td>
+                                <td><strong>Discount</strong></td>
+                                <td><strong>Amount Due</strong></td>
+                                <td align="right"><strong>Amount Paid</strong></td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                @php
 
 
-                                            $subTotal = $total_product_price + $total_service_price;
-                                            $grandTotal = $subTotal + $total_Tax_Amount;
-                                            $balancePrice = $grandTotal - ($installmentPayment + $paid_price + $discount_price);
-                                        @endphp
-                                        <td>£{{ number_format($subTotal, 2) }}</td>
-                                        <td>£{{ number_format($total_Tax_Amount, 2) }}</td>
-                                        <td>£{{ number_format($grandTotal, 2) }}</td>
-                                        <td>£{{ number_format($discount_price, 2) }}</td>
-                                        <td><strong>£{{ number_format($balancePrice, 2) }}</strong></td>
-                                        <td align="right"><strong>£{{ number_format($paid_price, 2) }}</strong></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                                    $subTotal = $total_product_price + $total_service_price;
+                                    $grandTotal = $subTotal + $total_Tax_Amount;
+                                    $balancePrice = $grandTotal - ($installmentPayment + $paid_price + $discount_price);
+                                @endphp
+                                <td>£{{ number_format($subTotal, 2) }}</td>
+                                <td>£{{ number_format($total_Tax_Amount, 2) }}</td>
+                                <td>£{{ number_format($grandTotal, 2) }}</td>
+                                <td>£{{ number_format($discount_price, 2) }}</td>
+                                <td><strong>£{{ number_format($balancePrice, 2) }}</strong></td>
+                                <td align="right"><strong>£{{ number_format($paid_price, 2) }}</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             @endif
 
         </main>
@@ -431,15 +475,6 @@ $itemIndex = 1;
 </body>
 <script src="{{ asset('bootstrap-4.1.3/dist/js/bootstrap.js') }}"></script>
 <style>
-    /*-----------------------------------------------------------------------------------
-=================================================
-  Table of Contents
-=================================================
-	- Basic
-	- Helpers Classes
-	- Layouts
-	- Extra
--------------------------------------------------------------------*/
     :root,
     [data-bs-theme="light"] {
         --bs-themecolor: #0071cc;
@@ -461,9 +496,6 @@ $itemIndex = 1;
         --bs-body-font-family: Poppins, sans-serif;
     }
 
-    /* =================================== */
-    /*  Basic Style 
-/* =================================== */
     body {
         background: #e7e9ed;
         font-size: 14px;
@@ -498,10 +530,6 @@ $itemIndex = 1;
         height: auto;
     }
 
-    /* =================================== */
-    /*  Helpers Classes
-/* =================================== */
-    /* Border Radius */
     .rounded-top-0 {
         border-top-left-radius: 0px !important;
         border-top-right-radius: 0px !important;

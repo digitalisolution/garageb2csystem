@@ -6,7 +6,9 @@ use App\Models\CarService;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Response;
+use App\Models\OrderTypes;
 use App\Http\Controllers\MailTyrePricingController;
 use App\Http\Controllers\MobileTyrePricingController;
 use Illuminate\Support\Facades\Session;
@@ -14,84 +16,92 @@ use App\Models\Booking;
 
 class CartController extends Controller
 {
-      protected $mailTyrePricingController;
-      protected $mobileTyrePricingController;
+    protected $mailTyrePricingController;
+    protected $mobileTyrePricingController;
 
     public function __construct(MailTyrePricingController $mailTyrePricingController, MobileTyrePricingController $mobileTyrePricingController)
     {
         $this->mailTyrePricingController = $mailTyrePricingController;
         $this->mobileTyrePricingController = $mobileTyrePricingController;
     }
-    public function show()
-    {
-        $cart = session('cart', []);
-        $cartItems = [];
-        $total = 0;
-        $totalQuantity = 0;
-        $events = Booking::all()->map(function ($booking) {
-            return [
-                'title' => $booking->title,
-                'start' => $booking->start ? $booking->start->format('Y-m-d\TH:i:s') : null,
-                'end' => $booking->end ? $booking->end->format('Y-m-d\TH:i:s') : null,
-            ];
-        })->filter(function ($event) {
-            return $event['start'] && $event['end'];
-        });
+    // public function show()
+    // {
+    //     $cart = session('cart', []);
+    //     $cartItems = [];
+    //     $total = 0;
+    //     $totalQuantity = 0;
+    //     $userOrdertype = session('user_ordertype');
+    //     $garageFittingCharge = Session::get('garageFittingCharge');
+    //     $calenderBook = OrderTypes::where('status', 1)->where('calender_book', 1)->get()
+    //         ->pluck('ordertype_name')
+    //         ->toArray();
+    //     $customer = Auth::guard('customer')->user();
+    //     $selectedCounty = $customer->shipping_address_county;
+    //     $selectedCountry = $customer->shipping_address_country;
+    //     $events = Booking::all()->map(function ($booking) {
+    //         return [
+    //             'title' => $booking->title,
+    //             'start' => $booking->start ? $booking->start->format('Y-m-d\TH:i:s') : null,
+    //             'end' => $booking->end ? $booking->end->format('Y-m-d\TH:i:s') : null,
+    //         ];
+    //     })->filter(function ($event) {
+    //         return $event['start'] && $event['end'];
+    //     });
 
-        if (empty($cart)) {
-            return redirect()->route('home');
-        }
+    //     if (empty($cart)) {
+    //         return redirect()->route('home');
+    //     }
 
-        foreach ($cart as $item) {
-            if (is_array($item) && isset($item['id'], $item['quantity'], $item['type'])) {
-                $product = null;
+    //     foreach ($cart as $item) {
+    //         if (is_array($item) && isset($item['id'], $item['quantity'], $item['type'])) {
+    //             $product = null;
 
-                if ($item['type'] === 'tyre') {
-                    $product = TyresProduct::where('product_id', $item['id'])->first();
-                } elseif ($item['type'] === 'service') {
-                    $product = CarService::find($item['id']);
-                }
+    //             if ($item['type'] === 'tyre') {
+    //                 $product = TyresProduct::where('product_id', $item['id'])->first();
+    //             } elseif ($item['type'] === 'service') {
+    //                 $product = CarService::find($item['id']);
+    //             }
 
-                if ($item['type'] === 'tyre') {
-                    $image = $product->tyre_image ?? 'sample-tyre.png';
-                } elseif ($item['type'] === 'service') {
-                    $image = $product->inner_image ?? 'no-img-service.jpg';
-                } else {
-                    $image = null; // fallback
-                }
+    //             if ($item['type'] === 'tyre') {
+    //                 $image = $product->tyre_image ?? 'sample-tyre.png';
+    //             } elseif ($item['type'] === 'service') {
+    //                 $image = $product->inner_image ?? 'no-img-service.jpg';
+    //             } else {
+    //                 $image = null; // fallback
+    //             }
 
-                if ($product) {
-                    $cartItem = [
-                        'id' => $product->id,
-                        'type' => $item['type'],
-                        'image' => $image,
-                        'tax_class_id' => $product->tax_class_id ?? '',
-                        'model' => $product->model ?? ($item['type'] === 'service' ? $product->name : ''),
-                        'price' => $item['price'] ?? 0,
-                        'fitting_type' => $item['fitting_type'] ?? null,
-                        'quantity' => $item['quantity'],
-                        'total' => $item['price'] * $item['quantity'],
-                    ];
+    //             if ($product) {
+    //                 $cartItem = [
+    //                     'id' => $product->id,
+    //                     'type' => $item['type'],
+    //                     'image' => $image,
+    //                     'tax_class_id' => $product->tax_class_id ?? '',
+    //                     'model' => $product->model ?? ($item['type'] === 'service' ? $product->name : ''),
+    //                     'price' => $item['price'] ?? 0,
+    //                     'fitting_type' => $item['fitting_type'] ?? null,
+    //                     'quantity' => $item['quantity'],
+    //                     'total' => $item['price'] * $item['quantity'],
+    //                 ];
 
-                    if ($item['type'] === 'tyre') {
-                        $cartItem['ean'] = $product->ean ?? '';
-                        $cartItem['sku'] = $product->sku ?? '';
-                        $cartItem['desc'] = $product->description ?? '';
-                    }
-                    $shippingData = session('postcode_data', []);
-                    $cartItems[] = $cartItem;
-                    $total += $item['price'] * $item['quantity'];
-                    $totalQuantity += $item['quantity'];
-                }
-            }
-        }
+    //                 if ($item['type'] === 'tyre') {
+    //                     $cartItem['ean'] = $product->ean ?? '';
+    //                     $cartItem['sku'] = $product->sku ?? '';
+    //                     $cartItem['desc'] = $product->description ?? '';
+    //                 }
+    //                 $shippingData = session('postcode_data', []);
+    //                 $cartItems[] = $cartItem;
+    //                 $total += $item['price'] * $item['quantity'];
+    //                 $totalQuantity += $item['quantity'];
+    //             }
+    //         }
+    //     }
 
-        Session::put('cartTotalPrice', $total);
-        return view('checkout', compact('cartItems', 'total', 'shippingData', 'totalQuantity', 'events'));
-    }
+    //     Session::put('cartTotalPrice', $total);
+    //     return view('checkout', compact('cartItems', 'total', 'garageFittingCharge', 'shippingData', 'userOrdertype', 'calenderBook', 'selectedCountry', 'selectedCounty', 'totalQuantity', 'events'));
+    // }
 
 
-  public function add(Request $request)
+    public function add(Request $request)
     {
         $itemId = $request->input('id');
         $fittingType = $request->input('fitting_type', null);
@@ -162,22 +172,22 @@ class CartController extends Controller
             ], 200);
         }
 
-    if (session('user_postcode') && $fittingType === 'mailorder') {
-        $user_postcode = new Request(['postcode' => session('user_postcode')]);
-        $response = $this->mailTyrePricingController->calculateMailShipping($user_postcode);
-        $shippingData = $response->getData(true);
-        if (isset($shippingData['success'])) {
-            session(['postcode_data' => $shippingData]);
+        if (session('user_postcode') && $fittingType === 'mailorder') {
+            $user_postcode = new Request(['postcode' => session('user_postcode')]);
+            $response = $this->mailTyrePricingController->calculateMailShipping($user_postcode);
+            $shippingData = $response->getData(true);
+            if (isset($shippingData['success'])) {
+                session(['postcode_data' => $shippingData]);
+            }
         }
-    }
-    if (session('user_postcode') && $fittingType === 'mobile_fitted') {
-        $user_postcode = new Request(['postcode' => session('user_postcode')]);
-        $response = $this->mobileTyrePricingController->calculateShipping($user_postcode);
-        $shippingData = $response->getData(true);
-        if (isset($shippingData['success'])) {
-            session(['postcode_data' => $shippingData]);
+        if (session('user_postcode') && $fittingType === 'mobile_fitted') {
+            $user_postcode = new Request(['postcode' => session('user_postcode')]);
+            $response = $this->mobileTyrePricingController->calculateShipping($user_postcode);
+            $shippingData = $response->getData(true);
+            if (isset($shippingData['success'])) {
+                session(['postcode_data' => $shippingData]);
+            }
         }
-    }
 
         // Add or update item in the cart
         if (isset($cart[$cartKey])) {
@@ -211,7 +221,7 @@ class CartController extends Controller
                 $cartItem['desc'] = $product->tyre_description ?? '';
                 $cartItem['tyre_weight'] = $product->tyre_weight ?? '10KG';
                 $cartItem['supplier'] = $product->tyre_supplier_name ?? '';
-            }elseif ($type === 'service') {
+            } elseif ($type === 'service') {
                 $cartItem['image'] = $product->inner_image ?? 'no-img-service.jpg';
             }
 
@@ -287,7 +297,7 @@ class CartController extends Controller
             'shippingVAT' => number_format($shippingVAT, 2),
         ]);
     }
-     public function clearCart(Request $request)
+    public function clearCart(Request $request)
     {
         Session::forget('cart');
         Session::forget('cartSubTotal');
@@ -307,6 +317,8 @@ class CartController extends Controller
     public function update(Request $request)
     {
         $cart = session('cart', []);
+        $garageFittingCharge = Session::get('garage_fitting_charge');
+        $garageVatClass = Session::get('garageVatClass');
         $productId = $request->id;
         $action = $request->action;
         $itemKey = null;
@@ -326,7 +338,7 @@ class CartController extends Controller
                 ], 404);
             }
 
-            $existingQuantity = $cart[$itemKey]['quantity']; 
+            $existingQuantity = $cart[$itemKey]['quantity'];
             $newQuantity = $existingQuantity;
 
             if ($action === 'increase') {
@@ -347,14 +359,22 @@ class CartController extends Controller
 
         $cartSubTotal = 0;
         $vatTotal = 0;
+        $grandTotal = 0;
         $shippingPricePerJob = 0;
         $shippingPricePerTyre = 0;
+        $garageFittingCharges = 0;
+        $garageFittingVAT = 0;
 
         $shippingData = session('postcode_data', []);
         $hasMobileFitting = false;
+        $hasMailorderFitting = false;
+        $hasGarageFittingCharge = false;
 
         foreach ($cart as $item) {
             $cartSubTotal += $item['price'] * $item['quantity'];
+            if ($garageFittingCharge) {
+                $garageFittingCharges = $garageFittingCharge * $item['quantity'];
+            }
             if ($item['tax_class_id'] == 9) {
                 $vatTotal += $item['price'] * $item['quantity'] * 0.2;
             }
@@ -371,16 +391,41 @@ class CartController extends Controller
                     $shippingPricePerTyre += $shippingPrice * $item['quantity'];
                 }
             }
+             if ($item['fitting_type'] === 'mailorder') {
+                        $hasMailorderFitting = true;
+                        $shippingType = $shippingData['ship_type'] ?? 'job';
+                        $shippingPrice = $shippingData['ship_price'] ?? 0;
+
+                        if ($shippingType === 'job') {
+                            $shippingPricePerJob = max($shippingPricePerJob, $shippingPrice);
+                        } elseif ($shippingType === 'tyre' && $item['type'] === 'tyre') {
+                            $shippingPricePerTyre += $shippingPrice * $item['quantity'];
+                        }
+            }
+            if ($item['fitting_type'] === 'fully_fitted') {
+                        $hasGarageFittingCharge = true;
+            }
         }
 
         $shippingVAT = 0;
         if ($hasMobileFitting && ($shippingData['includes_vat'] ?? 0) == 9) {
+            $totalShippingPrice = $shippingPricePerJob + $shippingPricePerTyre;
             $shippingVAT = ($shippingPricePerJob + $shippingPricePerTyre) * 0.2;
-            $vatTotal = $vatTotal + $shippingVAT;
+            $vatTotal += $shippingVAT;
+            $grandTotal += $totalShippingPrice;
         }
-
-        $grandTotal = $cartSubTotal + $vatTotal + $shippingPricePerJob + $shippingPricePerTyre;
-
+        if ($hasMailorderFitting && ($shippingData['includes_vat'] ?? 0) == 9) {
+            $totalShippingPrice = $shippingPricePerJob + $shippingPricePerTyre;
+            $shippingVAT = ($shippingPricePerJob + $shippingPricePerTyre) * 0.2;
+            $vatTotal += $shippingVAT;
+            $grandTotal += $totalShippingPrice;
+        }
+        if($hasGarageFittingCharge && $garageFittingCharges > 0 && $garageVatClass === 9 ){
+            $garageFittingVAT = $garageFittingCharges * 0.2;
+            $vatTotal += $garageFittingVAT;
+            $grandTotal += $garageFittingCharges;
+        }
+        $grandTotal += $cartSubTotal + $vatTotal;
         session([
             'cart' => $cart,
             'cartSubTotal' => $cartSubTotal,
@@ -389,6 +434,9 @@ class CartController extends Controller
             'shippingPricePerJob' => $shippingPricePerJob,
             'shippingPricePerTyre' => $shippingPricePerTyre,
             'shippingVAT' => $shippingVAT,
+            'garageFittingCharge' => $garageFittingCharges,
+            'garageFittingVAT'    => $garageFittingVAT,
+            'garageVatClass'      => $garageVatClass,
         ]);
         Session::save();
 
@@ -402,6 +450,8 @@ class CartController extends Controller
             'shippingPricePerJob' => number_format($shippingPricePerJob, 2),
             'shippingPricePerTyre' => number_format($shippingPricePerTyre, 2),
             'shippingVAT' => number_format($shippingVAT, 2),
+            'garageFittingCharges' => $garageFittingCharges,
+            'garageFittingVAT' => $garageFittingVAT,
         ]);
     }
     public function delete(Request $request)

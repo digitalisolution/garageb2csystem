@@ -23,6 +23,8 @@ class WorkshopTyre extends Model
         'shipping_postcode',
         'shipping_price',
         'shipping_tax_id',
+        'garage_fitting_charges',
+        'garage_vat_class',
         'tax_class_id',
         'product_sku',
         'quantity',

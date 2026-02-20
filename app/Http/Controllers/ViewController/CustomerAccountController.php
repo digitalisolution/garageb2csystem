@@ -14,6 +14,11 @@ use App\Models\VehicleDetail;
 use App\Models\WorkshopTyre;
 use App\Models\WorkshopService;
 use DB;
+use App\Rules\NoTestCustomer;
+use App\Mail\SendMailToCustomer;
+use App\Mail\OrderToGarage;
+use App\Models\GarageDetails;
+use Illuminate\Support\Facades\Mail;
 use App\Helpers\ActivityLogger;
 use App\Models\RegionCounty;
 use App\Http\Controllers\Controller;
@@ -138,7 +143,6 @@ class CustomerAccountController extends Controller
 
     return view('customer.orders', compact('workshops'));
 }
-
 
     public function viewOrder($id)
     {
@@ -286,16 +290,17 @@ class CustomerAccountController extends Controller
             ActivityLogger::log(
                 workshopId: $workshop->id,
                 action: 'Cancelled Workshop',
-                description: 'Cancelled Workshop, Invoice ID: ' . $workshop->id,
+                description: 'Cancelled Workshop ID: ' . $workshop->id,
                 changes: [
-                    'invoice_id' => $workshop->id,
-                    'invoice_status' => $workshop->status,
+                    'workshop_id' => $workshop->id,
+                    'workshop_status' => $workshop->status,
                     'balance amount' => $workshop->balance_price
                 ]
             );
 
             $request->session()->flash('message.level', 'success');
-            $request->session()->flash('message.content', 'Workshop and Invoice voided successfully!');
+            $request->session()->flash('message.content', 'Order Cancelled Successfully!');
+            $this->sendOrderConfirmationEmail($workshopId);
             return redirect()->back();
 
         } catch (\Exception $e) {
@@ -310,6 +315,53 @@ class CustomerAccountController extends Controller
             $request->session()->flash('message.level', 'danger');
             $request->session()->flash('message.content', 'An error occurred while voiding: ' . $e->getMessage());
             return redirect()->back();
+        }
+    }
+
+       protected function sendOrderConfirmationEmail($orderId)
+    {
+        $nameRule = new NoTestCustomer();
+        $emailRule = new NoTestCustomer();
+        
+        $workshop = Workshop::findOrFail($orderId);
+        $customer_name = $workshop->name . ' ' . $workshop->last_name;
+        $email = $workshop->email;
+        if (
+            !$nameRule->passes('customer_name', $customer_name) ||
+            !$emailRule->passes('email',  $email)
+        ) {
+            Log::info('Skipping email due to spam-like customer details.', [
+                'customer_name' => $customer_name,
+                'email' => $email,
+            ]);
+            return true;
+        }
+
+        try {
+            $customer = [
+                'customer_name' => $customer_name,
+                'email' => $email,
+            ];
+
+            $garage = GarageDetails::first();
+            $garageEmail = $garage?->email;
+
+            Mail::to($customer['email'])->send(new SendMailToCustomer($orderId, $customer, $garage));
+
+            $ownerEmail = 'info@digitalideasltd.co.uk';
+            Mail::to($ownerEmail)->send(new OrderToGarage($orderId, $customer, $garage));
+
+            if ($garageEmail) {
+                Mail::to($garageEmail)->send(new OrderToGarage($orderId, $customer, $garage));
+            } else {
+                Log::warning('Garage email not found.', ['email' => $garageEmail]);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Error during email submission.', [
+                'error_message' => $e->getMessage(),
+                'error_trace' => $e->getTraceAsString(),
+            ]);
         }
     }
 
@@ -422,7 +474,7 @@ class CustomerAccountController extends Controller
     public function invoices()
     {
         $customer = Auth::guard('customer')->user();
-        $invoices = $customer->invoices()->where('is_void', 0)->paginate(10);
+        $invoices = $customer->invoices()->where('is_void', 0)->orderBy('id', 'desc')->paginate(10);
         $unpaidCount = $customer->invoices()->where('status', 'Unpaid')->where('is_void', 0)->count();
         $paidCount = $customer->invoices()->where('status', 'Paid')->where('is_void', 0)->count();
         $overdueCount = $customer->invoices()->where('status', 'Overdue')->where('is_void', 0)->count();

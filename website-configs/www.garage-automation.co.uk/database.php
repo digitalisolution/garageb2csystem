@@ -42,7 +42,7 @@ return [
 
         'mysql' => [
             'driver' => 'mysql',
-            'host' => 'localhost',
+            'host' => '178.128.171.57',
             'port' => '3306',
             'database' => 'tyrelab_liveb2c',
             'username' => 'tyrelab_liveb2c',

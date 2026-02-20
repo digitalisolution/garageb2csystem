@@ -413,7 +413,7 @@ hr {
   margin-top: 1rem;
   margin-bottom: 1rem;
   border: 0;
-  border-top: 1px solid rgba(0, 0, 0, 0.1); }
+  border-top: 1px solid rgba(0, 0, 0, 0.4); }
 
 small,
 .small {
@@ -7176,10 +7176,7 @@ button {
     background: #e7357a; }
     .btn-dribbble:hover::before {
       background: #e51e6b; }
-.text-red{
-    color:red;
-    font-size:15px
-}
+
 .btn-google-plus {
   background: #d34836; }
   .btn-google-plus::before {
@@ -9469,10 +9466,22 @@ hr.transparent {
 .hidden{display:none;}
 .dashboard_bank{display:flex;gap:20px;}
 .dashboard_bank .card{width:25%;/*min-width:239px;*/}
-.bg-dash1{background:#1561ae;}
+.dashboard_bank .card:before{content:"";width:70px;height:70px;border-radius:50%;background:rgba(255, 255, 255, 0.2);position:absolute;left:-20px;top:-20px;}
+.dashboard_bank .card:after{content:"";width:70px;height:70px;border-radius:50%;background:rgba(255, 255, 255, 0.2);position:absolute;right:-20px;bottom:-20px;}
+.bg-dash1{background:#ffa200;border:0;overflow:hidden;}
+.bg-dash2{background:#19DAF1;border:0;overflow:hidden;}
+.bg-dash3{background:#13B662;border:0;overflow:hidden;}
+.bg-dash4{background:#6237FF;border:0;overflow:hidden;}
+/*.bg-dash1{background:#1561ae;}
 .bg-dash2{background:#0052cc;}
 .bg-dash3{background:#6554c0;}
-.bg-dash4{background:#6539a0;}
+.bg-dash4{background:#6539a0;}*/
+/*.bg-dash1{background:#232323;}
+.bg-dash2{background:#232323;}
+.bg-dash3{background:#232323;}
+.bg-dash4{background:#232323;}*/
+.bg-dash1 a, .bg-dash2 a, .bg-dash3 a, .bg-dash4 a{display:block;}
+.bg-dash1 a:hover, .bg-dash2 a:hover, .bg-dash3 a:hover, .bg-dash4 a:hover{text-decoration:none;}
 
 .shipping_charges_wrap{display:flex;gap:10px;margin:5px 0;flex-wrap:wrap;}
 .shipping_charges_wrap .item{width:135px;}
@@ -9480,7 +9489,8 @@ hr.transparent {
 
 table.dataTable thead th, table.dataTable thead td{padding:10px 10px !important;}
 
-.ownstock{background:green !important;color:#fff !important;padding:1px 10px;border-radius:10px;}
+.ownstock,.ownstockwheel{background:green !important;color:#fff !important;padding:1px 10px;border-radius:10px;}
+
 .bond{background:orange !important;color:#fff !important;padding:1px 10px;border-radius:10px;}
 .bits{background:blue !important;color:#fff !important;padding:1px 10px;border-radius:10px;}
 .trade_costprice{background:#bbffb7 !important;}
@@ -9569,36 +9579,72 @@ table.dataTable thead th, table.dataTable thead td{padding:10px 10px !important;
 .notification-item .mark-as-read-btn i{color:darkturquoise;}
 .notification-item .Unpaid, .notification-item .Paid, .notification-item .Partially{padding:2px 5px;}
 .alert{overflow-wrap: anywhere;}
-.grg_name_fitters{display: none;}
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 45px;
-  height: 24px;
+.fc-event .fc-event-time {display: none !important;}
+.fc-event .fc-event-main{text-wrap: auto;}
+#motHistoryAccordion .card-header:hover .card-header{background:#f8f8f8;}
+#motHistoryAccordion .card-header{border-bottom:0;border-top:1px solid #c2cfd6;border-radius:0 !important;}
+.accordion {
+  .card {
+    border: none;
+    margin-bottom: 20px;
+    h5 {
+      background: url(https://cdn0.iconfinder.com/data/icons/entypo/91/arrow56-512.png)
+        no-repeat calc(100% - 10px) center;
+      background-size: 20px;
+      cursor: pointer;
+      font-size: 18px;
+      &.collapsed {
+        background-image: url(https://cdn0.iconfinder.com/data/icons/arrows-android-l-lollipop-icon-pack/24/expand2-256.png);
+      }
+    }
+    &-body {
+      padding-left: 0;
+      padding-right: 0;
+    }
+  }
 }
+.mot-pass{fill:#1E9771;color:#1E9771;}
+.mot-fail{fill:#e6231f;color:#e6231f;}
+.mot-list {display: flex;flex-wrap: wrap;padding-left: 15px;gap:0 30px;}
+.motvehicle_information{box-shadow: 0 .15rem 1.75rem 0 rgba(58, 59, 69, .15);border-left: .35rem solid #157AE9 !important;position: relative;display: flex;flex-direction: column;min-width: 0;word-wrap: break-word;background-color: #fff;background-clip: border-box;border: 1px solid #157AE9;border-radius: .35rem;padding:25px;}
+.motvehicle_information .vehi_info{display:flex;gap:15px 30px;flex-wrap:wrap;}
+.motvehicle_information h5{color:#157AE9;}
+.motvehicle_information .vehi_info .item{width:130px;}
+.motvehicle_information .vehi_info .item span{display:block;font-weight:700;}
+
+.mot_status{min-height:180px;box-shadow: 0 .15rem 1.75rem 0 rgba(58, 59, 69, .15);border-left: .35rem solid #2c8 !important;position: relative;display: flex;flex-direction: column;min-width: 0;word-wrap: break-word;background-color: #fff;background-clip: border-box;border: 1px solid #2c8;border-radius: .35rem;padding:25px;}
+.mot_status .vehi_info{display:flex;gap:15px 40px;flex-wrap:wrap;}
+.mot_status h5{color:#2c8;}
+.mot_status .vehi_info .item{width:195px;}
+.mot_status .vehi_info .item span{display:block;font-weight:700;}
+
+.permissions_element{display:flex;gap:10px;flex-wrap:wrap;}
+.permissions_element .item{width:352px;background:#fff;padding:10px;border-radius:8px;}
+.form-check-input{width:1.3em;height:1.3em;}
+.permissions_widget{display:flex;gap:20px;flex-wrap:wrap;border-bottom:solid 1px rgba(0, 0, 0, 0.1);align-items:center;padding:7px 7px;border-radius:4px;}
+.permissions_widget .item{width:190px;}
+.permissions_widget:hover{background-color:rgba(0, 0, 0, 0.05);}
+.calendar_reg{background: linear-gradient(90deg, #111c43 12%, #ffaa16 12%);border: solid 1px #000000;padding: 0 5px;border-radius: 3px;padding-left: 13px;color: #000;font-weight: 700;}
+
+.switch {position: relative;display: inline-block;width: 45px;height: 24px;}
 .switch input { display:none; }
-.slider {
-  position: absolute;
-  cursor: pointer;
-  background-color: #ccc;
-  border-radius: 24px;
-  top: 0; left: 0; right: 0; bottom: 0;
-  transition: .4s;
-}
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 18px;
-  width: 18px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: .4s;
-  border-radius: 50%;
-}
-input:checked + .slider {
-  background-color: #28a745;
-}
-input:checked + .slider:before {
-  transform: translateX(21px);
-}
+.slider {position: absolute;cursor: pointer;background-color: #ccc;border-radius: 24px;top: 0; left: 0; right: 0; bottom: 0;transition: .4s;}
+.slider:before {position: absolute;content: "";height: 18px;width: 18px;left: 3px;bottom: 3px;background-color: white;transition: .4s;border-radius: 50%;}
+input:checked + .slider {background-color: #28a745;}
+input:checked + .slider:before {transform: translateX(21px);}
+.tox-statusbar__branding, .tox-promotion {display: none;}
+
+ /* The switch - the box around the slider */
+.switch {position: relative;display: inline-block;width: 50px;height: 24px;}
+/* Hide default HTML checkbox */
+.switch input {opacity: 0;width: 0;height: 0;}
+/* The slider */
+.slider {position: absolute;cursor: pointer;top: 0; left: 0;right: 0; bottom: 0;background-color: #ccc;transition: 0.4s;border-radius: 24px;}
+/* The circle inside the slider */
+.slider:before {position: absolute;content: "";height: 18px;width: 18px;left: 3px;bottom: 3px;background-color: white;transition: 0.4s;border-radius: 50%;}
+/* When checked */
+input:checked + .slider {background-color: #28a745; /* green */}
+input:checked + .slider:before {transform: translateX(26px);}
+/* Rounded slider */
+.slider.round {border-radius: 24px;}
+.slider.round:before {border-radius: 50%;}

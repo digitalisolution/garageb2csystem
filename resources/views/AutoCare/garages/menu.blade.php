@@ -4,6 +4,9 @@
         <li><a href="AutoCare/garages/details/{{ $garages->id }}"
                 class="{{ request()->routeIs('AutoCare.garages.details') ? 'active' : '' }}"><i
                     class="fa fa-user"></i>Profile</a></li>
+                    <li><a href="AutoCare/calendar/{{ $garages->id }}/edit"
+                class="{{ request()->routeIs('AutoCare.calendar') ? 'active' : '' }}"><i
+                    class="fa fa-calendar"></i> Calendar</a></li>
         <li><a href="AutoCare/garages/details/{{ $garages->id }}/orders"
                 class="{{ request()->routeIs('AutoCare.garages.orders') ? 'active' : '' }}"><i
                     class="fa fa-briefcase"></i>Orders</a></li>

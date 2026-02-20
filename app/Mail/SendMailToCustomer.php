@@ -70,24 +70,28 @@ class SendMailToCustomer extends Mailable
             Log::error('Workshop not found.', ['orderId' => $this->orderId]);
             throw new \Exception('Workshop not found.');
         }
-
-        // Combine workshop tyres and services into a single collection
         $workshopProducts = collect($this->workshopTyres)->merge($this->workshopServices);
-
-        // Prepare data for the email view
         $viewData = [
             'workshop' => $this->workshop,
-            'workshopProducts' => $workshopProducts, // Combined tyres and services
-            'bookings' => $this->bookings, // Include bookings in the view data
+            'workshopProducts' => $workshopProducts,
+            'bookings' => $this->bookings,
             'customer' => $this->customer,
         ];
 
-        // Log the view data
-        // Log::info('View data prepared for email.', $viewData);
+        $status = $this->workshop->status ?? 'pending';
+        $subject = match (strtolower($status)) {
+            'pending'     => 'Your Booking Request Has Been Pending',
+            'booked'   => 'Your Order Submitted Successfully',
+            'processing' => 'We’re Working on Your Order',
+            'completed'   => 'Your Order is Complete – Thank You!',
+            'cancelled'   => 'Your Booking Has Been Cancelled',
+            'failed'    => 'Update: Your Booking Request',
+            default       => 'Update Regarding Your Order #' . $this->orderId,
+        };
 
         // Return the email with the view and subject
         return $this->view('emails.order_submitted', $viewData)
-            ->subject("Order Submitted Successfully")
+            ->subject($subject)
             ->replyTo($this->garage->email , $this->garage->garage_name);
     }
 }

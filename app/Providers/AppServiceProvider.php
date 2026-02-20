@@ -9,7 +9,8 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\View;
 use App\Models\VrmVehicleDetail;
-use App\Models\GeneralSettings;
+use Illuminate\Support\Facades\Session;
+use App\Models\CalendarSetting;
 use Illuminate\Pagination\Paginator;
 use App\Models\GarageDetails;
 use App\Services\BondService;
@@ -54,6 +55,13 @@ class AppServiceProvider extends ServiceProvider
 
             $garage = GarageDetails::first();
             $view->with('garage', $garage);
+            $garageId = Session::get('selected_garage_id');
+            if (!$garageId) {
+                return redirect()->route('grages')
+                    ->with('error', 'Please select a garage first.');
+            }
+            $calendarSettings = CalendarSetting::where('garage_id', $garageId)->first();
+            $view->with('globalCalendarSettings', $calendarSettings);
         });
         View::composer('core.navbar', function ($view) {
             $service = app(BookingNotificationService::class);

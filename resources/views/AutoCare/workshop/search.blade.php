@@ -120,14 +120,14 @@
     ]) }}
                     </div>
 
-                    <div class="col-lg-3 col-md-6 col-12 form-group">
+                    <!-- <div class="col-lg-3 col-md-6 col-12 form-group">
                         <label for="payment_method">Payment Method:</label>
                         {{ Form::select('payment_method', ['pay_at_fitting_center' => 'Pay at Center', 'dojo' => 'dojo', 'global_payment' => 'Global Pay'], request('payment_method', old('payment_method')), [
         'id' => 'payment_method',
         'class' => 'form-control',
         'placeholder' => 'Select Payment Method'
     ]) }}
-                    </div>
+                    </div> -->
 
                     <div class="col-lg-3 col-md-6 col-12 form-group">
                         <label for="is_void">Void Invoices:</label>
@@ -228,7 +228,8 @@
                                      <th style="white-space: nowrap">Garage</th>
                                     <th style="white-space: nowrap">Mobile</th>
                                     <th style="white-space: nowrap">Reg. No</th>
-                                    <th style="white-space: nowrap">Pymt Method</th>
+                                    <!-- <th style="white-space: nowrap">Pymt Method</th> -->
+                                    <th style="white-space: nowrap">Fitting Type</th>
                                     <th style="white-space: nowrap">Amnt Due</th>
                                     <th style="white-space: nowrap">Total</th>
                                     <th style="white-space: nowrap">Payment</th>
@@ -900,7 +901,8 @@
                         d.origin = $('select[name="origin"]').val();
                         d.convert_to_invoice = $('select[name="convert_to_invoice"]').val();
                         d.status = $('select[name="status"]').val();
-                        d.payment_method = $('select[name="payment_method"]').val();
+                        // d.payment_method = $('select[name="payment_method"]').val();
+                        d.fitting_type = $('select[name="fitting_type"]').val();
                         d.is_void = $('select[name="is_void"]').val();
                         d.payment_status = $('select[name="payment_status"]').val();
                         d.vehicle_reg_number_for_search = $('input[name="vehicle_reg_number_for_search"]').val();
@@ -913,7 +915,8 @@
                     { data: 'garage_name', name: 'garages.garage_name' },
                     { data: 'mobile', name: 'workshops.mobile' },
                     { data: 'vehicle_reg', name: 'workshops.vehicle_reg_number' },
-                    { data: 'payment_method_formatted', name: 'workshops.payment_method' },
+                    // { data: 'payment_method_formatted', name: 'workshops.payment_method' },
+                    { data: 'fitting_type_formatted', name: 'workshops.fitting_type' },
                     { data: 'amount_due', name: 'workshops.balance_price' },
                     { data: 'grand_total', name: 'workshops.grandTotal' },
                     { data: 'payment_status_badge', name: null, orderable: true, searchable: true },

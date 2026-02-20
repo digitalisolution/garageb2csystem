@@ -5,11 +5,10 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import { DateTime } from 'luxon';
 import interactionPlugin from '@fullcalendar/interaction';
-import { Modal } from 'bootstrap'; // Import Bootstrap Modal
+import { Modal } from 'bootstrap';
 import tinymce from 'tinymce/tinymce';
-import 'tinymce/themes/silver'; // Required theme
+import 'tinymce/themes/silver';
 
-// Import plugins
 import 'tinymce/plugins/advlist';
 import 'tinymce/plugins/autolink';
 import 'tinymce/plugins/lists';
@@ -28,15 +27,11 @@ import 'tinymce/plugins/table';
 import 'tinymce/plugins/help';
 import 'tinymce/plugins/wordcount';
 
-// Initialize TinyMCE
 document.addEventListener('DOMContentLoaded', function () {
     tinymce.init({
-        base_url: '/js/tinymce', // Path to your local TinyMCE assets
+        base_url: '/js/tinymce',
         selector: '#email_body',
         license_key: 'gpl',
-        // setup: function (editor) {
-        //     console.log('TinyMCE initialized:', editor);
-        // },
         height: 400,
         menubar: true,
         plugins: [
@@ -62,12 +57,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 font-size: 12pt;
             }
         `,
-        valid_elements: '*[*]', // Allows all elements but ensures proper sanitization
-        valid_children: '+body[style]', // Ensures proper nesting of elements
+        valid_elements: '*[*]',
+        valid_children: '+body[style]',
     });
 });
-
-
 
 document.addEventListener('DOMContentLoaded', function () {
     const calendarEl = document.getElementById('calendar');
@@ -76,11 +69,12 @@ document.addEventListener('DOMContentLoaded', function () {
         fetchCalendarSettings()
             .then(data => {
                 const businessHours = formatBusinessHours(data.businessHours);
-                const { slotMinTime, slotMaxTime } = calculateSlotTimes(businessHours); // Calculate dynamic slot times
+                const { slotMinTime, slotMaxTime } = calculateSlotTimes(businessHours);
                 const blockedEvents = createBlockedEvents(data);
-                const slotDuration = data.duration || 30; // Default to 30 minutes if duration is not provided
-                // console.log(data);
-                initializeCalendar(calendarEl, businessHours, blockedEvents, slotMinTime, slotMaxTime, slotDuration);
+                const slotDuration = data.duration || 30;
+                const validRangeStart = data.businessHours[0].validRangeStart;
+                const validRangeEnd = data.businessHours[0].validRangeEnd;
+                initializeCalendar(calendarEl, businessHours, blockedEvents, slotMinTime, slotMaxTime, slotDuration, validRangeStart, validRangeEnd);
             })
             .catch(error => {
                 console.error('Error loading calendar settings:', error);
@@ -89,10 +83,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
-/**
- * Fetch calendar settings from the server.
- * @returns {Promise<Object>} Calendar settings data.
- */
 async function fetchCalendarSettings() {
     const response = await fetch('/calendar-settings');
     if (!response.ok) {
@@ -101,14 +91,9 @@ async function fetchCalendarSettings() {
     return response.json();
 }
 
-/**
- * Format business hours for FullCalendar.
- * @param {Array} businessHours - Business hours data.
- * @returns {Array} Formatted business hours.
- */
 function formatBusinessHours(businessHours) {
     return businessHours
-        .filter(hour => !hour.closed) // Exclude closed days
+        .filter(hour => !hour.closed)
         .map(hour => ({
             daysOfWeek: hour.daysOfWeek,
             startTime: hour.startTime,
@@ -116,39 +101,25 @@ function formatBusinessHours(businessHours) {
         }));
 }
 
-/**
- * Calculate the earliest start time and latest end time from business hours.
- * @param {Array} businessHours - Formatted business hours.
- * @returns {Object} Object containing `slotMinTime` and `slotMaxTime`.
- */
-
 function calculateSlotTimes(businessHours) {
-    let slotMinTime = '23:59'; // Initialize with the latest possible time
-    let slotMaxTime = '00:00'; // Initialize with the earliest possible time
+    let slotMinTime = '23:59';
+    let slotMaxTime = '00:00';
 
     businessHours.forEach(hour => {
         if (hour.startTime < slotMinTime) {
-            slotMinTime = hour.startTime; // Update to the earliest start time
+            slotMinTime = hour.startTime;
         }
         if (hour.endTime > slotMaxTime) {
-            slotMaxTime = hour.endTime; // Update to the latest end time
+            slotMaxTime = hour.endTime;
         }
     });
 
     return { slotMinTime, slotMaxTime };
 }
 
-/**
- * Create blocked events from the fetched data.
- * @param {Object} data - Calendar settings data.
- * @returns {Array} Array of blocked events.
- */
-
 function createBlockedEvents(data) {
     const blockedEvents = [];
-
-    // Convert blocked date times into events
-    if (data.blockedTimes && data.blockedTimes.days) {
+    if (data.blockedTimes && data.blockedTimes.days && data.blockedTimes.apply_on_dashboard === "1") {
         const daysMapping = {
             Sunday: 0,
             Monday: 1,
@@ -161,28 +132,28 @@ function createBlockedEvents(data) {
 
         data.blockedTimes.days.forEach((day, index) => {
             if (day === "all") {
-                // If "all", block the time for all days of the week
                 blockedEvents.push({
                     title: data.blockedTimes.block_title[index],
-                    daysOfWeek: [0, 1, 2, 3, 4, 5, 6], // All days
+                    daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
                     startTime: data.blockedTimes.from[index],
                     endTime: data.blockedTimes.to[index],
                     backgroundColor: 'red',
                     borderColor: 'red',
-                    display: 'background', // Ensure blocked times are displayed as background events
+                    display: 'background',
+                    extendedProps: { type: 'blocked' },
                 });
             } else {
-                // Block the time for a specific day
                 const dayNumber = daysMapping[day];
                 if (dayNumber !== undefined) {
                     blockedEvents.push({
                         title: data.blockedTimes.block_title[index],
-                        daysOfWeek: [dayNumber], // Convert day name to number
+                        daysOfWeek: [dayNumber],
                         startTime: data.blockedTimes.from[index],
                         endTime: data.blockedTimes.to[index],
                         backgroundColor: 'red',
                         borderColor: 'red',
-                        display: 'background', // Ensure blocked times are displayed as background events
+                        display: 'background',
+                        extendedProps: { type: 'blocked' },
                     });
                 } else {
                     console.error(`Invalid day name: ${day}`);
@@ -191,123 +162,266 @@ function createBlockedEvents(data) {
         });
     }
 
-    // Convert holidays into blocked events
-    if (data.holidays && data.holidays.holidayDate) {
-        data.holidays.holidayDate.forEach((date, index) => {
+    if (data.holidays && data.holidays.holidayDate && data.holidays.apply_on_dashboard === "1") {
+    data.holidays.holidayDate.forEach((date, index) => {
+        const nextDay = new Date(date);
+        nextDay.setDate(nextDay.getDate() + 1);
+
+        blockedEvents.push({
+            title: data.holidays.holiday_name[index],
+            start: date,
+            end: nextDay.toISOString().split('T')[0],
+            backgroundColor: '#ff0000',
+            borderColor: '#ff0000',
+            allDay: true,
+            display: 'background',
+            extendedProps: { type: 'blocked' },
+        });
+    });
+    }
+    
+    if (data.blockedSpecificDateTimes.date && data.holidays.apply_on_dashboard === "1") {
+        data.blockedSpecificDateTimes.date.forEach((date, index) => {
+            const title = data.blockedSpecificDateTimes.block_title[index] || 'Blocked';
+            const from = data.blockedSpecificDateTimes.from[index];
+            const to = data.blockedSpecificDateTimes.to[index];
+
+            if (date && from && to) {
+            const formatTo12Hour = (timeStr) => {
+                if (!timeStr) return '';
+                const [hourStr, minuteStr] = timeStr.split(':');
+                let hour = parseInt(hourStr, 10);
+                const minute = minuteStr.padStart(2, '0');
+                const ampm = hour >= 12 ? 'PM' : 'AM';
+                hour = hour % 12 || 12;
+                return `${hour}:${minute} ${ampm}`;
+            };
+            const formattedFrom = formatTo12Hour(from);
+            const formattedTo = formatTo12Hour(to);
+            const displayTitle = `${title} (${formattedFrom} - ${formattedTo})`;
+                blockedEvents.push({
+                    title: displayTitle,
+                    start: `${date}T${from}`,
+                    end: `${date}T${to}`,
+                    backgroundColor: 'rgba(255, 0, 0, 0.3)',
+                    borderColor: 'rgba(255, 0, 0, 0.4)',
+                    display: 'background',
+                    allDay: false,
+                });
+            }
+        });
+    }
+
+    if (data.fullyBookedSlots) {
+        data.fullyBookedSlots.forEach(slot => {
             blockedEvents.push({
-                title: data.holidays.holiday_name[index],
-                start: date,
-                end: date, // Holidays are all-day events
-                backgroundColor: '#ffcc00',
-                borderColor: '#ffcc00',
-                allDay: true, // Mark as all-day event
-                display: 'background', // Ensure holidays are displayed as background events
+                title: 'Fully Booked',
+                start: `${slot.date}T${slot.start}`,
+                end: `${slot.date}T${slot.end}`,
+                backgroundColor: 'rgb(127 255 7)',
+                borderColor: 'rgb(127 255 7)',
+                display: 'background',
             });
         });
     }
 
-    // console.log("Blocked Events:", blockedEvents); // Debugging: Log blocked events
+
     return blockedEvents;
 }
 
-/**
- * Check if the selected slot overlaps with any blocked events.
- * @param {Date} start - The start date and time of the selected slot.
- * @param {Date} end - The end date and time of the selected slot.
- * @param {Array} blockedEvents - Array of blocked events.
- * @returns {boolean} True if the slot is blocked, otherwise false.
- */
-function isSlotBlocked(start, end, blockedEvents) {
-    return blockedEvents.some(blockedEvent => {
-        let blockedStart, blockedEnd;
-
-        if (blockedEvent.startTime && blockedEvent.endTime) {
-            // For recurring blocked times (e.g., lunch breaks)
-            const today = new Date(start).toISOString().split('T')[0]; // Get today's date
-            blockedStart = new Date(`${today}T${blockedEvent.startTime}`);
-            blockedEnd = new Date(`${today}T${blockedEvent.endTime}`);
-
-            // Check if the blocked event applies to the selected day
-            if (blockedEvent.daysOfWeek) {
-                const selectedDay = start.getDay(); // Get the day of the week (0-6)
-                if (!blockedEvent.daysOfWeek.includes(selectedDay)) {
-                    return false; // Skip if the blocked event doesn't apply to the selected day
-                }
-            }
-        } else if (blockedEvent.start && blockedEvent.end) {
-            // For one-time blocked events (e.g., holidays)
-            blockedStart = new Date(blockedEvent.start);
-            blockedEnd = new Date(blockedEvent.end);
-
-            // Check if the selected slot overlaps with the holiday
-            if (blockedEvent.allDay) {
-                // For all-day events (holidays), check if the selected slot is on the same day
-                const selectedDate = start.toISOString().split('T')[0]; // Get the selected date
-                const holidayDate = blockedStart.toISOString().split('T')[0]; // Get the holiday date
-                if (selectedDate === holidayDate) {
-                    return true; // Block the entire day
-                }
-            } else {
-                // For non-all-day events, check for overlap
-                return (
-                    (start >= blockedStart && start < blockedEnd) || // Selected start time is within a blocked slot
-                    (end > blockedStart && end <= blockedEnd) || // Selected end time is within a blocked slot
-                    (start <= blockedStart && end >= blockedEnd) // Selected slot completely overlaps a blocked slot
-                );
-            }
-        } else {
-            return false; // Skip invalid blocked events
-        }
-
-        // console.log("Blocked Slot:", { blockedStart, blockedEnd }); // Debugging: Log blocked slot
-
-        return (
-            (start >= blockedStart && start < blockedEnd) || // Selected start time is within a blocked slot
-            (end > blockedStart && end <= blockedEnd) || // Selected end time is within a blocked slot
-            (start <= blockedStart && end >= blockedEnd) // Selected slot completely overlaps a blocked slot
-        );
-    });
+function timeStringToMinutes(t) {
+    if (!t) return null;
+    const parts = t.split(':').map(Number);
+    return parts[0] * 60 + (parts[1] || 0);
 }
 
-/**
- * Open the booking form modal and pre-fill the date and time.
- * @param {Date} start - The start date and time of the selected slot.
- * @param {Date} end - The end date and time of the selected slot.
- * @param {Array} blockedEvents - Array of blocked events.
- * @param {number} slotDuration
- */
+function isSlotBlocked(selectedStart, selectedEnd, blockedSlots, currentJobType = null, currentServiceType = null) {
+    const selectedDay = selectedStart.getDay();
+    const selectedStartMinutes = selectedStart.getHours() * 60 + selectedStart.getMinutes();
+    const selectedEndMinutes = selectedEnd.getHours() * 60 + selectedEnd.getMinutes();
+
+    for (let slot of blockedSlots) {
+        if (slot.job_type && currentJobType && slot.job_type !== currentJobType) continue;
+        if (slot.service_type && currentServiceType && slot.service_type !== currentServiceType) continue;
+        if (slot.extendedProps && slot.extendedProps.serviceType === 'mot' && currentServiceType !== 'mot') {
+            continue;
+        }
+        if (slot.display === 'background' && !slot.start && slot.daysOfWeek) {
+            const day = selectedStart.getDay();
+            if (slot.daysOfWeek.includes(day)) {
+                const blockStart = timeStringToMinutes(slot.startTime);
+                const blockEnd = timeStringToMinutes(slot.endTime);
+                const selStart = selectedStart.getHours() * 60 + selectedStart.getMinutes();
+                const selEnd = selectedEnd.getHours() * 60 + selectedEnd.getMinutes();
+                if (selStart < blockEnd && selEnd > blockStart) {
+                    return true;
+                }
+            }
+        }
+
+        // Handle all-day holiday blocks
+        if (slot.allDay && slot.start && !slot.end) {
+            const blockedDate = new Date(slot.start).toDateString();
+            if (selectedStart.toDateString() === blockedDate) {
+                return true;
+            }
+        }
+
+        // at top of isSlotBlocked loop
+       if (slot.start && slot.end) {
+            const blockedStart = new Date(slot.start);
+            const blockedEnd = new Date(slot.end);
+
+            if (isNaN(blockedStart) || isNaN(blockedEnd)) {
+                continue;
+            }
+
+            if (
+                (selectedStart >= blockedStart && selectedStart < blockedEnd) ||
+                (selectedEnd > blockedStart && selectedEnd <= blockedEnd) ||
+                (selectedStart <= blockedStart && selectedEnd >= blockedEnd)
+            ) {
+                return true;
+            }
+        }
+
+
+        if (Array.isArray(slot.daysOfWeek) && (slot.startTime || slot.start) && (slot.endTime || slot.end)) {
+            if (!slot.daysOfWeek.includes(selectedDay)) {
+                continue;
+            }
+
+            let blockStartMinutes = null;
+            let blockEndMinutes = null;
+
+            if (slot.startTime && slot.endTime) {
+                blockStartMinutes = timeStringToMinutes(slot.startTime);
+                blockEndMinutes = timeStringToMinutes(slot.endTime);
+            } else if (slot.start && slot.end) {
+                const s = new Date(slot.start);
+                const e = new Date(slot.end);
+                if (!isNaN(s) && !isNaN(e)) {
+                    blockStartMinutes = s.getHours() * 60 + s.getMinutes();
+                    blockEndMinutes = e.getHours() * 60 + e.getMinutes();
+                }
+            }
+
+            if (blockStartMinutes !== null && blockEndMinutes !== null) {
+                if (blockEndMinutes <= blockStartMinutes) {
+                    if (
+                        (selectedStartMinutes >= blockStartMinutes && selectedStartMinutes <= 24 * 60 - 1) ||
+                        (selectedEndMinutes >= 0 && selectedEndMinutes <= blockEndMinutes)
+                    ) {
+                        return true;
+                    }
+                } else {
+                    if (
+                        (selectedStartMinutes >= blockStartMinutes && selectedStartMinutes < blockEndMinutes) ||
+                        (selectedEndMinutes > blockStartMinutes && selectedEndMinutes <= blockEndMinutes) ||
+                        (selectedStartMinutes <= blockStartMinutes && selectedEndMinutes >= blockEndMinutes)
+                    ) {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+function getLondonDate() {
+    const londonTimeString = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Europe/London',
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: false,
+    }).format(new Date());
+    const [day, month, year, hours, minutes, seconds] = londonTimeString.match(/\d+/g);
+    return new Date(`${year}-${month}-${day}T${hours}:${minutes}:${seconds}`);
+}
+
+// Get current UK date
+const now = getLondonDate();
+const enddateuk = new Date(now);
+enddateuk.setDate(now.getDate() + 6);
+const formattedEnd = enddateuk.toLocaleDateString('en-GB');
+
+function calculateBlockedTimes(businessHours) {
+    const blockedTimes = [];
+
+    const earliestTime = '00:00';
+    const latestTime = '23:59';
+
+    for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
+        const dayHours = businessHours.find(hour => hour.daysOfWeek.includes(dayOfWeek));
+
+        if (dayHours) {
+            const { startTime, endTime } = dayHours;
+
+            if (startTime > earliestTime) {
+                blockedTimes.push({
+                    daysOfWeek: [dayOfWeek],
+                    startTime: earliestTime,
+                    endTime: startTime,
+                    backgroundColor: 'rgba(255, 0, 0, 0.2)',
+                    borderColor: 'rgba(255, 0, 0, 0.2)',
+                    display: 'background',
+                });
+            }
+
+            if (endTime < latestTime) {
+                blockedTimes.push({
+                    daysOfWeek: [dayOfWeek],
+                    startTime: endTime,
+                    endTime: latestTime,
+                    backgroundColor: 'rgba(255, 0, 0, 0.2)',
+                    borderColor: 'rgba(255, 0, 0, 0.2)',
+                    display: 'background',
+                });
+            }
+        } else {
+            blockedTimes.push({
+                daysOfWeek: [dayOfWeek],
+                startTime: earliestTime,
+                endTime: latestTime,
+                backgroundColor: 'rgba(255, 0, 0, 0.2)',
+                borderColor: 'rgba(255, 0, 0, 0.2)',
+                display: 'background',
+            });
+        }
+    }
+
+    return blockedTimes;
+}
+
 function openBookingForm(start, end, blockedEvents, slotDuration) {
-    // Check if the selected slot is blocked
-    if (isSlotBlocked(start, end, blockedEvents,slotDuration)) {
+    const now = getLondonDate();
+    if (start < now) {
+        alert('You cannot create a new booking for a past time.');
+        return;
+    }
+
+    if (isSlotBlocked(start, end, blockedEvents)) {
         alert('This slot is blocked and cannot be booked.');
-        return; // Exit the function if the slot is blocked
+        return;
     }
 
     const modal = new bootstrap.Modal(document.getElementById('bookingFormModal'));
-
-    // Convert the selected start time to local datetime format
     const startLocal = toLocalDateTimeString(start);
-
-    // Calculate the end time by adding the slot duration to the start time
-    const endTime = new Date(start.getTime() + slotDuration * 60000); // Convert slotDuration from minutes to milliseconds
+    const endTime = new Date(start.getTime() + slotDuration * 60000);
     const endLocal = toLocalDateTimeString(endTime);
-    // Set values for Due In and Due Out fields
+    console.log(start);
     document.getElementById('due_in').value = startLocal;
     document.getElementById('due_out').value = endLocal;
 
-    // Show the modal
     modal.show();
 }
 
 
-/**
- * Convert a Date object to a local date-time string compatible with datetime-local input.
- * @param {Date} date - The date to format.
- * @returns {string} The formatted date string in local time.
- */
 function toLocalDateTimeString(date) {
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+    const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
@@ -315,51 +429,93 @@ function toLocalDateTimeString(date) {
     return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
-/**
- * Initialize FullCalendar with the provided data.
- * @param {HTMLElement} calendarEl - The calendar container element.
- * @param {Array} businessHours - Formatted business hours.
- * @param {Array} blockedEvents - Array of blocked events.
- * @param {string} slotMinTime - Minimum time to display on the calendar.
- * @param {string} slotMaxTime - Maximum time to display on the calendar.
- * @param {number} slotDuration - Duration of each slot in minutes.
- */
-function initializeCalendar(calendarEl, businessHours, blockedEvents, slotMinTime, slotMaxTime, slotDuration) {
+function initializeCalendar(calendarEl, businessHours, blockedEvents, slotMinTime, slotMaxTime, slotDuration, validRangeStart, validRangeEnd) {
     const calendar = new Calendar(calendarEl, {
         plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
-        initialView: 'dayGridMonth', // Use timeGridWeek for better visibility of hours
-        timeZone: 'Europe/London',
+        initialView: 'dayGridMonth',
+        timeZone: 'local',
+        selectable: true,
+        selectMirror: true,
+        editable: false,
         headerToolbar: {
             left: 'prev,next today',
             center: 'title',
             right: 'dayGridMonth,timeGridWeek,timeGridDay',
         },
-        businessHours: businessHours, // Dynamic working hours
-        events: blockedEvents, // Blocked times and holidays
-        slotMinTime: slotMinTime, // Set the minimum time dynamically
-        slotMaxTime: slotMaxTime, // Set the maximum time dynamically
-        slotDuration: `00:${slotDuration}:00`, // Set slot duration dynamically
+        businessHours: businessHours,
+        events: [...calculateBlockedTimes(businessHours), ...blockedEvents, {
+            start: new Date(),
+            end: new Date(validRangeStart),
+            display: 'background',
+            backgroundColor: '#f8d7da',
+            overlap: false
+        }
+        ],
+        events: blockedEvents,
+        slotMinTime: slotMinTime,
+        slotMaxTime: slotMaxTime,
+        slotDuration: `00:${slotDuration}:00`,
+
         eventSources: [
             {
-                url: '/get-events', // Fetch bookings dynamically
+                url: '/get-events',
                 method: 'GET',
                 failure: () => {
                     alert('Error loading events');
                 },
             },
         ],
+
         eventClick: function (info) {
-            // Handle event click
+            if (info.event.display === 'background') {
+                info.jsEvent.preventDefault();
+                return false;
+            }
             showBookingDetails(info.event);
         },
-        dateClick: function (info) {
-            // Handle click on empty slots
-            openBookingForm(info.date, info.date, blockedEvents,slotDuration); // Pass blockedEvents
+
+        selectOverlap: function (event) {
+            return event.display !== 'background';
         },
-        selectable: true, // Enable selection of slots
+
+        selectAllow: function (selectInfo) {
+            const allEvents = calendar.getEvents();
+            return !isSlotBlocked(selectInfo.start, selectInfo.end, allEvents);
+        },
+        eventDidMount: function (info) {
+            if (info.event.display === 'background') return;
+
+            const eventType = info.event.extendedProps.type;
+            const titleEl = info.el.querySelector('.fc-event-title');
+
+            if (eventType !== 'blocked' || eventType !== 'holiday') {
+                if (titleEl) {
+                    titleEl.innerHTML = info.event.title;
+                }
+            }
+            if (eventType === 'blocked' || eventType === 'holiday') {
+                if (titleEl) {
+                    titleEl.innerHTML = `<i class="fa fa-ban text-danger"></i> ${info.event.title || ''}`;
+                }
+            }
+        },
+        dateClick: function (info) {
+            const allEvents = calendar.getEvents();
+            const end = new Date(info.date.getTime() + slotDuration * 60000);
+            if (isSlotBlocked(info.date, end, allEvents)) {
+                alert('This slot is blocked and cannot be booked.');
+                return;
+            }
+            openBookingForm(info.date, end, allEvents, slotDuration);
+        },
+
         select: function (info) {
-            // Handle selection of slots
-            openBookingForm(info.start, info.end, blockedEvents,slotDuration); // Pass blockedEvents
+            const allEvents = calendar.getEvents();
+            if (isSlotBlocked(info.start, info.end, allEvents)) {
+                alert('This slot is blocked and cannot be booked.');
+                return;
+            }
+            openBookingForm(info.start, info.end, allEvents, slotDuration);
         },
     });
 
@@ -367,18 +523,12 @@ function initializeCalendar(calendarEl, businessHours, blockedEvents, slotMinTim
 }
 
 
-/**
- * Show booking details in a modal.
- * @param {Object} event - The clicked event object.
- */
 function showBookingDetails(event) {
-    const bookingId = event.id; // Assuming the event has an ID
+    const bookingId = event.id;
     fetch(`/get-booking-details/${bookingId}`)
         .then(response => response.json())
         .then(data => {
-            // Populate the modal with the fetched data
             populateModal(data);
-            // Show the modal
             const modal = new bootstrap.Modal(document.getElementById('bookingDetailsModal'));
             modal.show();
         })
@@ -388,27 +538,16 @@ function showBookingDetails(event) {
         });
 }
 
-/**
- * Populate the modal with booking, workshop, and item details.
- * @param {Object} booking - Booking details.
- */
 function populateModal(bookingData) {
     const { booking, workshop, customer, vehicle } = bookingData;
 
-    // Dynamically generate Booking Information
     const bookingInfoContainer = document.getElementById("booking_info");
-    bookingInfoContainer.innerHTML = ''; // Clear previous content
+    bookingInfoContainer.innerHTML = '';
 
-    // Create a wrapper div for the booking information
-    const bookingInfoWrapper = document.createElement('div');
-    bookingInfoWrapper.className = "bg-white border rounded text-uppercase";
-
-    // Add the heading
     const heading = document.createElement('h6');
     heading.textContent = "Vehicle Information";
     bookingInfoContainer.appendChild(heading);
 
-    // New Table Structure for Vehicle Details
     const vehicleTable = document.createElement('div');
     vehicleTable.className = "table-responsive";
     vehicleTable.innerHTML = `
@@ -430,7 +569,7 @@ function populateModal(bookingData) {
             </thead>
             <tbody>
                 <tr>
-                    <td><span class="text-uppercase">${vehicle.vehicle_reg_number || 'N/A'}</span></td>
+                    <td><span class="calendar_reg text-uppercase">${vehicle.vehicle_reg_number || 'N/A'}</span></td>
                     <td>${vehicle.vehicle_make || 'N/A'}</td>
                     <td>${vehicle.vehicle_model || 'N/A'}</td>
                     <td>${vehicle.vehicle_year || 'N/A'}</td>
@@ -445,12 +584,8 @@ function populateModal(bookingData) {
             </tbody>
         </table>
     `;
-    bookingInfoWrapper.appendChild(vehicleTable);
+    bookingInfoContainer.appendChild(vehicleTable);
 
-    // Append the wrapper to the container
-    bookingInfoContainer.appendChild(bookingInfoWrapper);
-
-    // Populate Customer Details
     document.getElementById("customerName").textContent = customer.customer_name || 'N/A';
     document.getElementById("customerPhone").textContent = customer.customer_contact_number || 'N/A';
     document.getElementById("customerEmail").textContent = customer.customer_email || 'N/A';
@@ -459,12 +594,12 @@ function populateModal(bookingData) {
     const startTime = DateTime.fromISO(booking.start).setZone('Europe/London');
     const endTime = DateTime.fromISO(booking.end).setZone('Europe/London');
 
-    document.getElementById("bookingStartDate").textContent = startTime.toFormat('dd MMM yyyy');
+    document.getElementById("bookingGarageName").textContent = booking.garage_name || 'N/A';
+     document.getElementById("bookingStartDate").textContent = startTime.toFormat('dd MMM yyyy');
     document.getElementById("bookingEndDate").textContent = endTime.toFormat('dd MMM yyyy');
     document.getElementById("bookingStartTime").textContent = startTime.toFormat('hh:mm a');
     document.getElementById("bookingEndTime").textContent = endTime.toFormat('hh:mm a');
 
-    // Populate Workshop Information
     document.getElementById("jobid").textContent = 'JOB ID: ' + (workshop.id || 'N/A');
     document.getElementById("workshopName").textContent = workshop.name || 'N/A';
     document.getElementById("workshopDueIn").textContent = workshop.due_in || 'N/A';
@@ -473,7 +608,6 @@ function populateModal(bookingData) {
     document.getElementById("workshopPaymentMethod").textContent = workshop.payment_method || 'N/A';
     document.getElementById("workshopStatus").textContent = workshop.status || 'N/A';
 
-    // Populate Workshop Items and Services in Table
     const itemsTableBody = document.getElementById('workshopItems');
     itemsTableBody.innerHTML = '';
     let index = 1;
@@ -485,7 +619,6 @@ function populateModal(bookingData) {
     let hasMobileFitting = false;
     let shippingPostcode = null;
 
-    // Process Items First
     if (workshop.items && workshop.items.length > 0) {
         workshop.items.forEach((item, i) => {
             let quantity = item.quantity || 1;
@@ -504,18 +637,16 @@ function populateModal(bookingData) {
             subtotal += rate * quantity;
             totalVAT += vatAmount * quantity;
 
-            // Check for mobile fitting and store shipping details (only set once)
             if (item.fitting_type === 'mobile_fitted') {
                 hasMobileFitting = true;
                 shippingPostcode = item.shipping_postcode;
-                if (shippingPrice === 0) { // Only set if not already set
+                if (shippingPrice === 0) {
                     shippingPrice = parseFloat(item.shipping_price) || 0;
                     if (item.shipping_tax_id === 9) {
                         shippingVAT = shippingPrice * 0.2;
                     }
                 }
             }
-
             const row = `
                 <tr>
                     <td>${index++}</td>
@@ -534,7 +665,6 @@ function populateModal(bookingData) {
         });
     }
 
-    // Process Services Second
     if (workshop.services && workshop.services.length > 0) {
         workshop.services.forEach((service) => {
             let rate = parseFloat(service.service_price) || 0;
@@ -542,7 +672,6 @@ function populateModal(bookingData) {
             let vatAmount = (rate * vatPercentage) / 100;
             let total = rate + vatAmount;
 
-            // Add to totals
             subtotal += rate;
             totalVAT += vatAmount;
 
@@ -563,7 +692,6 @@ function populateModal(bookingData) {
         });
     }
 
-    // Add Mobile Fitting Callout Charge at the END (only once)
     if (hasMobileFitting && shippingPrice > 0) {
         const shippingTotal = shippingPrice + shippingVAT;
 
@@ -579,19 +707,16 @@ function populateModal(bookingData) {
                 <td class="text-right">20%</td>
                 <td class="text-right">£${shippingTotal.toFixed(2)}</td>
             </tr>`;
-        
+
         itemsTableBody.innerHTML += calloutRow;
-        // subtotal += shippingPrice;
         totalVAT += shippingVAT;
     }
 
-    // Calculate correct grand total
     const grandTotal = subtotal + totalVAT + shippingPrice;
 
-    // Handle callout charges display in summary
     const shippingChargesElement = document.getElementById("calloutcharge");
     const shippingChargestrElement = document.getElementById("calloutchargetr");
-    
+
     if (hasMobileFitting && shippingPrice > 0) {
         shippingChargesElement.textContent = `Callout Charges: £${shippingPrice.toFixed(2)}`;
         shippingChargesElement.style.display = "block";
@@ -606,12 +731,10 @@ function populateModal(bookingData) {
         }
     }
 
-    // Update summary totals
     document.getElementById("subtotal").textContent = 'Sub-Total: £' + subtotal.toFixed(2);
     document.getElementById("totalvat").textContent = 'VAT (20%): £' + totalVAT.toFixed(2);
     document.getElementById("grandtotal").textContent = 'Grand Total: £' + grandTotal.toFixed(2);
 
-    // Handle empty table
     if (itemsTableBody.innerHTML === '') {
         itemsTableBody.innerHTML = `
             <tr>
@@ -624,11 +747,6 @@ function populateModal(bookingData) {
         document.getElementById("editBookingBtn").href = `/AutoCare/workshop/add/${workshop.id}`;
     }
 
-    // Show the modal
     const modal = new bootstrap.Modal(document.getElementById('bookingDetailsModal'));
     modal.show();
 }
-
-
-
-

@@ -34,10 +34,8 @@ class GarageViewController extends Controller
             return redirect()->route('home');
         }
 
-        // Load garages based on order type and distance
         $garagesQuery = Garage::where('garage_status', 1);
         
-        // Filter by order type if available
         if ($user_ordertype) {
             $garagesQuery->where(function ($query) use ($user_ordertype) {
                 $query->where('garage_order_types', 'LIKE', '%' . $user_ordertype . '%')
@@ -46,8 +44,6 @@ class GarageViewController extends Controller
         }
 
         $garages = $garagesQuery->get();
-
-        // Calculate distances if postcode is available
         if ($user_postcode) {
             $origin = $user_postcode;
             $garages = $garages->map(function ($garage) use ($origin) {
@@ -247,10 +243,18 @@ class GarageViewController extends Controller
     }
     
     public function bookNow($id)
-    {
-        $garage = Garage::where('id', $id)->where('garage_status', 1)->firstOrFail();
-        Session::put('selected_garage_id', $garage->id);
-        Session::put('selected_garage_name', $garage->garage_name);
-        return redirect()->route('checkout');
-    }
+{
+    $garage = Garage::where('id', $id)
+        ->where('garage_status', 1)
+        ->firstOrFail();
+    Session::put('selected_garage_id', $garage->id);
+    Session::put('selected_garage_name', $garage->garage_name);
+    Session::put('garage_fitting_charge', $garage->garage_fitting_charges ?? 0);    
+    Session::put('garage_fitting_vat_class', $garage->garage_fitting_vat_class ?? 0);
+
+    app(\App\Services\CartTotalService::class)->recalculate();
+
+    return redirect()->route('checkout');
+}
+
 }

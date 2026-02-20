@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,15 +15,21 @@ class CalendarSetting extends Model
 
     public $timestamps = false;
     protected $casts = [
-        'open_close_hours' => 'array', // Will automatically cast serialized JSON data to array
+        'open_close_hours' => 'array',
         'block_fitting_type_days' => 'array',
         'block_service_hours_date' => 'array',
+        'block_fitting_type_datetime' => 'array',
+        'block_service_datetime' => 'array',
     ];
 
     protected $fillable = [
         'calendar_name',
         'open_close_hours',
+        'garage_id',
+        'am_pm_break_point',
         'block_date_time',
+        'block_specific_datetime',
+        'ramps_block_day_time',
         'default',
         'duration',
         'calendar_type',
@@ -34,23 +41,41 @@ class CalendarSetting extends Model
         'block_service_perhours',
         'block_fitting_type_days',
         'block_service_hours_date',
+        'block_fitting_type_datetime',
+        'block_service_datetime',
     ];
     public function getBlockDateTimeAttribute($value)
     {
         return $value ? unserialize($value) : [];
     }
 
-    // Automatically serialize block_date_time when saving
     public function setBlockDateTimeAttribute($value)
     {
         $this->attributes['block_date_time'] = $value ? serialize($value) : null;
     }
+
+    public function getBlockSpecificDateTimeAttribute($value)
+    {
+        return $value ? unserialize($value) : [];
+    }
+    public function setBlockSpecificDateTimeAttribute($value)
+    {
+        $this->attributes['block_specific_datetime'] = $value ? serialize($value) : null;
+    }
+    public function getRampsBlockDayTimeAttribute($value)
+    {
+        return $value ? unserialize($value) : [];
+    }
+    public function setRampsBlockDayTimeAttribute($value)
+    {
+        $this->attributes['ramps_block_day_time'] = $value ? serialize($value) : null;
+    }
+
     public function getHolidaysAttribute($value)
     {
         return !empty($value) ? unserialize($value) : [];
     }
 
-    // Automatically serialize 'holidays' before saving
     public function setHolidaysAttribute($value)
     {
         $this->attributes['holidays'] = !empty($value) ? serialize($value) : null;
@@ -61,21 +86,24 @@ class CalendarSetting extends Model
         return !empty($value) ? unserialize($value) : [];
     }
 
-    // Serialize 'block_service_perdays' before saving
     public function setBlockServicePerdaysAttribute($value)
     {
         $this->attributes['block_service_perdays'] = !empty($value) ? serialize($value) : null;
     }
 
-    // Unserialize 'block_service_perhours' when retrieving
     public function getBlockServicePerhoursAttribute($value)
     {
         return !empty($value) ? unserialize($value) : [];
     }
 
-    // Serialize 'block_service_perhours' before saving
     public function setBlockServicePerhoursAttribute($value)
     {
         $this->attributes['block_service_perhours'] = !empty($value) ? serialize($value) : null;
     }
+
+    public function garage()
+    {
+        return $this->belongsTo(Garage::class, 'garage_id');
+    }
+
 }

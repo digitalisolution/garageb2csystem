@@ -5,7 +5,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { DateTime } from 'luxon';
-import { Modal } from 'bootstrap'; // Import Bootstrap Modal
+import { Modal } from 'bootstrap';
 
 document.addEventListener('DOMContentLoaded', function () {
     const calendarEl = document.getElementById('calendar');
@@ -14,13 +14,12 @@ document.addEventListener('DOMContentLoaded', function () {
         fetchCalendarSettings()
             .then(data => {
                 const businessHours = formatBusinessHours(data.businessHours);
-                const { slotMinTime, slotMaxTime } = calculateSlotTimes(businessHours); // Calculate dynamic slot times
+                const { slotMinTime, slotMaxTime } = calculateSlotTimes(businessHours);
                 const blockedEvents = createBlockedEvents(data);
-                const slotDuration = data.duration || 30; // Default to 30 minutes if duration is not provided
+                const slotDuration = data.duration || 30;
                 const validRangeStart = data.businessHours[0].validRangeStart;
                 const validRangeEnd = data.businessHours[0].validRangeEnd;
-                // console.log(data);
-                initializeCalendar(calendarEl, businessHours, blockedEvents, slotMinTime, slotMaxTime, slotDuration,validRangeStart,validRangeEnd);
+                initializeCalendar(calendarEl, businessHours, blockedEvents, slotMinTime, slotMaxTime, slotDuration, validRangeStart, validRangeEnd);
             })
             .catch(error => {
                 console.error('Error loading calendar settings:', error);
@@ -31,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 /**
  * Fetch calendar settings from the server.
- * @returns {Promise<Object>} Calendar settings data.
+ * @returns {Promise<Object>}
  */
 async function fetchCalendarSettings() {
     const response = await fetch('/calendar-website-settings');
@@ -43,12 +42,12 @@ async function fetchCalendarSettings() {
 
 /**
  * Format business hours for FullCalendar.
- * @param {Array} businessHours - Business hours data.
- * @returns {Array} Formatted business hours.
+ * @param {Array} businessHours
+ * @returns {Array}
  */
 function formatBusinessHours(businessHours) {
     return businessHours
-        .filter(hour => !hour.closed) // Exclude closed days
+        .filter(hour => !hour.closed)
         .map(hour => ({
             daysOfWeek: hour.daysOfWeek,
             startTime: hour.startTime,
@@ -63,15 +62,15 @@ function formatBusinessHours(businessHours) {
  */
 
 function calculateSlotTimes(businessHours) {
-    let slotMinTime = '23:59'; // Initialize with the latest possible time
-    let slotMaxTime = '00:00'; // Initialize with the earliest possible time
+    let slotMinTime = '23:59';
+    let slotMaxTime = '00:00';
 
     businessHours.forEach(hour => {
         if (hour.startTime < slotMinTime) {
-            slotMinTime = hour.startTime; // Update to the earliest start time
+            slotMinTime = hour.startTime;
         }
         if (hour.endTime > slotMaxTime) {
-            slotMaxTime = hour.endTime; // Update to the latest end time
+            slotMaxTime = hour.endTime;
         }
     });
 
@@ -87,7 +86,6 @@ function calculateSlotTimes(businessHours) {
 function createBlockedEvents(data) {
     const blockedEvents = [];
 
-    // Convert blocked date times into events
     if (data.blockedTimes && data.blockedTimes.days) {
         const daysMapping = {
             Sunday: 0,
@@ -101,28 +99,26 @@ function createBlockedEvents(data) {
 
         data.blockedTimes.days.forEach((day, index) => {
             if (day === "all") {
-                // If "all", block the time for all days of the week
                 blockedEvents.push({
                     title: data.blockedTimes.block_title[index],
-                    daysOfWeek: [0, 1, 2, 3, 4, 5, 6], // All days
+                    daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
                     startTime: data.blockedTimes.from[index],
                     endTime: data.blockedTimes.to[index],
                     backgroundColor: 'red',
                     borderColor: 'red',
-                    display: 'background', // Ensure blocked times are displayed as background events
+                    display: 'background',
                 });
             } else {
-                // Block the time for a specific day
                 const dayNumber = daysMapping[day];
                 if (dayNumber !== undefined) {
                     blockedEvents.push({
                         title: data.blockedTimes.block_title[index],
-                        daysOfWeek: [dayNumber], // Convert day name to number
+                        daysOfWeek: [dayNumber],
                         startTime: data.blockedTimes.from[index],
                         endTime: data.blockedTimes.to[index],
                         backgroundColor: 'red',
                         borderColor: 'red',
-                        display: 'background', // Ensure blocked times are displayed as background events
+                        display: 'background',
                     });
                 } else {
                     console.error(`Invalid day name: ${day}`);
@@ -131,23 +127,52 @@ function createBlockedEvents(data) {
         });
     }
 
-    // Convert holidays into blocked events
+    if (data.blockedSpecificDateTimes.date) {
+        data.blockedSpecificDateTimes.date.forEach((date, index) => {
+            const title = data.blockedSpecificDateTimes.block_title[index] || 'Blocked';
+            const from = data.blockedSpecificDateTimes.from[index];
+            const to = data.blockedSpecificDateTimes.to[index];
+
+            if (date && from && to) {
+                const formatTo12Hour = (timeStr) => {
+                if (!timeStr) return '';
+                const [hourStr, minuteStr] = timeStr.split(':');
+                let hour = parseInt(hourStr, 10);
+                const minute = minuteStr.padStart(2, '0');
+                const ampm = hour >= 12 ? 'PM' : 'AM';
+                hour = hour % 12 || 12;
+                return `${hour}:${minute} ${ampm}`;
+            };
+            const formattedFrom = formatTo12Hour(from);
+            const formattedTo = formatTo12Hour(to);
+            const displayTitle = `${title} (${formattedFrom} - ${formattedTo})`;
+                blockedEvents.push({
+                    title: displayTitle,
+                    start: `${date}T${from}`,
+                    end: `${date}T${to}`,
+                    backgroundColor: 'rgba(255, 0, 0, 0.3)',
+                    borderColor: 'rgba(255, 0, 0, 0.4)',
+                    display: 'background',
+                    allDay: false,
+                });
+            }
+        });
+    }
+
     if (data.holidays && data.holidays.holidayDate) {
         data.holidays.holidayDate.forEach((date, index) => {
             blockedEvents.push({
                 title: data.holidays.holiday_name[index],
                 start: date,
-                end: date, // Holidays are all-day events
+                end: date,
                 backgroundColor: '#ffcc00',
                 borderColor: '#ffcc00',
-                allDay: true, // Mark as all-day event
-                display: 'background', // Ensure holidays are displayed as background events
+                allDay: true,
+                display: 'background',
             });
         });
     }
 
-    
-    // Convert blockFittingTypeDays into blocked events
     if (data.blockFittingTypeDays) {
         const daysMapping = {
             Sunday: 0,
@@ -167,7 +192,6 @@ function createBlockedEvents(data) {
             const title = block.block_title;
 
             if (day === 'all') {
-                // Block for all days of the week
                 blockedEvents.push({
                     title: title,
                     daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
@@ -196,7 +220,32 @@ function createBlockedEvents(data) {
         });
     }
 
-    // Handle blockServicePerhours
+    if (data.blockFittingTypeDateTime && Array.isArray(data.blockFittingTypeDateTime)) {
+        data.blockFittingTypeDateTime.forEach(block => {
+            if (!block.date || !block.from || !block.to) {
+                console.warn('Invalid blockFittingTypeDateTime entry:', block);
+                return;
+            }
+            const startTime = block.from;
+            const endTime = block.to;
+            const jobType = block.jobtype || null;
+            const title = block.block_title || "Job Blocked";
+
+            blockedEvents.push({
+                title: `${title}`,
+                start: `${block.date}T${startTime}`,
+                end: `${block.date}T${endTime}`,
+                backgroundColor: "rgba(255, 0, 0, 0.3)",
+                borderColor: "rgba(255, 0, 0, 0.4)",
+                display: "background",
+                extendedProps: {
+                    type: "job",
+                    jobType: jobType,
+                },
+            });
+        });
+    }
+
     if (data.blockServicePerhours) {
         const daysMapping = {
             Sunday: 0,
@@ -225,6 +274,26 @@ function createBlockedEvents(data) {
         });
     }
 
+    if (data.blockServiceDateTime && Array.isArray(data.blockServiceDateTime)) {
+        data.blockServiceDateTime.forEach(block => {
+            if (!block.date || !block.from || !block.to) {
+                console.log('Invalid blockServiceDateTime entry:', block);
+                return;
+            }
+            blockedEvents.push({
+                title: block.block_title || 'Blocked',
+                start: `${block.date}T${block.from}`,
+                end: `${block.date}T${block.to}`,
+                backgroundColor: 'rgba(255, 0, 0, 0.3)',
+                borderColor: 'rgba(255, 0, 0, 0.3)',
+                display: 'background',
+                allDay: false,
+                service_type: block.service_type || null,
+                job_type: block.job_type || null,
+            });
+        });
+    }
+
     if (data.fullyBookedSlots) {
         data.fullyBookedSlots.forEach(slot => {
             blockedEvents.push({
@@ -237,11 +306,31 @@ function createBlockedEvents(data) {
             });
         });
     }
+    if (data.motBookedSlots) {
+        data.motBookedSlots.forEach(slot => {
+            blockedEvents.push({
+                title: 'MOT Fully Booked',
+                start: `${slot.date}T${slot.start}`,
+                end: `${slot.date}T${slot.end}`,
+                backgroundColor: 'rgba(241, 183, 101, 0.92)',
+                borderColor: 'rgba(255, 136, 0, 0.6)',
+                display: 'background',
+                extendedProps: {
+                    serviceType: 'mot'
+                }
+            });
+        });
+    }
 
-    // console.log("Blocked Events:", blockedEvents); // Debugging: Log blocked events
     return blockedEvents;
 }
 
+
+function timeStringToMinutes(t) {
+    if (!t) return null;
+    const parts = t.split(':').map(Number);
+    return parts[0] * 60 + (parts[1] || 0);
+}
 /**
  * Check if the selected slot overlaps with any blocked events.
  * @param {Date} start - The start date and time of the selected slot.
@@ -249,37 +338,86 @@ function createBlockedEvents(data) {
  * @param {Array} blockedEvents - Array of blocked events.
  * @returns {boolean} True if the slot is blocked, otherwise false.
  */
-function isSlotBlocked(selectedStart, selectedEnd, blockedSlots, currentJobType) {
+
+function isSlotBlocked(selectedStart, selectedEnd, blockedSlots, currentJobType = null, currentServiceType = null) {
+    const selectedDay = selectedStart.getDay();
+    const selectedStartMinutes = selectedStart.getHours() * 60 + selectedStart.getMinutes();
+    const selectedEndMinutes = selectedEnd.getHours() * 60 + selectedEnd.getMinutes();
     for (let slot of blockedSlots) {
-        if (slot.job_type && slot.job_type !== currentJobType) {
+        if (slot.job_type && currentJobType && slot.job_type !== currentJobType) continue;
+        if (slot.service_type && currentServiceType && slot.service_type !== currentServiceType) continue;
+        if (slot.extendedProps && slot.extendedProps.serviceType === 'mot' && currentServiceType !== 'mot') {
             continue;
         }
 
-        const blockedStart = new Date(slot.start);
-        const blockedEnd = new Date(slot.end);
+        if (slot.start && slot.end) {
+            const blockedStart = new Date(slot.start);
+            const blockedEnd = new Date(slot.end);
 
-        if (
-            (selectedStart >= blockedStart && selectedStart < blockedEnd) ||
-            (selectedEnd > blockedStart && selectedEnd <= blockedEnd) ||
-            (selectedStart <= blockedStart && selectedEnd >= blockedEnd) // full overlap
-        ) {
-            return true;
+            if (isNaN(blockedStart) || isNaN(blockedEnd)) {
+                continue;
+            }
+
+            if (
+                (selectedStart >= blockedStart && selectedStart < blockedEnd) ||
+                (selectedEnd > blockedStart && selectedEnd <= blockedEnd) ||
+                (selectedStart <= blockedStart && selectedEnd >= blockedEnd)
+            ) {
+                return true;
+            }
+        }
+
+        if (Array.isArray(slot.daysOfWeek) && (slot.startTime || slot.start) && (slot.endTime || slot.end)) {
+            if (!slot.daysOfWeek.includes(selectedDay)) {
+                continue;
+            }
+
+            let blockStartMinutes = null;
+            let blockEndMinutes = null;
+
+            if (slot.startTime && slot.endTime) {
+                blockStartMinutes = timeStringToMinutes(slot.startTime);
+                blockEndMinutes = timeStringToMinutes(slot.endTime);
+            } else if (slot.start && slot.end) {
+                const s = new Date(slot.start);
+                const e = new Date(slot.end);
+                if (!isNaN(s) && !isNaN(e)) {
+                    blockStartMinutes = s.getHours() * 60 + s.getMinutes();
+                    blockEndMinutes = e.getHours() * 60 + e.getMinutes();
+                }
+            }
+
+            if (blockStartMinutes !== null && blockEndMinutes !== null) {
+                if (blockEndMinutes <= blockStartMinutes) {
+                    if (
+                        (selectedStartMinutes >= blockStartMinutes && selectedStartMinutes <= 24 * 60 - 1) ||
+                        (selectedEndMinutes >= 0 && selectedEndMinutes <= blockEndMinutes)
+                    ) {
+                        return true;
+                    }
+                } else {
+                    if (
+                        (selectedStartMinutes >= blockStartMinutes && selectedStartMinutes < blockEndMinutes) ||
+                        (selectedEndMinutes > blockStartMinutes && selectedEndMinutes <= blockEndMinutes) ||
+                        (selectedStartMinutes <= blockStartMinutes && selectedEndMinutes >= blockEndMinutes)
+                    ) {
+                        return true;
+                    }
+                }
+            }
         }
     }
+
     return false;
 }
-
-
 
 function getLondonDate() {
     const londonTimeString = new Intl.DateTimeFormat('en-GB', {
         timeZone: 'Europe/London',
         year: 'numeric', month: '2-digit', day: '2-digit',
         hour: '2-digit', minute: '2-digit', second: '2-digit',
-        hour12: false, // 24-hour format
+        hour12: false,
     }).format(new Date());
-
-    // Extract components and construct Date object
     const [day, month, year, hours, minutes, seconds] = londonTimeString.match(/\d+/g);
     return new Date(`${year}-${month}-${day}T${hours}:${minutes}:${seconds}`);
 }
@@ -316,7 +454,7 @@ function calculateBlockedTimes(businessHours) {
                     daysOfWeek: [dayOfWeek],
                     startTime: earliestTime,
                     endTime: startTime,
-                    backgroundColor: 'rgba(255, 0, 0, 0.2)', // Light red for blocked times
+                    backgroundColor: 'rgba(255, 0, 0, 0.2)',
                     borderColor: 'rgba(255, 0, 0, 0.2)',
                     display: 'background',
                 });
@@ -328,7 +466,7 @@ function calculateBlockedTimes(businessHours) {
                     daysOfWeek: [dayOfWeek],
                     startTime: endTime,
                     endTime: latestTime,
-                    backgroundColor: 'rgba(255, 0, 0, 0.2)', // Light red for blocked times
+                    backgroundColor: 'rgba(255, 0, 0, 0.2)',
                     borderColor: 'rgba(255, 0, 0, 0.2)',
                     display: 'background',
                 });
@@ -339,7 +477,7 @@ function calculateBlockedTimes(businessHours) {
                 daysOfWeek: [dayOfWeek],
                 startTime: earliestTime,
                 endTime: latestTime,
-                backgroundColor: 'rgba(255, 0, 0, 0.2)', // Light red for blocked times
+                backgroundColor: 'rgba(255, 0, 0, 0.2)',
                 borderColor: 'rgba(255, 0, 0, 0.2)',
                 display: 'background',
             });
@@ -359,7 +497,7 @@ function calculateBlockedTimes(businessHours) {
  * @param {string} slotMaxTime - Maximum time to display on the calendar.
  * @param {number} slotDuration - Duration of each slot in minutes.
  */
-function initializeCalendar(calendarEl, businessHours, blockedEvents, slotMinTime, slotMaxTime, slotDuration,validRangeStart,validRangeEnd) {
+function initializeCalendar(calendarEl, businessHours, blockedEvents, slotMinTime, slotMaxTime, slotDuration, validRangeStart, validRangeEnd) {
     let selectedEvent = null;
 
     const now = getLondonDate();
@@ -370,20 +508,18 @@ function initializeCalendar(calendarEl, businessHours, blockedEvents, slotMinTim
     const calendar = new Calendar(calendarEl, {
         plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
         initialView: 'timeGridWeek',
-        timeZone: 'Europe/London',
+        timeZone: 'local',
         initialDate: today,
         firstDay: currentDayIndex,
         validRange: { start: today },
         visibleRange: { start: today, end: formattedEnd },
-        scrollTime: `${now.getHours()}:00:00`,
-
         slotMinTime: slotMinTime,
         slotMaxTime: slotMaxTime,
         slotDuration: `00:${slotDuration}:00`,
         selectable: true,
         selectOverlap: false,
         longPressDelay: 0,
-        selectConstraint: { start: '00:00', end: '23:59' }, 
+        selectConstraint: { start: '00:00', end: '23:59' },
         allDaySlot: false,
 
         headerToolbar: {
@@ -393,14 +529,14 @@ function initializeCalendar(calendarEl, businessHours, blockedEvents, slotMinTim
         },
 
         businessHours: businessHours,
-        events: [...calculateBlockedTimes(businessHours), ...blockedEvents,  {
-        start: new Date(),
-        end: new Date(validRangeStart),
-        display: 'background',
-        backgroundColor: '#f8d7da', // Light red to indicate blocked area
-        overlap: false
+        events: [...calculateBlockedTimes(businessHours), ...blockedEvents, {
+            start: new Date(),
+            end: new Date(validRangeStart),
+            display: 'background',
+            backgroundColor: '#f8d7da',
+            overlap: false
         }
-        ], // Include blocked slots
+        ],
         displayEventTime: false,
 
         dayHeaderContent: function (arg) {
@@ -409,30 +545,27 @@ function initializeCalendar(calendarEl, businessHours, blockedEvents, slotMinTim
         },
 
         selectAllow: function (info) {
-            return info.start >= new Date(validRangeStart); // Prevent past slots
+            return info.start >= new Date(validRangeStart);
         },
         select: function (info) {
-            
-            console.log(info);
             const start = info.start;
             const startTime = info.startStr;
             const endTime = info.endStr;
-            const end = new Date(start.getTime() + slotDuration * 60000); // Force selection of only one slot
+            const end = new Date(start.getTime() + slotDuration * 60000);
 
-            if (isSlotBlocked(start, end, blockedEvents)) {
-                alert('This slot is blocked and cannot be booked.');
+            const currentJobType = document.getElementById('job_type_select')?.value || null;
+            const currentServiceType = document.getElementById('service_type_select')?.value || null;
+
+            if (isSlotBlocked(start, end, blockedEvents, currentJobType, currentServiceType)) {
+                alert('This slot is blocked for the selected job or service type.');
                 return;
             }
-
             if (start < new Date()) {
                 alert('You cannot select a past slot.');
                 return;
             }
 
-            // Remove previous selection before adding new one
             if (selectedEvent) selectedEvent.remove();
-
-            // Add only ONE slot, preventing drag selection
             selectedEvent = calendar.addEvent({
                 title: `${formatTimeFromISO(startTime)} - Available`,
                 start: start,
@@ -447,22 +580,20 @@ function initializeCalendar(calendarEl, businessHours, blockedEvents, slotMinTim
                 `Selected Slot: ${formatDateTimeFromISO(startTime)} - ${formatTimeFromISO(endTime)}`;
 
             saveSelectedSlot(start, end);
-        }     
-        
+        }
+
     });
 
     calendar.render();
 }
 
 function formatDateTimeFromISO(isoString) {
-    return DateTime.fromISO(isoString, { zone: 'Europe/London' }).toFormat('dd LLL yyyy, hh:mm a');
+    return DateTime.fromISO(isoString, { zone: 'local' }).toFormat('dd LLL yyyy, hh:mm a');
 }
 
 function formatTimeFromISO(isoString) {
-    return DateTime.fromISO(isoString, { zone: 'Europe/London' }).toFormat('hh:mm a');
+    return DateTime.fromISO(isoString, { zone: 'local' }).toFormat('hh:mm a');
 }
-
-
 
 /**
  * Save the selected slot in the session via AJAX.
@@ -470,14 +601,21 @@ function formatTimeFromISO(isoString) {
  * @param {Date} end - The end date and time of the selected slot.
  */
 function saveSelectedSlot(start, end) {
-    const startLocal = start.toISOString(); // Convert to ISO string for consistency
-    const endLocal = end.toISOString();
+   const formatLocalDate = (dateObj) =>
+        `${dateObj.getFullYear()}-` +
+        `${String(dateObj.getMonth() + 1).padStart(2, '0')}-` +
+        `${String(dateObj.getDate()).padStart(2, '0')} ` +
+        `${String(dateObj.getHours()).padStart(2, '0')}:` +
+        `${String(dateObj.getMinutes()).padStart(2, '0')}:00`;
+
+    const startLocal = formatLocalDate(start);
+    const endLocal = formatLocalDate(end);
 
     fetch('/save-selected-slot', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, // Add CSRF token
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
         },
         body: JSON.stringify({
             start: startLocal,

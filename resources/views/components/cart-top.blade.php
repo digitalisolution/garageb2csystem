@@ -75,6 +75,11 @@
                         <span>£{{ number_format($shippingPricePerJob + $shippingPricePerTyre, 2) }}</span>
                 </h4>
             @endif
+            @if ($garageFittingCharges > 0 )
+                <h4>Garage Fitting Charges:
+                        <span id="garageFittingCharges">£{{ number_format($garageFittingCharges, 2) }}</span>
+                </h4>
+            @endif
             <h4>VAT (20%): <span id="vat-total">£{{ number_format($vatTotal, 2) }}</span></h4>
             <h4>Grand Total: <span id="grand-total">£{{ number_format($grandTotal, 2) }}</span></h4>
         </div>

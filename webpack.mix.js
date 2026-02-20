@@ -13,6 +13,7 @@ const mix = require('laravel-mix');
 
 mix.js('resources/js/calendarfrd.js', 'public/js')
    .js('resources/js/app.js', 'public/js')
+   .js('resources/js/ampm-calendar.js', 'public/js')
    .postCss('resources/css/app.css', 'public/css')
    .sass('resources/sass/styles/app.scss', 'public/css')
    .version();

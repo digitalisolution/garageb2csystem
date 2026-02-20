@@ -217,7 +217,7 @@ public function resendCode(Request $request, Workshop $order)
     public function invoices()
     {
         $garage = Auth::guard('garage')->user();
-        $invoices = $garage->invoices()->where('is_void', 0)->paginate(10);
+        $invoices = $garage->invoices()->where('is_void', 0)->orderBy('workshop_id', 'desc')->paginate(10);
         // Calculate invoice counts for each status
         $unpaidCount = $garage->invoices()->where('payment_status', '0')->where('is_void', 0)->count();
         $paidCount = $garage->invoices()->where('payment_status', '1')->where('is_void', 0)->count();

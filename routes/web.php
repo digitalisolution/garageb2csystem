@@ -98,7 +98,7 @@ Route::post('/cart/clear', [CartController::class, 'clearCart'])->name('cart.cle
 Route::post('/cart/update', [CartController::class, 'update'])->name('cart.update');
 Route::post('/cart/delete', [CartController::class, 'delete'])->name('cart.delete');
 Route::post('/cart/remove', [CartController::class, 'remove'])->name('cart.remove');
-Route::get('/cart/show', [CartController::class, 'show'])->name('cart.show');
+// Route::get('/cart/show', [CartController::class, 'show'])->name('cart.show');
 Route::get('/cart-refresh', [CheckoutController::class, 'refresh'])->name('cart.refresh');
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
 Route::get('/sitemap', [SitemapController::class, 'index'])->name('sitemap');
@@ -595,6 +595,7 @@ Route::middleware('auth:web')->group(function () {
     Route::post('/AutoCare/workshop/update', 'WorkshopController@save');
     Route::delete('/AutoCare/workshop/trash/{id}', 'WorkshopController@trash');
     Route::get('/AutoCare/workshop/delete', 'WorkshopController@trashedList');
+    Route::post('/AutoCare/workshop/add', 'WorkshopController@save')->name('AutoCare.workshop.create');
     Route::get('/AutoCare/workshop/delete/{id}', 'WorkshopController@permanemetDelete');
     Route::post('/AutoCare/workshop/void/{id}', 'WorkshopController@voidInvoice')->name('workshop.invoice.void');
     Route::get('/AutoCare/workshop/view/{id}', 'WorkshopController@viewIndivisual')->name('workshop.job.view');

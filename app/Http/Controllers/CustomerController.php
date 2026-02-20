@@ -297,12 +297,8 @@ class CustomerController extends Controller
     {
         $customer = Customer::findOrFail($id);
 
-        // Fetch workshops with pagination and eager loading
         $workshops = Workshop::where('customer_id', $customer->id)->where('is_void', false)
-            ->with('items')->get();
-
-        // Transform only the items (not the entire paginated object)
-       
+            ->with('items')->orderBy('id', 'desc')->get();      
 
         return view('AutoCare.customer.orders', compact('workshops', 'customer'));
     }
@@ -312,7 +308,7 @@ class CustomerController extends Controller
     {
         $customer = Customer::findOrFail($id); // Fetch customer by ID
         $invoices = Invoice::where('customer_id', $customer->id)->where('is_void', false)
-            ->with('items')->get(); // Assuming a relationship exists in the Customer model
+            ->with('items')->orderBy('id', 'DESC')->get(); // Assuming a relationship exists in the Customer model
 
         $viewData['header_link'] = HeaderLink::where("menu_id", '4')
             ->select("link_title", "link_name")

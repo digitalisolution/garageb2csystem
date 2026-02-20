@@ -218,10 +218,13 @@ $itemIndex = 1;
         $quantity = $tyre->quantity ?? 1;
         $vatRate = $tyre->tax_class_id == 9 ? 0.2 : 0;
         $vatText = $vatRate > 0 ? 'VAT 20%' : 'VAT 0%';
+        $garageVatClass = $tyre->garage_vat_class == 9 ? 0.2 : 0;
+        $garageVatText = $garageVatClass > 0 ? 'VAT 20%' : 'VAT 0%';
         $price = $tyre->margin_rate ?? 0;
         $itemTotal = $price * $quantity;
         $vatAmount = $itemTotal * $vatRate;
         $totalAmount = $itemTotal + $vatAmount;
+        $garageFittingCharges = $tyre->garage_fitting_charges;
         $total_Tax_Amount += $vatAmount;
         $total_product_price += $itemTotal;
                                 @endphp
@@ -234,13 +237,22 @@ $itemIndex = 1;
                                     <td align="right">£{{ number_format($itemTotal, 2) }}</td>
                                     <td align="right"><strong>£{{ number_format($totalAmount, 2) }}</strong></td>
                                 </tr>
-                                 @if($tyre->fitting_type === 'mobile_fitted' || 'mailorder')
+                                @if(!empty($tyre) && in_array($tyre->fitting_type, ['mobile_fitted','mailorder']))
                                 <tr>
                                 <td>
                                      <td><strong>{{ str_replace('_', ' ', ucfirst($tyre->fitting_type)) }} CallOut Charge({{$tyre->shipping_postcode}})</strong></td>
                                 </td>
                                         <td colspan="4" align="right"><strong>£{{ number_format($tyre->shipping_price, 2) }}</strong></td>
                                          <td colspan="5" align="right"><strong>£{{ number_format($tyre->shipping_price+($tyre->shipping_price*$vatRate), 2) }}</strong></td>
+                                </tr>
+                                @endif
+                                 @if($tyre->fitting_type === 'fully_fitted')
+                                <tr>
+                                <td>
+                                     <td><strong>Garage Fitting Charge</strong></td>
+                                </td>
+                                        <td colspan="4" align="right"><strong>£{{ number_format($garageFittingCharges, 2) }}</strong></td>
+                                         <td colspan="5" align="right"><strong>£{{ number_format($garageFittingCharges + ($garageFittingCharges*$garageVatClass), 2) }}</strong></td>
                                 </tr>
                                 @endif
                     @endforeach
@@ -276,8 +288,12 @@ $itemIndex = 1;
                             <thead class="bg-gray">
                                 <tr>
                                     <td><strong>Sub Total</strong></td>
-                                    @if($tyre->fitting_type === 'mobile_fitted' || 'mailorder')
+                                    @if(!empty($tyre) && in_array($tyre->fitting_type, ['mobile_fitted','mailorder']))
                                         <td><strong>CallOut Charge({{$tyre->shipping_postcode}})</strong></td>
+                                    @endif
+
+                                    @if(!empty($tyre) && in_array($tyre->fitting_type, ['fully_fitted']))
+                                        <td><strong>Garage Fitting Charge</strong></td>
                                     @endif
 
                                     <td><strong>VAT</strong></td>
@@ -291,17 +307,21 @@ $itemIndex = 1;
                                 <tr>
                                     @php
             $shippingVatRates = $tyre->shipping_tax_id == 9 ? 0.2 : 0;
+            $garageVatRates = $tyre->garage_vat_class == 9 ? 0.2 : 0;
             $shippingVatRate = $tyre->shipping_price * $shippingVatRates;
-            $shippingVatPrice = $total_Tax_Amount + $shippingVatRate;
             $shippingTotalPrice = $tyre->shipping_price + $shippingVatRate;
-
+            $garageFittingVat = $garageFittingCharges * $garageVatRates;
+            $shippingVatPrice = $total_Tax_Amount + $shippingVatRate + $garageFittingVat;
             $subTotal = $total_product_price + $total_service_price;
-            $grandTotal = $subTotal + $total_Tax_Amount + $shippingTotalPrice;
+            $grandTotal = $subTotal + $total_Tax_Amount + $shippingTotalPrice + $garageFittingCharges + $garageFittingVat;
             $balancePrice = $grandTotal - ($installmentPayment + $paid_price + $discount_price);
                                     @endphp
                                     <td>£{{ number_format($subTotal, 2) }}</td>
-                                    @if($tyre->fitting_type === 'mobile_fitted' || 'mailorder')
+                                    @if(!empty($tyre) && in_array($tyre->fitting_type, ['mobile_fitted','mailorder']))
                                         <td>£{{ number_format($tyre->shipping_price, 2) }}</td>
+                                    @endif
+                                    @if(!empty($tyre) && in_array($tyre->fitting_type, ['fully_fitted']))
+                                        <td>£{{ number_format($garageFittingCharges, 2) }}</td>
                                     @endif
 
                                     <td>£{{ number_format($shippingVatPrice, 2) }}</td>

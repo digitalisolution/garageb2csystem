@@ -28,6 +28,7 @@ use App\Models\Garage;
 use App\Models\GarageDetails;
 use App\Models\RegionCounty;
 use App\Models\VehicleDetail;
+use App\Models\CalendarSetting;
 use App\Models\Countries;
 use Illuminate\Support\Facades\Session;
 use App\Services\DojoService;
@@ -88,21 +89,24 @@ class CheckoutController extends Controller
     public function index()
     {
         $cart = session('cart', []);
-        //dd($cart);
         $cartItems = [];
+        $data = Session::all();
+        // dd($data);
         $total = 0;
         if (empty($cart)) {
             return redirect()->route('home')->with('error', 'Your cart is empty. Please add items to the cart before proceeding to checkout.');
         }
         $garageId = Session::get('selected_garage_id');
+        $garageFittingCharge = Session::get('garageFittingCharge');
+        $garageFittingVAT = Session::get('garageFittingVAT');
         $domain = str_replace('.', '-', request()->getHost());
 
         if (!$garageId) {
             return redirect()->route('grages')->with('error', 'Please select a garage first.');
         }
         $calenderBook = OrderTypes::where('status', 1)->where('calender_book', 1)->get()
-        ->pluck('ordertype_name')
-        ->toArray();
+            ->pluck('ordertype_name')
+            ->toArray();
         $userOrdertype = session('user_ordertype');
         $garages = Garage::findOrFail($garageId);
         $token = uniqid('checkout_', true);
@@ -138,7 +142,9 @@ class CheckoutController extends Controller
                         'fitting_type' => $item['fitting_type'] ?? null,
                         'quantity' => $item['quantity'],
                         'tax_class_id' => $product->tax_class_id ?? '',
+                        'garageFittingVAT' => $garageFittingVAT,
                         'total' => ($product->$priceField ?? 0) * $item['quantity'],
+                        'garageFittingCharges' => $garageFittingCharge,
                     ];
 
                     if ($item['type'] === 'tyre') {
@@ -199,12 +205,14 @@ class CheckoutController extends Controller
 
         }
         $services = CarService::where('garage_id', $garageId)
-        ->where('status', 1)
-        ->get();
+            ->where('status', 1)
+            ->get();
         $userOrdertype = session('user_ordertype');
         $bookingDetails = $this->getBookingDetails($userOrdertype);
         $shippingData = session('postcode_data', []);
         $VehicleDetails = session('vehicleData', []);
+
+        $calendarSettings = CalendarSetting::where('garage_id', $garageId)->first();
 
         $response = response()->view('checkout', [
             'checkoutToken' => $token,
@@ -225,7 +233,8 @@ class CheckoutController extends Controller
             'services' => $services,
             'domain' => $domain,
             'calenderBook' => $calenderBook,
-            'userOrdertype' => $userOrdertype
+            'userOrdertype' => $userOrdertype,
+            'calendarSettings' => $calendarSettings
         ]);
 
         $this->preventPageCaching($response);
@@ -241,6 +250,8 @@ class CheckoutController extends Controller
             return redirect()->route('home')->with('error', 'Your cart is empty. Please add items to the cart before proceeding to checkout.');
         }
         $token = uniqid('checkout_', true);
+        $garageFittingCharge = Session::get('garageFittingCharge');
+        $garageFittingVAT = Session::get('garageFittingVAT');
         Session::put('checkout_token', $token);
         // Process each item in the cart
         foreach ($cart as $item) {
@@ -262,7 +273,9 @@ class CheckoutController extends Controller
                         'fitting_type' => $item['fitting_type'] ?? null,
                         'quantity' => $item['quantity'],
                         'tax_class_id' => $product->tax_class_id ?? '',
+                        'garageFittingVAT' => $garageFittingVAT,
                         'total' => ($product->$priceField ?? 0) * $item['quantity'],
+                        'garageFittingCharges' => $garageFittingCharge,
                     ];
                     if ($item['type'] === 'tyre') {
                         $cartItem['ean'] = $product->tyre_ean ?? '';
@@ -320,6 +333,14 @@ class CheckoutController extends Controller
             ];
 
         }
+        $garageId = Session::get('selected_garage_id');
+        if (!$garageId) {
+            return redirect()->route('grages')
+                ->with('error', 'Please select a garage first.');
+        }
+
+        $calendarSettings = CalendarSetting::where('garage_id', $garageId)->first();
+        // $calendarSettings = CalendarSetting::where('default', 1)->first();
         // dd($billin);
         $userOrdertype = session('user_ordertype');
         $bookingDetails = $this->getBookingDetails($userOrdertype);
@@ -342,6 +363,7 @@ class CheckoutController extends Controller
             'countries' => $countries,
             'selectedCountry' => $selectedCountry,
             'vehicleDetails' => $vehicleDetails,
+            'calendarSettings' => $calendarSettings
         ]);
     }
     public function autoSaveCustomer(Request $request)
@@ -419,7 +441,7 @@ class CheckoutController extends Controller
         Session::put('customer', $customerData);
         return response()->json(['success' => true, 'session_data' => $customerData]);
     }
-     protected function getBookingDetails($userOrdertype)
+    protected function getBookingDetails($userOrdertype)
     {
         $calenderBook = OrderTypes::where('status', 1)
             ->pluck('calender_book', 'ordertype_name')
@@ -434,11 +456,10 @@ class CheckoutController extends Controller
             $now = Carbon::now();
             $bookingDetails = [
                 'start' => $now->copy()->addDays(5)->setTime(12, 30, 0)->format('Y-m-d H:i:s'),
-                'end'   => $now->copy()->addDays(5)->setTime(13, 0, 0)->format('Y-m-d H:i:s'),
+                'end' => $now->copy()->addDays(5)->setTime(13, 0, 0)->format('Y-m-d H:i:s'),
             ];
         }
 
-        // Save in session
         session(['bookingDetails' => $bookingDetails]);
 
         return $bookingDetails;
@@ -450,12 +471,10 @@ class CheckoutController extends Controller
         $submittedToken = $request->input('checkout_token');
         $userOrdertype = session('user_ordertype');
         $bookingDetails = $this->getBookingDetails($userOrdertype);
-        // dd($bookingDetails);
         if (empty($bookingDetails) || !isset($bookingDetails['start']) || !isset($bookingDetails['end'])) {
             return back()->withErrors(['booking_slot' => 'Booking slot is not selected. Please select a booking slot before submitting the order.'])->withInput();
         }
 
-        // Invalidate the token after use
         Session::forget('checkout_token');
         // dd($request);
         $rules = $this->getValidationRules();
@@ -508,11 +527,11 @@ class CheckoutController extends Controller
                     'total' => $workshop->grandTotal,
                 ]);
             }
-if (isset($validated['payment_method']) && $validated['payment_method'] === 'revolut') {
-    return $this->revolutService->processPaymentWebsite([
-        'workshop_id' => $workshop->id,
-    ]);
-}
+            if (isset($validated['payment_method']) && $validated['payment_method'] === 'revolut') {
+                return $this->revolutService->processPaymentWebsite([
+                    'workshop_id' => $workshop->id,
+                ]);
+            }
 
             if (isset($validated['payment_method']) && $validated['payment_method'] === 'pay_at_fitting_center') {
                 if ($workshop->status !== 'failed') {
@@ -726,7 +745,10 @@ if (isset($validated['payment_method']) && $validated['payment_method'] === 'rev
     protected function saveCartItems($workshopId)
     {
         $cartItems = Session::get('cart', []);
-        $postcodeData = Session::get('postcode_data', []);
+        $postcodeData = Session::get('postcode_data', []);        
+        $garageFittingCharge = Session::get('garageFittingCharge');        
+        $garageFittingVAT = Session::get('garageFittingVAT');
+        $garageVatClass = Session::get('garageVatClass');
         $shippingPricePerJob = Session::get('shippingPricePerJob');
         $shippingPricePerTyre = Session::get('shippingPricePerTyre');
         $shippingPostcode = $postcodeData['postcode'] ?? null;
@@ -768,6 +790,8 @@ if (isset($validated['payment_method']) && $validated['payment_method'] === 'rev
                         'shipping_postcode' => $shippingPostcode,
                         'shipping_price' => $shippingPriceWithoutVAT,
                         'shipping_tax_id' => $shippingTaxId,
+                        'garage_vat_class' => $garageVatClass,
+                        'garage_fitting_charges' => $garageFittingCharge
                     ];
                     WorkshopTyre::create($tyreData);
                 }
@@ -805,6 +829,7 @@ if (isset($validated['payment_method']) && $validated['payment_method'] === 'rev
         $userOrdertype = session('user_ordertype');
         $slotDetails = $this->getBookingDetails($userOrdertype);
         $workshopId = $workshopData->id;
+        $garageId = $workshopData->garage_id;
         $workshopName = $workshopData->name;
 
         $customerName = $workshopName ?: 'Unknown Customer';
@@ -819,6 +844,7 @@ if (isset($validated['payment_method']) && $validated['payment_method'] === 'rev
 
         Booking::create([
             'workshop_id' => $workshopId,
+            'garage_id' => $garageId,
             'title' => $customerName,
             'start' => $startUtc->format('Y-m-d H:i:s'),
             'end' => $endUtc->format('Y-m-d H:i:s'),

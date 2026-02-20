@@ -1,3 +1,6 @@
+@if (($calendarSettings->calendar_type ?? null) === 'calendar_hours')
+<h3 class="cart-page-title">Booking Calendar</h3>
+<div id="calendar"></div>
 <style>
     /* Optional: Add custom styling for modal */
     #bookingModal {
@@ -70,19 +73,69 @@
         .fc .fc-col-header-cell-cushion{padding:2px 2px; line-height:normal;}
     }
 </style>
-<h3 class="cart-page-title">Booking Calendar</h3>
-<div id="calendar"></div>
-{{-- Check if there's session data and display the booking slot --}}
-{{-- Check if there's session data and display the booking slot --}}
+@elseif(($calendarSettings->calendar_type ?? null) === 'calendar_ampm')
+<div id="ampm-calendar"></div>
+<style>
+    .ampm-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+    gap:15px;
+}
+
+.ampm-day {
+    border:1px solid #eee;
+    padding:10px;
+    text-align:center;
+    border-radius:8px;
+}
+
+.session-btn {
+    display:block;
+    width:100%;
+    margin-top:6px;
+    padding:6px;
+    border:none;
+    border-radius:6px;
+}
+
+.available {
+    background:#28a745;
+    color:white;
+}
+
+.disabled {
+    background:#ccc;
+    pointer-events:none;
+}
+
+</style>
+@else
+    <div class="alert alert-warning">Calendar settings not configured.</div>
+@endif
+
+
 @if (!empty(session('bookingDetails')))
     @php
-        $start = \Carbon\Carbon::parse(session('bookingDetails.start'));
-        $end = \Carbon\Carbon::parse(session('bookingDetails.end'));
+        $start  = \Carbon\Carbon::parse(session('bookingDetails.start'));
+        $end    = \Carbon\Carbon::parse(session('bookingDetails.end'));
+        $period = session('bookingDetails.period') ?? null;
     @endphp
+
     <div id="selectedSlot" class="booked_slot">
-        Selected Slot: {{ $start->format('jS M Y, h:i A') }} - {{ $end->format('h:i A') }}
+        @if($period)
+            Selected Slot:
+            {{ $start->format('d-m-Y') }}
+            — {{ $period }}
+        @else
+            Selected Slot:
+            {{ $start->format('jS M Y, h:i A') }}
+            - {{ $end->format('h:i A') }}
+        @endif
+
     </div>
 @else
     <div id="selectedSlot" class="booked_slot">No booking details available.</div>
 @endif
+
 <input type="hidden" id="selected_slot_details" name="selected_slot_details">
+

@@ -920,6 +920,7 @@ document.addEventListener('DOMContentLoaded', function () {
 function updateGrandTotal(response) {
     let subTotal = parseFloat(response.cartSubTotal.replace(',', '')) || 0;
     let vatTotal = parseFloat(response.vatTotal.replace(',', '')) || 0;
+    let garageFittingCharges = response.garageFittingCharges || 0;
     let grandTotal = parseFloat(response.cartTotalPrice.replace(',', '')) || 0;
 
     const shippingPostcode = response.shippingPostcode || '';
@@ -931,6 +932,8 @@ function updateGrandTotal(response) {
     $('#totalbill h4 #shippingPrice').text('£' + (shippingPricePerJob + shippingPricePerTyre).toFixed(2));
     $('#totalbill h4 #vat-total').text('£' + vatTotal.toFixed(2));
     $('#totalbill h4 #grand-total').text('£' + grandTotal.toFixed(2));
+    $('#totalbill h4 #garageFittingCharges').text('£' + garageFittingCharges.toFixed(2));    
+    $('.shopping-cart-total h4 #garageFittingCharges').text('£' + garageFittingCharges.toFixed(2));
     $('.shopping-cart-total h4 #sub-total').text('£' + subTotal.toFixed(2));
     $('.shopping-cart-total h4 #shippingPrice').text('£' + (shippingPricePerJob + shippingPricePerTyre).toFixed(2));
     $('.shopping-cart-total h4 #vat-total').text('£' + vatTotal.toFixed(2));
@@ -1616,6 +1619,7 @@ document.addEventListener("DOMContentLoaded", function () {
 function updateCartUI(data) {
     const subTotal = parseFloat(data.cartSubTotal);
     const vatTotal = parseFloat(data.vatTotal);
+    const garageFittingCharges = parseFloat(data.garageFittingCharges);
     const shippingPricePerJob = parseFloat(data.shippingPricePerJob);
     const shippingPricePerTyre = parseFloat(data.shippingPricePerTyre);
     const shippingVAT = parseFloat(data.shippingVAT);
@@ -1628,7 +1632,7 @@ function updateCartUI(data) {
 
     // Update callout charges if mobile fitting is present
     if (shippingPricePerJob > 0 || shippingPricePerTyre > 0) {
-        $('.callout-charges').remove(); // Remove existing callout charges
+        $('.callout-charges').remove();
         const calloutChargesHTML = `
             <h4 class="callout-charges">
                 Callout Charges: £${(shippingPricePerJob + shippingPricePerTyre).toFixed(2)}
@@ -1636,7 +1640,19 @@ function updateCartUI(data) {
         `;
         $('.shopping-cart-total').append(calloutChargesHTML);
     } else {
-        $('.callout-charges').remove(); // Remove callout charges if no mobile fitting
+        $('.callout-charges').remove();
+    }
+
+    if (garageFittingCharges > 0) {
+        $('.garageFittingCharges').remove();
+        const calloutChargesHTML = `
+            <h4 class="garageFittingCharges">
+                Garage Fitting Charges: £${(garageFittingCharges).toFixed(2)}
+            </h4>
+        `;
+        $('.shopping-cart-total').append(calloutChargesHTML);
+    } else {
+        $('.garageFittingCharges').remove();
     }
 
     // Show or hide the "Your Basket is Empty" message and cart content

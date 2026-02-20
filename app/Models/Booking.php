@@ -10,7 +10,7 @@ class Booking extends Model
 {
     // use HasFactory;
     protected $dates = ['start', 'end'];
-    protected $fillable = ['workshop_id', 'title', 'start', 'end'];
+    protected $fillable = ['workshop_id', 'garage_id', 'title', 'start', 'end'];
     public function bookings()
     {
         return $this->hasMany(\App\Models\Booking::class, 'workshop_id');
@@ -19,5 +19,11 @@ class Booking extends Model
     {
         return $this->belongsTo(Workshop::class, 'workshop_id');
     }
+
+    public function garage()
+    {
+        return $this->belongsTo(Garage::class, 'garage_id');
+    }
+
 
 }
