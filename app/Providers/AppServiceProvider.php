@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\View;
 use App\Models\VrmVehicleDetail;
+use App\Models\GeneralSettings;
 use Illuminate\Support\Facades\Session;
 use App\Models\CalendarSetting;
 use Illuminate\Pagination\Paginator;
@@ -55,10 +56,16 @@ class AppServiceProvider extends ServiceProvider
 
             $garage = GarageDetails::first();
             $view->with('garage', $garage);
+            $view->with([
+                'moduleTyreEnabled' => get_option('module_tyre_status') == 1,
+                'modulePartEnabled' => get_option('module_part_status') == 1,
+                'moduleConsumableEnabled' => get_option('module_consumable_status') == 1,
+                'moduleLabourEnabled' => get_option('module_labour_status') == 1,
+                'moduleFullServiceEnabled' => get_option('module_fullservice_status') == 1,
+            ]);
             $garageId = Session::get('selected_garage_id');
             if (!$garageId) {
-                return redirect()->route('grages')
-                    ->with('error', 'Please select a garage first.');
+                return response()->json(['error' => 'Please select a garage first'], 404);
             }
             $calendarSettings = CalendarSetting::where('garage_id', $garageId)->first();
             $view->with('globalCalendarSettings', $calendarSettings);

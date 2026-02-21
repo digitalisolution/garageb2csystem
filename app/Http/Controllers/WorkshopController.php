@@ -2,18 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\WorkshopPart;
+use App\Models\WorkshopLabour;
 use App\Models\WorkshopTyre;
 use App\Models\tyre_brands;
 use App\Models\TyresProduct;
 use Illuminate\Http\Request;
 use App\Models\Workshop;
-use App\Models\Service;
 use DB;
-use App\Models\WorkshopProduct;
 use Yajra\DataTables\Facades\DataTables;
 use App\Models\WorkshopService;
-use App\Models\Modal;
-// use App\Models\ServiceType;
+use App\Models\WorkshopConsumable;
 use App\Models\Booking;
 use App\Models\Invoice;
 use App\Models\HeaderLink;
@@ -22,6 +21,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use PDF;
 use Illuminate\Support\Facades\Mail;
+use App\Traits\HasPermissionCheck;
 use App\Models\Customer;
 use App\Models\CustomerDebitLog;
 use App\Models\VehicleDetail;
@@ -29,81 +29,80 @@ use App\Models\CarService;
 use App\Models\RegionCounty;
 use App\Models\CustomerVehicle;
 use Illuminate\Support\Str;
-use Auth;
 use App\Helpers\ActivityLogger;
+use App\Models\Garage;
 use App\Models\ActivityLog;
 use App\Models\PaymentHistory;
 use App\Services\PaymentHistoryService;
+use App\Services\WorkshopDiscountService;
 
 class WorkshopController extends Controller
 {
+    use HasPermissionCheck;
     protected $paymentHistoryService;
-    public function __construct(PaymentHistoryService $paymentHistoryService)
+    protected $discountService;
+    public function __construct(PaymentHistoryService $paymentHistoryService,WorkshopDiscountService $discountService)
     {
         $this->middleware('auth');
         $this->paymentHistoryService = $paymentHistoryService;
+        $this->discountService = $discountService;
     }
 
     public function save(Request $request, $id = null)
     {
+        $this->authorizePermission('workshop.create');
         $viewData['header_link'] = HeaderLink::where("menu_id", '1')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
         $viewData['pageTitle'] = 'Add Workshop';
-        // $viewData['model_select'] = Modal::pluck('model_name', 'id');
         $viewData['tyre_width'] = TyresProduct::pluck('tyre_width', 'product_id');
         $viewData['tyre_profile'] = TyresProduct::pluck('tyre_profile', 'product_id');
         $viewData['service_data'] = CarService::pluck('name', 'service_id');
         $viewData['tyre_brand_name'] = tyre_brands::pluck('name', 'brand_id');
-        // $viewData['ServiceType'] = ServiceType::pluck('service_type_name', 'id');
         $viewData['registered_vehicle_select'] = VehicleDetail::pluck('vehicle_reg_number', 'vehicle_reg_number');
         $viewData['customerNameSelect'] = Customer::pluck('customer_name', 'id');
         $viewData['counties'] = RegionCounty::where('status', 1)->get();
+        $viewData['garagesData'] = Garage::where('garage_status', 1)->get();
         $viewData['brands'] = tyre_brands::where('status', 1)->get();
+        $viewData['selectedDueIn'] = $request->query('due_in');
+        $viewData['selectedDueOut'] = $request->query('due_out');
 
+        if ( $viewData['selectedDueIn']) {
+             $viewData['selectedDueIn'] = \Carbon\Carbon::parse( $viewData['selectedDueIn'])->format('Y-m-d\TH:i');
+        }
+        if ($viewData['selectedDueOut']) {
+            $viewData['selectedDueOut'] = \Carbon\Carbon::parse($viewData['selectedDueOut'])->format('Y-m-d\TH:i');
+        }
 
         // For editing an existing workshop
         if (isset($id) && $id != null) {
             $workshop = Workshop::findOrFail($id);
             $getFormAutoFillup = $workshop->toArray();
 
-            // Get vehicle registration number from workshop data
             $vehicleRegNumber = $workshop->vehicle_reg_number;
 
             $viewData = [
                 'workshopTyreData' => WorkshopTyre::where('workshop_id', $id)->where('ref_type', 'workshop')->get(),
                 'workshopServiceData' => WorkshopService::where('workshop_id', $id)->get(),
+                'workshopConsumableData' => WorkshopConsumable::where('workshop_id', $id)->get(),
+                'workshopPartData' => WorkshopPart::where('workshop_id', $id)->get(),
+                'WorkshopLabourData' => WorkshopLabour::where('workshop_id', $id)->get(),
                 'workshopVehicleData' => VehicleDetail::where('vehicle_reg_number', $vehicleRegNumber)->get()
             ];
+            //dd($viewData);
             $viewData['counties'] = RegionCounty::where('status', 1)->get();
             $viewData['brands'] = tyre_brands::where('status', 1)->get();
-            // dd($viewData);
             return view('AutoCare.workshop.add', $viewData)->with($getFormAutoFillup);
         }
 
-        // For adding new data or updating existing 3
         if ($request->isMethod('post')) {
-            // dd($request);
             try {
-                // \Log::info("Starting save operation...");
-
-                // Validate tyre data
                 if (empty($request->input('due_in')) && empty($request->input('due_out'))) {
                     \Log::warning("booking date missing. Workshop not created.");
                     $request->session()->flash('message.level', 'danger');
                     $request->session()->flash('message.content', 'Please add Due in and Due out before saving the workshop.');
                     return redirect()->back()->withInput();
                 }
-                // $addressComponents = [
-                //     $request->input('shipping_address_street'),
-                //     $request->input('shipping_address_city'),
-                //     $request->input('shipping_address_postcode'),
-                //     $request->input('shipping_address_county'),
-                //     $request->input('shipping_address_country'),
-                // ];
 
-                // Filter out empty values and join with commas
-                // $fullAddress = implode(", ", array_filter($addressComponents));
                 $saveAndSyncInvoice = $request->has('save_and_sync_invoice');
-                // Data for updating an existing workshop
                 if ($request->has('id') && $request->id != null) {
                     $existingWorkshop = Workshop::find($request->id);
 
@@ -111,11 +110,9 @@ class WorkshopController extends Controller
                         return redirect()->back()->with('message.level', 'danger')->with('message.content', 'Workshop not found.');
                     }
 
-                    // Get the paid price from the existing workshop
                     $paidPrice = $existingWorkshop->paid_price + $existingWorkshop->discount_price;
                     $OnlypaidPrice = $existingWorkshop->paid_price;
 
-                    // Update existing workshop
                     $PartyManage = $request->only([
                         'name',
                         'mobile',
@@ -136,7 +133,6 @@ class WorkshopController extends Controller
                         'due_in',
                         'due_out'
                     ]);
-                    // $PartyManage['address'] = $fullAddress;
                     $PartyManage['address'] = $request->shipping_address_street;
                     $PartyManage['city'] = $request->shipping_address_city;
                     $PartyManage['zone'] = $request->shipping_address_postcode;
@@ -147,19 +143,14 @@ class WorkshopController extends Controller
                     $PartyManage['balance_price'] = $request->grand_total - $paidPrice;
                     $PartyManage['fitting_type'] = $request->fitting_type ?? 'fully_fitted';
 
-                    // Logic to determine payment_status
                     if ($PartyManage['balance_price'] == 0 && $paidPrice == $request->grand_total) {
-                        // If balance is 0 and paid price equals grand total, set payment_status to 1 (Paid)
                         $PartyManage['payment_status'] = 1;
                     } elseif ($PartyManage['balance_price'] > 0 && $PartyManage['balance_price'] < $request->grand_total && $OnlypaidPrice > 0) {
-                        // If balance is not 0 but some amount has been paid, set payment_status to 3 (Partially Paid)
                         $PartyManage['payment_status'] = 3;
                     } elseif ($PartyManage['balance_price'] == $request->grand_total || $PartyManage['balance_price'] == $request->balance_price + $existingWorkshop->discount_price) {
-                        // If no payment has been made, set payment_status to 0 (Unpaid)
                         $PartyManage['payment_status'] = 0;
                     }
 
-                    // Check if payment_status is "1" (paid)
                     if ($PartyManage['payment_status'] == 1) {
                         $PartyManage['is_complete'] = 1;
                         $PartyManage['status'] = 'completed';
@@ -167,16 +158,15 @@ class WorkshopController extends Controller
 
                     $PartyManage['is_read'] = 1;
 
-                    // dd($PartyManage);
                     // Update the workshop record
                     if (Workshop::whereId($request->id)->update($PartyManage)) {
                         $this->saveWorkshopData($request, $request->id);
+                        //$this->discountService->applyAutoDiscount($request->id);
                         if ($saveAndSyncInvoice) {
                             $this->convertToInvoice($request->id);
                         }
                     }
                 } else {
-                    // Add a new workshop
                     $PartyManage = $request->only([
                         'name',
                         'mobile',
@@ -198,7 +188,6 @@ class WorkshopController extends Controller
                         'due_in',
                         'due_out'
                     ]);
-                    // $PartyManage['address'] = $fullAddress;
                     $PartyManage['address'] = $request->shipping_address_street;
                     $PartyManage['city'] = $request->shipping_address_city;
                     $PartyManage['zone'] = $request->shipping_address_postcode;
@@ -209,10 +198,7 @@ class WorkshopController extends Controller
                     $PartyManage['workshop_origin'] = 'Admin';
                     $PartyManage['fitting_type'] = $request->fitting_type ?? 'fully_fitted';
 
-                    // Check if payment_status is "1" (paid)
                     if ($request->payment_status == 1) {
-                        // $PartyManage['paid_price'] = $request->grand_total; // Move balanceprice to paid_price
-                        // $PartyManage['balance_price'] = $request->grand_total - $request->paid_price; // Reset balanceprice to 0
                         $PartyManage['is_complete'] = 1;
                         $PartyManage['status'] = 'completed';
 
@@ -225,7 +211,6 @@ class WorkshopController extends Controller
                     $newWorkshop = Workshop::create($PartyManage);
 
                     if ($newWorkshop) {
-                        // Save new product and service data
                         $this->saveWorkshopData($request, $newWorkshop->id);
                         if ($saveAndSyncInvoice) {
                             $this->convertToInvoice($newWorkshop->id);
@@ -245,132 +230,103 @@ class WorkshopController extends Controller
 
         return view('AutoCare.workshop.add', $viewData);
     }
+
     private function saveWorkshopData($request, $workshopId)
     {
-        if ($request->has('product_id') && $request->product_id[0] != null) {
-
-            $existingTyreIds = WorkshopTyre::where('workshop_id', $workshopId)->where('ref_type', 'workshop')->pluck('id')->toArray();
-
-            $updatedTyreIds = [];
-
-            foreach ($request->product_id as $index => $productId) {
-                $itemId = $request->item_id[$index] ?? null;
-                $tyreProduct = TyresProduct::find($productId);
-
-                if (!$tyreProduct) {
-                    \Log::warning("Tyre product with ID $productId not found.");
-                    continue;
-                }
-
+        // **Save or Update Tyre Data**
+        if ($request->has('tyre_ean') && !empty($request->tyre_ean[0])) {
+            $existingTyres = WorkshopTyre::where('workshop_id', $workshopId)->where('ref_type', 'workshop')->get();
+            $updatedTyreKeys = [];
+            foreach ($request->tyre_ean as $index => $ean) {
+                $supplierName = $request->tyre_supplier_name[$index] ?? null;
                 $requestedQuantity = $request->tyre_quantity[$index] ?? 1;
+                if (!$ean || !$supplierName)
+                    continue;
+                $tyreProduct = TyresProduct::where('tyre_ean', $ean)->where('tyre_supplier_name', $supplierName)->first();
 
-                // Add new item or update existing item
-                $WorkshopTyre = $itemId ? WorkshopTyre::where('ref_type', 'workshop')->find($itemId) : new WorkshopTyre();
+                $WorkshopTyre = WorkshopTyre::where('workshop_id', $workshopId)->where('ref_type', 'workshop')->where('product_ean', $ean)->where('supplier', $supplierName)->first();
+
                 if (!$WorkshopTyre) {
                     $WorkshopTyre = new WorkshopTyre();
+                    $WorkshopTyre->workshop_id = $workshopId;
                     $WorkshopTyre->ref_type = 'workshop';
+                    $WorkshopTyre->supplier = $supplierName;
+                    $WorkshopTyre->product_ean = $ean;
                 }
 
-                if ($itemId && $WorkshopTyre->exists) {
-                    $oldQuantity = $WorkshopTyre->quantity;
-                    $tyreProduct->tyre_quantity += $oldQuantity;
+                if ($tyreProduct && $WorkshopTyre->exists) {
+                    $tyreProduct->tyre_quantity += $WorkshopTyre->quantity;
                 }
 
-                // Update tyre details
-                $WorkshopTyre->workshop_id = $workshopId;
-                $WorkshopTyre->product_id = $productId;
-                $WorkshopTyre->ref_type = 'workshop';
-                $WorkshopTyre->product_ean = $request->tyre_ean[$index] ?? null;
-                $WorkshopTyre->product_sku = $request->tyre_sku[$index] ?? null;
-                $WorkshopTyre->supplier = $request->tyre_supplier_name ?? null;
-                $WorkshopTyre->product_type = $request->product_type ?? null;
-                $WorkshopTyre->description = $request->tyre_description[$index] ?? null;
-                $WorkshopTyre->quantity = $requestedQuantity;
-                $WorkshopTyre->cost_price = $request->cost_price[$index] ?? 0;
-                $WorkshopTyre->shipping_postcode = $request->callout_postcode ?? null;
-                $WorkshopTyre->shipping_price = $request->callout_charges ?? 0;
-                $WorkshopTyre->shipping_tax_id = $request->callout_vat ?? 0;
-                $WorkshopTyre->fitting_type = $request->fitting_type ?? 'fully_fitted';
-                $WorkshopTyre->margin_rate = $request->margin_rate[$index] ?? 0;
-                $WorkshopTyre->tax_class_id = $request->tyre_vat[$index] ?? 0;
-                $WorkshopTyre->price = $request->tyre_amount[$index] ?? 0;
+                $WorkshopTyre->fill([
+                    'product_id' => $request->product_id[$index] ?? null,
+                    'product_sku' => $request->tyre_sku[$index] ?? null,
+                    'product_type' => $request->product_type ?? null,
+                    'description' => $request->tyre_description[$index] ?? null,
+                    'quantity' => $requestedQuantity,
+                    'cost_price' => $request->tyre_cost_price[$index] ?? 0,
+                    'shipping_postcode' => $request->callout_postcode ?? null,
+                    'shipping_price' => $request->callout_charges ?? 0,
+                    'shipping_tax_id' => $request->callout_vat ?? 0,
+                    'fitting_type' => $request->fitting_type ?? 'fully_fitted',
+                    'margin_rate' => $request->tyre_margin_rate[$index] ?? 0,
+                    'tax_class_id' => $request->tyre_vat[$index] ?? 0,
+                    'price' => $request->tyre_amount[$index] ?? 0,
+                ]);
+
                 $WorkshopTyre->save();
-                // Deduct the requested quantity from the tyre's stock
-                $tyreProduct->tyre_quantity -= $requestedQuantity;
-                $tyreProduct->save();
-                if ($itemId) {
-                    $updatedTyreIds[] = $itemId;
-                }
-                ActivityLogger::log(
-                    workshopId: $workshopId,
-                    action: $itemId ? 'Updated Tyre' : 'Added Tyre',
-                    description: 'Tyre item ' . ($itemId ? 'updated' : 'added') . ': ' . $tyreProduct->product_name,
-                    changes: ['product_id' => $productId, 'quantity' => $requestedQuantity]
-                );
-
-            }
-
-            // Remove tyres that are no longer part of the request
-            $tyresToRemove = array_diff($existingTyreIds, $updatedTyreIds);
-            if (!empty($tyresToRemove)) {
-                $removedTyres = WorkshopTyre::whereIn('id', $tyresToRemove)->where('ref_type', 'workshop')->get();
-
-                foreach ($removedTyres as $removedTyre) {
-
-                    $tyreProduct = TyresProduct::where(function ($query) use ($removedTyre) {
-                        $query->where('product_id', $removedTyre->product_id)
-                            ->Where('tyre_supplier_name', $removedTyre->supplier)
-                            ->Where('tyre_ean', $removedTyre->product_ean);
-                    })->first();
-
-                    if ($tyreProduct) {
-                        $tyreProduct->tyre_quantity += $removedTyre->quantity;
-                        $tyreProduct->save();
-                    }
-                    ActivityLogger::log(
-                        workshopId: $workshopId,
-                        action: 'Removed Tyre',
-                        description: 'Removed tyre product: ' . $removedTyre->product_ean,
-                        changes: ['quantity' => $removedTyre->quantity]
-                    );
-                }
-                WorkshopTyre::whereIn('id', $tyresToRemove)->where('ref_type', 'workshop')->forceDelete();
-            }
-        } else {
-            $removedTyres = WorkshopTyre::where('workshop_id', $workshopId)->where('ref_type', 'workshop')->get();
-
-            foreach ($removedTyres as $removedTyre) {
-                $tyreProduct = TyresProduct::where(function ($query) use ($removedTyre) {
-                    $query->where('product_id', $removedTyre->product_id)
-                        ->Where('tyre_supplier_name', $removedTyre->supplier)
-                        ->Where('tyre_ean', $removedTyre->product_ean);
-                })->first();
 
                 if ($tyreProduct) {
+                    $tyreProduct->tyre_quantity -= $requestedQuantity;
+                    $tyreProduct->save();
+                } else {
+                    \Log::warning("Tyre not found in stock (EAN={$ean}, Supplier={$supplierName}) — stock skipped, only workshop fields updated.");
+                }
+
+                $updatedTyreKeys[] = $supplierName . '_' . $ean;
+
+                ActivityLogger::log(
+                    workshopId: $workshopId,
+                    action: $WorkshopTyre->wasRecentlyCreated ? 'Added Tyre' : 'Updated Tyre',
+                    description: ($WorkshopTyre->wasRecentlyCreated ? 'Added' : 'Updated') . " tyre: {$ean}",
+                    changes: ['quantity' => $requestedQuantity]
+                );
+            }
+
+            $removedTyres = $existingTyres->filter(function ($tyre) use ($updatedTyreKeys) {
+                return !in_array($tyre->supplier . '_' . $tyre->product_ean, $updatedTyreKeys);
+            });
+
+            foreach ($removedTyres as $removedTyre) {
+                $tyreProduct = TyresProduct::where('tyre_ean', $removedTyre->product_ean)->where('tyre_supplier_name', $removedTyre->supplier)->first();
+                if (!$tyreProduct) {
+                    \Log::warning("Skipping removal stock restore for {$removedTyre->product_ean} ({$removedTyre->supplier}) — not found in tyres_products");
+                } else {
                     $tyreProduct->tyre_quantity += $removedTyre->quantity;
                     $tyreProduct->save();
                 }
+
                 ActivityLogger::log(
                     workshopId: $workshopId,
                     action: 'Removed Tyre',
-                    description: 'Removed tyre product: ' . $removedTyre->product_ean,
+                    description: "Removed tyre: {$removedTyre->product_ean}",
                     changes: ['quantity' => $removedTyre->quantity]
                 );
+                $removedTyre->forceDelete();
             }
-
-            WorkshopTyre::where('workshop_id', $workshopId)->where('ref_type', 'workshop')->forceDelete();
         }
 
         // **Save or Update Service Data**
         if ($request->has('service_id') && $request->service_id[0] != null) {
-            foreach ($request->service_id as $index => $serviceId) {
-                $serviceItemId = $serviceId ?? null;
+            $incomingServiceIds = $request->service_id;
+            foreach ($incomingServiceIds as $index => $serviceId) {
+                $serviceItem = WorkshopService::where('workshop_id', $workshopId)
+                    ->where('service_id', $serviceId)
+                    ->where('ref_type', 'workshop')
+                    ->first();
 
-                $serviceItem = WorkshopService::where('workshop_id', $workshopId)->where('service_id', $serviceItemId)->where('ref_type', 'workshop')->first();
-                // dd( $serviceItem);
                 if ($serviceItem) {
                     $original = $serviceItem->toArray();
-
                     $serviceItem->service_id = $serviceId;
                     $serviceItem->service_name = $request->service_name[$index] ?? 'Unknown Service';
                     $serviceItem->fitting_type = $request->fitting_type ?? 'fully_fitted';
@@ -399,7 +355,6 @@ class WorkshopController extends Controller
                         );
                     }
                 } else {
-                    // Add new service
                     $serviceItem = new WorkshopService();
                     $serviceItem->workshop_id = $workshopId;
                     $serviceItem->ref_type = 'workshop';
@@ -425,6 +380,358 @@ class WorkshopController extends Controller
                     );
                 }
             }
+            $removedServices = WorkshopService::where('workshop_id', $workshopId)
+                ->where('ref_type', 'workshop')
+                ->whereNotIn('service_id', $incomingServiceIds)
+                ->get();
+
+            foreach ($removedServices as $removed) {
+                ActivityLogger::log(
+                    workshopId: $workshopId,
+                    action: 'Removed Service',
+                    description: 'Service removed: ' . $removed->service_name,
+                    changes: [
+                        'service_id' => ['old' => $removed->service_id, 'new' => null],
+                        'quantity' => ['old' => $removed->service_quantity, 'new' => null],
+                        'price' => ['old' => $removed->service_price, 'new' => null],
+                        'vat' => ['old' => $removed->tax_class_id, 'new' => null],
+                    ]
+                );
+                $removed->delete();
+            }
+
+        }
+
+        // **Save or Update consumable Data**
+        if ($request->has('consumable_id') && $request->consumable_id[0] != null) {
+            $incoming = [];
+            foreach ($request->consumable_id as $index => $id) {
+                if ($id === null || $id === '')
+                    continue;
+
+                $incoming[] = [
+                    'id' => $id,
+                    'consumable_name' => $request->consumable_name[$index] ?? 'Unknown consumable',
+                    'content' => $request->consumable_content[$index] ?? '',
+                    'quantity' => (int) ($request->consumable_quantity[$index] ?? 1),
+                    'price' => (float) ($request->consumable_price[$index] ?? 0.0),
+                    'vat' => $request->consumable_vat[$index] ?? 0,
+                    'fitting_type' => $request->fitting_type ?? 'fully_fitted',
+                ];
+            }
+
+            $grouped = [];
+            foreach ($incoming as $item) {
+                $id = $item['id'];
+                if (!isset($grouped[$id])) {
+                    $grouped[$id] = $item;
+                } else {
+                    $grouped[$id]['quantity'] += $item['quantity'];
+                }
+            }
+            $grouped = array_values($grouped);
+
+            $incomingConsumableIds = array_column($grouped, 'id');
+
+            foreach ($grouped as $item) {
+                $consumableId = $item['id'];
+
+                $consumableItem = WorkshopConsumable::where('workshop_id', $workshopId)
+                    ->where('consumable_id', $consumableId)
+                    ->where('ref_type', 'workshop')
+                    ->first();
+
+                if ($consumableItem) {
+                    $original = $consumableItem->toArray();
+
+                    // Update with aggregated values
+                    $consumableItem->consumable_id = $consumableId;
+                    $consumableItem->consumable_name = $item['consumable_name'];
+                    $consumableItem->consumable_content = $item['content'];
+                    $consumableItem->fitting_type = $item['fitting_type'];
+                    $consumableItem->consumable_quantity = $item['quantity'];
+                    $consumableItem->consumable_price = $item['price'];
+                    $consumableItem->tax_class_id = $item['vat'];
+
+                    $dirty = $consumableItem->getDirty();
+
+                    if (!empty($dirty)) {
+                        $changes = [];
+                        foreach ($dirty as $field => $newValue) {
+                            $changes[$field] = [
+                                'old' => $original[$field] ?? null,
+                                'new' => $newValue
+                            ];
+                        }
+
+                        $consumableItem->save();
+
+                        ActivityLogger::log(
+                            workshopId: $workshopId,
+                            action: 'Updated consumable',
+                            description: 'consumable updated: ' . $consumableItem->consumable_name,
+                            changes: $changes
+                        );
+                    }
+                } else {
+                    // Create new
+                    $consumableItem = new WorkshopConsumable();
+                    $consumableItem->workshop_id = $workshopId;
+                    $consumableItem->ref_type = 'workshop';
+                    $consumableItem->product_type = 'consumable';
+                    $consumableItem->consumable_id = $consumableId;
+                    $consumableItem->consumable_name = $item['consumable_name'];
+                    $consumableItem->consumable_content = $item['content'];
+                    $consumableItem->fitting_type = $item['fitting_type'];
+                    $consumableItem->consumable_quantity = $item['quantity'];
+                    $consumableItem->consumable_price = $item['price'];
+                    $consumableItem->tax_class_id = $item['vat'];
+                    $consumableItem->save();
+
+                    ActivityLogger::log(
+                        workshopId: $workshopId,
+                        action: 'Added consumable',
+                        description: 'consumable added: ' . $consumableItem->consumable_name,
+                        changes: [
+                            'consumable_id' => ['old' => null, 'new' => $consumableId],
+                            'quantity' => ['old' => null, 'new' => $item['quantity']],
+                            'price' => ['old' => null, 'new' => $item['price']],
+                            'vat' => ['old' => null, 'new' => $item['vat']],
+                        ]
+                    );
+                }
+            }
+
+            $removedConsumables = WorkshopConsumable::where('workshop_id', $workshopId)
+                ->where('ref_type', 'workshop')
+                ->whereNotIn('consumable_id', $incomingConsumableIds)
+                ->get();
+
+            foreach ($removedConsumables as $removed) {
+                ActivityLogger::log(
+                    workshopId: $workshopId,
+                    action: 'Removed consumable',
+                    description: 'consumable removed: ' . $removed->consumable_name,
+                    changes: [
+                        'consumable_id' => ['old' => $removed->consumable_id, 'new' => null],
+                        'quantity' => ['old' => $removed->consumable_quantity, 'new' => null],
+                        'price' => ['old' => $removed->consumable_price, 'new' => null],
+                        'vat' => ['old' => $removed->tax_class_id, 'new' => null],
+                    ]
+                );
+                $removed->delete();
+            }
+
+        }
+
+        // **Save or Update part Data**
+        if ($request->has('part_id') && $request->part_id[0] != null) {
+            $incoming = [];
+            foreach ($request->part_id as $index => $id) {
+                if ($id === null || $id === '')
+                    continue;
+
+                $incoming[] = [
+                    'id' => $id,
+                    'part_name' => $request->part_name[$index] ?? 'Unknown part',
+                    'content' => $request->part_content[$index] ?? '',
+                    'quantity' => (int) ($request->part_quantity[$index] ?? 1),
+                    'price' => (float) ($request->part_price[$index] ?? 0.0),
+                    'vat' => $request->part_vat[$index] ?? 0,
+                    'fitting_type' => $request->fitting_type ?? 'fully_fitted',
+                ];
+            }
+
+            $grouped = [];
+            foreach ($incoming as $item) {
+                $id = $item['id'];
+                if (!isset($grouped[$id])) {
+                    $grouped[$id] = $item;
+                } else {
+                    $grouped[$id]['quantity'] += $item['quantity'];
+                }
+            }
+            $grouped = array_values($grouped);
+
+            $incomingPartIds = array_column($grouped, 'id');
+
+            foreach ($grouped as $item) {
+                $partId = $item['id'];
+
+                $partItem = WorkshopPart::where('workshop_id', $workshopId)
+                    ->where('part_id', $partId)
+                    ->where('ref_type', 'workshop')
+                    ->first();
+
+                if ($partItem) {
+                    $original = $partItem->toArray();
+
+                    // Update with aggregated values
+                    $partItem->part_id = $partId;
+                    $partItem->part_name = $item['part_name'];
+                    $partItem->part_content = $item['content'];
+                    $partItem->fitting_type = $item['fitting_type'];
+                    $partItem->part_quantity = $item['quantity'];
+                    $partItem->part_price = $item['price'];
+                    $partItem->tax_class_id = $item['vat'];
+
+                    $dirty = $partItem->getDirty();
+
+                    if (!empty($dirty)) {
+                        $changes = [];
+                        foreach ($dirty as $field => $newValue) {
+                            $changes[$field] = [
+                                'old' => $original[$field] ?? null,
+                                'new' => $newValue
+                            ];
+                        }
+
+                        $partItem->save();
+
+                        ActivityLogger::log(
+                            workshopId: $workshopId,
+                            action: 'Updated part',
+                            description: 'part updated: ' . $partItem->part_name,
+                            changes: $changes
+                        );
+                    }
+                } else {
+                    // Create new
+                    $partItem = new WorkshopPart();
+                    $partItem->workshop_id = $workshopId;
+                    $partItem->ref_type = 'workshop';
+                    $partItem->product_type = 'part';
+                    $partItem->part_id = $partId;
+                    $partItem->part_name = $item['part_name'];
+                    $partItem->part_content = $item['content'];
+                    $partItem->fitting_type = $item['fitting_type'];
+                    $partItem->part_quantity = $item['quantity'];
+                    $partItem->part_price = $item['price'];
+                    $partItem->tax_class_id = $item['vat'];
+                    $partItem->save();
+
+                    ActivityLogger::log(
+                        workshopId: $workshopId,
+                        action: 'Added part',
+                        description: 'part added: ' . $partItem->part_name,
+                        changes: [
+                            'part_id' => ['old' => null, 'new' => $partId],
+                            'quantity' => ['old' => null, 'new' => $item['quantity']],
+                            'price' => ['old' => null, 'new' => $item['price']],
+                            'vat' => ['old' => null, 'new' => $item['vat']],
+                        ]
+                    );
+                }
+            }
+
+            $removedParts = WorkshopPart::where('workshop_id', $workshopId)
+                ->where('ref_type', 'workshop')
+                ->whereNotIn('part_id', $incomingPartIds)
+                ->get();
+
+            foreach ($removedParts as $removed) {
+                ActivityLogger::log(
+                    workshopId: $workshopId,
+                    action: 'Removed part',
+                    description: 'part removed: ' . $removed->part_name,
+                    changes: [
+                        'part_id' => ['old' => $removed->part_id, 'new' => null],
+                        'quantity' => ['old' => $removed->part_quantity, 'new' => null],
+                        'price' => ['old' => $removed->part_price, 'new' => null],
+                        'vat' => ['old' => $removed->tax_class_id, 'new' => null],
+                    ]
+                );
+                $removed->delete();
+            }
+
+        }
+
+        // **Save or Update Labour Data**
+        if ($request->has('labour_id') && $request->labour_id[0] != null) {
+            $incomingLabourIds = $request->labour_id;
+            foreach ($incomingLabourIds as $index => $LabourId) {
+                $labourItem = WorkshopLabour::where('workshop_id', $workshopId)
+                    ->where('labour_id', $LabourId)
+                    ->where('ref_type', 'workshop')
+                    ->first();
+
+                if ($labourItem) {
+                    $original = $labourItem->toArray();
+                    $labourItem->labour_id = $LabourId;
+                    $labourItem->labour_name = $request->labour_name[$index] ?? 'Unknown labour';
+                    $labourItem->labour_content = $request->labour_content[$index] ?? '';
+                    $labourItem->fitting_type = $request->fitting_type ?? 'fully_fitted';
+                    $labourItem->labour_quantity = $request->labour_quantity[$index] ?? 1;
+                    $labourItem->labour_price = $request->labour_price[$index] ?? 0;
+                    $labourItem->tax_class_id = $request->labour_vat[$index] ?? 0;
+
+                    $dirty = $labourItem->getDirty();
+
+                    if (!empty($dirty)) {
+                        $changes = [];
+                        foreach ($dirty as $field => $newValue) {
+                            $changes[$field] = [
+                                'old' => $original[$field] ?? null,
+                                'new' => $newValue
+                            ];
+                        }
+
+                        $labourItem->save();
+
+                        ActivityLogger::log(
+                            workshopId: $workshopId,
+                            action: 'Updated labour',
+                            description: 'labour updated: ' . $labourItem->labour_name,
+                            changes: $changes
+                        );
+                    }
+                } else {
+                    $labourItem = new WorkshopLabour();
+                    $labourItem->workshop_id = $workshopId;
+                    $labourItem->ref_type = 'workshop';
+                    $labourItem->product_type = 'labour';
+                    $labourItem->labour_id = $LabourId;
+                    $labourItem->labour_name = $request->labour_name[$index] ?? 'Unknown labour';
+                    $labourItem->labour_content = $request->labour_content[$index] ?? '';
+                    $labourItem->fitting_type = $request->fitting_type ?? 'fully_fitted';
+                    $labourItem->labour_quantity = $request->labour_quantity[$index] ?? 1;
+                    $labourItem->labour_price = $request->labour_price[$index] ?? 0;
+                    $labourItem->tax_class_id = $request->labour_vat[$index] ?? 0;
+                    $labourItem->save();
+
+                    ActivityLogger::log(
+                        workshopId: $workshopId,
+                        action: 'Added labour',
+                        description: 'labour added: ' . $labourItem->labour_name,
+                        changes: [
+                            'labour_id' => ['old' => null, 'new' => $LabourId],
+                            'quantity' => ['old' => null, 'new' => $labourItem->labour_quantity],
+                            'price' => ['old' => null, 'new' => $labourItem->labour_price],
+                            'vat' => ['old' => null, 'new' => $labourItem->tax_class_id],
+                        ]
+                    );
+                }
+            }
+            $removedLabours = WorkshopLabour::where('workshop_id', $workshopId)
+                ->where('ref_type', 'workshop')
+                ->whereNotIn('labour_id', $incomingLabourIds)
+                ->get();
+
+            foreach ($removedLabours as $removed) {
+                ActivityLogger::log(
+                    workshopId: $workshopId,
+                    action: 'Removed Labour',
+                    description: 'Labour removed: ' . $removed->labour_name,
+                    changes: [
+                        'labour_id' => ['old' => $removed->labour_id, 'new' => null],
+                        'quantity' => ['old' => $removed->labour_quantity, 'new' => null],
+                        'price' => ['old' => $removed->labour_price, 'new' => null],
+                        'vat' => ['old' => $removed->tax_class_id, 'new' => null],
+                    ]
+                );
+                $removed->delete();
+            }
+
         }
 
         // **Save Booking Data**
@@ -480,12 +787,9 @@ class WorkshopController extends Controller
             }
         }
 
-        // Save VehicleDetail Data and manage customer_vehicle relationship
         if ($request->has('vehicle_reg_number') && $request->vehicle_reg_number != null) {
-            // Check if a vehicle with the same registration number already exists
             $vehicledetails = VehicleDetail::where('vehicle_reg_number', $request->vehicle_reg_number)->first();
             if ($vehicledetails) {
-                // Update existing VehicleDetail
                 $vehicledetails->vehicle_make = $request->vehicle_make;
                 $vehicledetails->vehicle_model = $request->vehicle_model;
                 $vehicledetails->vehicle_year = $request->vehicle_first_registered;
@@ -500,7 +804,6 @@ class WorkshopController extends Controller
                 $vehicledetails->vehicle_mot_expiry_date = $request->vehicle_mot_expiry_date;
                 $vehicledetails->save();
             } else {
-                // Create new VehicleDetail if not found
                 $vehicledetails = new VehicleDetail();
                 $vehicledetails->vehicle_reg_number = $request->vehicle_reg_number;
                 $vehicledetails->vehicle_make = $request->vehicle_make;
@@ -522,15 +825,12 @@ class WorkshopController extends Controller
                     description: 'Vehicle registration: ' . $request->vehicle_reg_number,
                     changes: ['make' => $request->vehicle_make, 'model' => $request->vehicle_model]
                 );
-                // \Log::info("Created new vehicledetails: " . json_encode($vehicledetails));
             }
 
             // Save customer_vehicle relationship if customer_id is present
             if ($request->has('customer_id') && $request->customer_id != null) {
                 $customerId = $request->customer_id;
-                $vehicleDetailId = $vehicledetails->id; // Get the ID of the vehicle detail
-
-                // Check if the relationship already exists
+                $vehicleDetailId = $vehicledetails->id;
                 $existingRelation = CustomerVehicle::where('customer_id', $customerId)
                     ->where('vehicle_detail_id', $vehicleDetailId)
                     ->first();
@@ -541,59 +841,109 @@ class WorkshopController extends Controller
                     $customerVehicle->vehicle_detail_id = $vehicleDetailId;
                     $customerVehicle->save();
                 }
-
             }
         }
     }
+
     public function searchCustomers(Request $request)
     {
-        $query = $request->input('q'); // Get the search term
+        $query = $request->input('q');
 
-        // Search for customers by name or company name
-        $customers = Customer::where('customer_name', 'like', '%' . $query . '%')
-            ->orWhere('company_name', 'like', '%' . $query . '%')
-            ->select('id', 'customer_name', 'company_name') // Select only the required fields
+        $customers = Customer::with('group:id,name,discount_type,discount_value,due_date_option,manual_due_date')
+            ->where(function ($q) use ($query) {
+                $q->where('customer_name', 'like', "%{$query}%")
+                  ->orWhere('company_name', 'like', "%{$query}%");
+            })
+            ->select('id', 'customer_name', 'company_name', 'customer_group_id')
             ->get();
 
-        // Format the response
         $results = $customers->map(function ($customer) {
+            $group = $customer->group;
+
             return [
                 'id' => $customer->id,
-                'text' => $customer->customer_name . ' - ' . $customer->company_name, // Combine name and company
+                'text' => trim($customer->customer_name . ' - ' . $customer->company_name),
+                'group' => $group ? [
+                    'name' => $group->name,
+                    'discount_type' => $group->discount_type,
+                    'discount_value' => $group->discount_value,
+                    'due_date_option' => $group->due_date_option,
+                    'manual_due_date' => $group->manual_due_date
+                        ? \Carbon\Carbon::parse($group->manual_due_date)->format('Y-m-d')
+                        : null,
+                ] : null,
             ];
         });
 
         return response()->json($results);
     }
-    public function validateTyreStock($productId)
+
+
+    public function validateTyreStockByEan(string $ean, string $supplier, Request $request)
     {
         try {
-            // Fetch the tyre product from the database
-            $tyreProduct = TyresProduct::find($productId);
+            $ean = urldecode($ean);
+            $supplier = urldecode($supplier);
+            $workshopId = $request->query('workshop_id');
+            $tyreProduct = TyresProduct::where('tyre_ean', $ean)->where('tyre_supplier_name', $supplier)->first();
 
+            // If neither found
             if (!$tyreProduct) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Tyre product not found.',
+                    'message' => 'Product not found for EAN: ' . $ean . ', Supplier: ' . $supplier,
+                    'available' => 0,
+                    'main_stock' => 0,
+                    'workshop_stock' => 0,
                 ]);
             }
+            // Determine product type and stock
+            if ($tyreProduct) {
+                $mainQty = (int) $tyreProduct->tyre_quantity;
+                $productType = 'tyre';
+            }
+            $workshopQty = 0;
 
-            // Return the available stock
+            if ($workshopId) {
+
+            if ($productType === 'tyre') {
+
+                $existingItem = WorkshopTyre::where('workshop_id', $workshopId)
+                    ->where('product_ean', $ean)
+                    ->where('supplier', $supplier)
+                    ->first();
+
+                }
+
+                $workshopQty = $existingItem ? (int) $existingItem->quantity : 0;
+            }
+
+
+            $totalAvailable = $mainQty + $workshopQty;
+
             return response()->json([
                 'success' => true,
-                'message' => 'Stock is sufficient.',
-                'available' => $tyreProduct->tyre_quantity,
+                'message' => 'Stock fetched successfully.',
+                'product_type' => $productType,
+                'available' => $totalAvailable,
+                'main_stock' => $mainQty,
+                'workshop_stock' => $workshopQty,
             ]);
         } catch (\Exception $e) {
+            \Log::error('Stock validation by EAN failed: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred while validating stock.',
-            ]);
+                'available' => 0,
+            ], 500);
         }
     }
+
     public function convertToInvoice($id)
     {
+        $this->authorizePermission('invoice.create');
         try {
+            DB::beginTransaction();
             $workshop = Workshop::findOrFail($id);
             $existingInvoice = Invoice::where('workshop_id', $workshop->id)->first();
 
@@ -602,44 +952,81 @@ class WorkshopController extends Controller
                 'workshop_id' => $workshop->id,
                 'updated_at' => now(),
             ]);
+
+            $successMessage = '';
+
             if ($existingInvoice) {
                 $existingInvoice->update($invoiceData);
                 $workshop->update(['is_converted_to_invoice' => 1]);
+
                 ActivityLogger::log(
                     workshopId: $workshop->id,
                     action: 'Update Invoice',
-                    description: 'Update Invoice: ' . $workshop->id,
+                    description: 'Updated Invoice: ' . $workshop->id,
                     changes: [
                         'workshop' => $workshop->id,
                         'balance_amount' => $workshop->balance_price,
                         'payment_status' => $workshop->payment_status
                     ]
                 );
-                // return redirect()->back();
+
+                $successMessage = 'Invoice updated successfully.';
+
             } else {
                 $invoiceData = array_merge($workshopData, [
                     'workshop_id' => $workshop->id,
                     'created_at' => now(),
                 ]);
+
                 $newInvoice = Invoice::create($invoiceData);
                 $workshop->update(['is_converted_to_invoice' => 1]);
+
                 ActivityLogger::log(
                     workshopId: $workshop->id,
                     action: 'Create Invoice',
-                    description: 'Create New Invoice: ' . $workshop->id,
+                    description: 'Created New Invoice: ' . $workshop->id,
                     changes: [
                         'workshop' => $workshop->id,
                         'balance_amount' => $workshop->balance_price,
                         'payment_status' => $workshop->payment_status
                     ]
                 );
-                // return redirect()->back();
+
+                $successMessage = 'Invoice created successfully.';
             }
 
-            $items = WorkshopTyre::where('workshop_id', $workshop->id)->where('ref_type', 'workshop')->where('supplier', 'ownstock')->get();
-            // Insert or update stock history records for each item
-           foreach ($items as $item) {
-                $tyreProduct = TyresProduct::find($item->product_id);
+            $tyres = WorkshopTyre::where('workshop_id', $workshop->id)
+                ->where('ref_type', 'workshop')
+                ->get();
+            $tyres->each(function ($item) {
+                $item->resolved_type = 'tyre';
+            });
+
+            $items = $tyres;
+//dd($items);
+            foreach ($items as $item) {
+                $product = null;
+                $availableQty = 0;
+                $stockColumn = null;
+                $type = $item->resolved_type ?? $item->product_type;
+                if ($type === 'tyre') {
+
+                    $product = TyresProduct::where('tyre_ean', $item->product_ean)
+                        ->where('tyre_supplier_name', $item->supplier)->lockForUpdate()
+                        ->first();
+                    $stockColumn = 'tyre_quantity';
+
+                    if ($product) {
+                        $availableQty = (int) $product->tyre_quantity;
+                    }
+
+                }
+
+                if (!$product) {
+                    \Log::warning("Product not found: Type={$item->product_type}, Supplier={$item->supplier}");
+                    continue;
+                  }
+                $availableQty = (int) $product->$stockColumn;
 
                 $existing = DB::table('stock_history')
                     ->where([
@@ -652,9 +1039,19 @@ class WorkshopController extends Controller
 
                 if ($existing) {
                     if ($existing->qty != $item->quantity) {
-                        // Determine stock change
                         $qtyDiff = $item->quantity - $existing->qty;
                         $stockType = $qtyDiff > 0 ? 'Decrease' : 'Increase';
+                        if ($qtyDiff > 0) {
+                        if ($availableQty < $qtyDiff) {
+                            DB::rollBack();
+                            return redirect()->back()->with('error', 'Insufficient stock for EAN: ' . $item->product_ean);
+                        }
+
+                        $product->decrement($stockColumn, $qtyDiff);
+
+                    } elseif ($qtyDiff < 0) {
+                        $product->increment($stockColumn, abs($qtyDiff));
+                    }
 
                         DB::table('stock_history')->insert([
                             'ean' => $item->product_ean,
@@ -664,7 +1061,7 @@ class WorkshopController extends Controller
                             'product_type' => $item->product_type,
                             'supplier' => $item->supplier,
                             'qty' => $item->quantity,
-                            'available_qty' => $tyreProduct->tyre_quantity,
+                            'available_qty' => $product->$stockColumn,//$availableQty,
                             'cost_price' => $item->margin_rate,
                             'product_id' => $item->product_id,
                             'user_id' => auth()->id(),
@@ -676,7 +1073,12 @@ class WorkshopController extends Controller
                         ]);
                     }
                 } else {
-                    // If no existing record, insert new (normal case)
+                    if ($availableQty < $item->quantity) {
+                        DB::rollBack();
+                        return redirect()->back()->with('error', 'Insufficient stock for EAN: ' . $item->product_ean);
+                    }
+
+                    $product->decrement($stockColumn, $item->quantity);
                     DB::table('stock_history')->insert([
                         'ean' => $item->product_ean,
                         'ref_type' => 'INV',
@@ -685,7 +1087,7 @@ class WorkshopController extends Controller
                         'product_type' => $item->product_type,
                         'supplier' => $item->supplier,
                         'qty' => $item->quantity,
-                        'available_qty' => $tyreProduct->tyre_quantity,
+                        'available_qty' => $product->$stockColumn,//$availableQty,
                         'cost_price' => $item->margin_rate,
                         'product_id' => $item->product_id,
                         'user_id' => auth()->id(),
@@ -698,32 +1100,58 @@ class WorkshopController extends Controller
                 }
             }
 
-            // Remove stock history entries for items that no longer exist in WorkshopTyre
             $existingEans = $items->pluck('product_ean')->toArray();
+            $removedItems = DB::table('stock_history')
+                ->where('ref_type', 'INV')
+                ->where('ref_id', $workshop->id)
+                ->whereNotIn('ean', $existingEans)
+                ->get();
+
+            foreach ($removedItems as $removed) {
+
+                if ($removed->product_type === 'tyre') {
+                    TyresProduct::where('tyre_ean', $removed->ean)
+                        ->where('tyre_supplier_name', $removed->supplier)
+                        ->increment('tyre_quantity', $removed->qty);
+                }
+            }
+
             DB::table('stock_history')
                 ->where('ref_type', 'INV')
                 ->where('ref_id', $workshop->id)
                 ->whereNotIn('ean', $existingEans)
                 ->delete();
-            return redirect()->back();
-        } catch (\Exception $e) {
-            \Log::error("Error occurred while processing invoice for workshop ID: $id", ['error' => $e->getMessage()]);
 
-            // Handle any errors and redirect back with an error message
+
+            DB::commit();
+            return redirect()->back()->with('success', $successMessage);
+
+        } catch (\Exception $e) {
+            \Log::error("Error processing invoice for workshop ID: $id", [
+                'error' => $e->getMessage()
+            ]);
+            DB::rollBack();
             return redirect()->back()->with('error', 'Failed to process the invoice: ' . $e->getMessage());
         }
     }
 
     public function view(Request $request)
     {
+        $this->authorizePermission('workshop.view');
         $viewData['header_link'] = HeaderLink::where("menu_id", '1')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
 
         $viewData['customerNameSelect'] = Customer::pluck('customer_name', 'id');
+        $workshopQuery = DB::table('workshops')
+            ->whereNull('workshops.deleted_at')
+            ->select('workshops.*')
+            ->selectRaw("
+                EXISTS (
+                    SELECT 1 FROM workshop_tyres wt
+                    WHERE wt.workshop_id = workshops.id
+                    AND wt.product_type = 'tyre'
+                ) as has_tyre
+            ");        
 
-        // Always build query based on request query parameters
-        $workshopQuery = DB::table('workshops')->whereNull('deleted_at');
-
-        // Apply filters from request (both GET and POST)
         if ($request->filled('id')) {
             $workshopQuery->where('id', $request->id);
         }
@@ -758,11 +1186,8 @@ class WorkshopController extends Controller
         if ($request->filled('status')) {
             $workshopQuery->where('status', 'like', '%' . $request->status . '%');
         }
-        // if ($request->filled('payment_method')) {
-        //     $workshopQuery->where('payment_method', 'like', '%' . $request->payment_method . '%');
-        // }
-         if ($request->filled('fitting_type')) {
-            $workshopQuery->where('fitting_type', 'like', '%' . $request->fitting_type . '%');
+        if ($request->filled('payment_method')) {
+            $workshopQuery->where('payment_method', 'like', '%' . $request->payment_method . '%');
         }
         if ($request->filled('is_void')) {
             $workshopQuery->where('is_void', $request->is_void);
@@ -777,25 +1202,25 @@ class WorkshopController extends Controller
             $workshopQuery->where('year', $request->year);
         }
 
-        // Sorting
         $workshopQuery->orderBy('id', 'desc');
-
-        // Paginate
         $workshopResults = $workshopQuery->paginate(10)->appends($request->except('page'));
+        foreach ($workshopResults as $workshop) {
+            $hasTyre = DB::table('workshop_tyres')
+                ->where('workshop_id', $workshop->id)
+                ->where('product_type', 'tyre')
+                ->exists();
 
-        // Pass data to view
+            $workshop->has_tyre = $hasTyre;
+        }
+
         $viewData['workshop'] = $workshopResults;
-
-        // Set title
         $viewData['pageTitle'] = 'Workshop Details';
 
-        // If POST, get form input for repopulating fields
         $formAutoFillup = $request->isMethod('post') ? $request->all() : $request->query();
 
         return view('AutoCare.workshop.search', $viewData, $formAutoFillup);
     }
-
-    public function getWorkshopData(Request $request)
+   public function getWorkshopData(Request $request)
     {
         $workshopQuery = DB::table('workshops')
             ->leftJoin('garages', 'workshops.garage_id', '=', 'garages.id')
@@ -1153,10 +1578,13 @@ class WorkshopController extends Controller
 
     public function viewSearchInvoice(Request $request)
     {
+        $this->authorizePermission('invoice.view');
         $viewData['header_link'] = HeaderLink::where("menu_id", '1')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
 
         $viewData['customerNameSelect'] = Customer::pluck('customer_name', 'id');
+
         $invoiceQuery = DB::table('invoices')->whereNull('deleted_at');
+
         if ($request->filled('id')) {
             $invoiceQuery->where('workshop_id', $request->id);
         }
@@ -1188,9 +1616,9 @@ class WorkshopController extends Controller
         if ($request->filled('status')) {
             $invoiceQuery->where('status', 'like', '%' . $request->status . '%');
         }
-        // if ($request->filled('payment_method')) {
-        //     $invoiceQuery->where('payment_method', 'like', '%' . $request->payment_method . '%');
-        // }
+        if ($request->filled('payment_method')) {
+            $invoiceQuery->where('payment_method', 'like', '%' . $request->payment_method . '%');
+        }
         if ($request->filled('is_void')) {
             $invoiceQuery->where('is_void', $request->is_void);
         }
@@ -1204,7 +1632,6 @@ class WorkshopController extends Controller
             $invoiceQuery->where('year', $request->year);
         }
 
-        // Sorting
         $invoiceQuery->orderBy('id', 'desc');
         $now = \Carbon\Carbon::now();
         $totals = (clone $invoiceQuery)
@@ -1222,27 +1649,26 @@ class WorkshopController extends Controller
         $viewData['total_overdue'] = $totals->total_overdue ?? 0;
 
         $invoiceResults = $invoiceQuery->paginate(10)->appends($request->except('page'));
+
         $viewData['workshop'] = $invoiceResults;
+
         $viewData['pageTitle'] = 'Invoice Details';
+
         $formAutoFillup = $request->isMethod('post') ? $request->all() : $request->query();
 
         return view('AutoCare.workshop.search-invoice', $viewData, $formAutoFillup);
     }
-
     public function getInvoiceData(Request $request)
     {
         $invoiceQuery = DB::table('invoices')
-            ->leftJoin('garages', 'invoices.garage_id', '=', 'garages.id')
             ->select(
                 'invoices.workshop_id',
                 'invoices.created_at as workshop_date',
                 'invoices.name',
-                'garages.garage_name',
                 'invoices.email',
                 'invoices.mobile',
                 'invoices.vehicle_reg_number',
-                // 'invoices.payment_method',
-                'invoices.fitting_type',
+                'invoices.payment_method',
                 'invoices.grandTotal',
                 'invoices.paid_price',
                 'invoices.discount_price',
@@ -1265,10 +1691,6 @@ class WorkshopController extends Controller
                 $query->where('invoices.name', 'like', $searchTerm)
                     ->orWhere('invoices.company_name', 'like', $searchTerm);
             });
-        }
-
-        if ($request->filled('garage_name')) {
-            $invoiceQuery->where('garages.garage_name', 'like', '%' . $request->garage_name . '%');
         }
 
         if ($request->filled('mobile')) {
@@ -1295,12 +1717,8 @@ class WorkshopController extends Controller
             $invoiceQuery->where('invoices.status', $request->status);
         }
 
-        // if ($request->filled('payment_method')) {
-        //     $invoiceQuery->where('invoices.payment_method', $request->payment_method);
-        // }
-
-        if ($request->filled('fitting_type')) {
-            $invoiceQuery->where('invoices.fitting_type', $request->fitting_type);
+        if ($request->filled('payment_method')) {
+            $invoiceQuery->where('invoices.payment_method', $request->payment_method);
         }
 
         if ($request->filled('is_void')) {
@@ -1327,19 +1745,13 @@ class WorkshopController extends Controller
             ->addColumn('customer_name', function ($invoice) {
                 return $invoice->name ?? '';
             })
-            ->addColumn('garage_name', function ($invoice) {
-                return $invoice->garage_name ?? '';
-            })
             // Vehicle Reg (uppercase)
             ->addColumn('vehicle_reg', function ($invoice) {
                 return strtoupper($invoice->vehicle_reg_number ?? '');
             })
             // Payment Method (formatted)
-            // ->addColumn('payment_method_formatted', function ($invoice) {
-            //     return strtoupper(str_replace('_', ' ', $invoice->payment_method ?? ''));
-            // })
-             ->addColumn('fitting_type_formatted', function ($invoice) {
-                return strtoupper(str_replace('_', ' ', $invoice->fitting_type ?? ''));
+            ->addColumn('payment_method_formatted', function ($invoice) {
+                return strtoupper(str_replace('_', ' ', $invoice->payment_method ?? ''));
             })
             // Amount Due (formatted)
             ->addColumn('amount_due', function ($invoice) {
@@ -1414,13 +1826,13 @@ class WorkshopController extends Controller
                                     </a>
                                 </li>
                             <li>
-        <button type="button"
-            class="dropdown-item btn btn-info btn-sm open-email-modal-btn"
-            data-workshop-id="' . e($invoice->workshop_id) . '"
-            data-workshop-email="' . e($invoice->email ?? '') . '"
-            data-email-body-b64="' . e(base64_encode($emailBody)) . '">
-            <i class="fa fa-envelope"></i> Email Invoice
-        </button>
+            <button type="button"
+                class="dropdown-item btn btn-info btn-sm open-email-modal-btn"
+                data-workshop-id="' . e($invoice->workshop_id) . '"
+                data-workshop-email="' . e($invoice->email ?? '') . '"
+                data-email-body-b64="' . e(base64_encode($emailBody)) . '">
+                <i class="fa fa-envelope"></i> Email Invoice
+            </button>
         </li>';
                 if ($roleId == 1) {
                     $actions .= '<li>
@@ -1475,15 +1887,15 @@ class WorkshopController extends Controller
                                         <i class="fa fa-eye"></i> Payment History
                                     </a>
                                 </li>';
-                            }
-                    if (!$isVoid) {
-                        $actions .= '<li>
+                }
+                if (!$isVoid) {
+                    $actions .= '<li>
                                         <a href="' . url('/') . '/AutoCare/workshop/add/' . $invoice->workshop_id . '"
                                             class="dropdown-item btn btn-success btn-sm">
                                             <i class="fa fa-edit"></i> Edit
                                         </a>
                                     </li>';
-                    }
+                }
                 $actions .= '<li>
                                 <a href="#"
                                     class="dropdown-item btn btn-success btn-sm open-activity-log-modal"
@@ -1529,9 +1941,7 @@ class WorkshopController extends Controller
                 }
             })
 
-            ->filterColumn('garage_name', function ($query, $keyword) {
-                $query->where('garages.garage_name', 'like', "%{$keyword}%");
-            })
+
 
             ->setRowClass(function ($invoice) {
                 $isVoid = ($invoice->is_void ?? false);
@@ -1541,8 +1951,7 @@ class WorkshopController extends Controller
                 'workshop_date_formatted',
                 'customer_name',
                 'vehicle_reg',
-                // 'payment_method_formatted',
-                'fitting_type_formatted',
+                'payment_method_formatted',
                 'amount_due',
                 'discount',
                 'paid_price',
@@ -1554,19 +1963,12 @@ class WorkshopController extends Controller
             ])
             ->make(true);
     }
-
     public function getActivityLog($id)
     {
         try {
             $logs = ActivityLog::where('workshop_id', $id)
-                ->leftJoin('users', 'activity_logs.user_id', '=', 'users.id')
-                ->leftJoin('customers', 'activity_logs.user_id', '=', 'customers.id')
-                ->select(
-                    'activity_logs.*',
-                    'users.name as user_name',
-                    'customers.customer_name as customer_name'
-                )
-                ->latest('activity_logs.created_at')
+                ->with('user')
+                ->latest()
                 ->get()
                 ->map(function ($log) {
                     // Handle changes field properly
@@ -1577,10 +1979,6 @@ class WorkshopController extends Controller
                     } else {
                         $log->changes_array = [];
                     }
-
-                    // Decide display name: prefer user, else customer
-                    $log->display_name = $log->user_name ?? $log->customer_name ?? 'System';
-
                     return $log;
                 });
 
@@ -1591,11 +1989,8 @@ class WorkshopController extends Controller
             return response()->json(['error' => 'Failed to load activity logs'], 500);
         }
     }
-
-
     public function viewpaymenthistory($id)
     {
-        // Check if the job_id exists in payment_histories
         $check = DB::table('payment_histories')
             ->where('job_id', '=', $id)
             ->exists();
@@ -1604,12 +1999,11 @@ class WorkshopController extends Controller
             return redirect()->back()->with('error', 'No payment history found for this workshop.');
         }
 
-        // Fetch payment history with customer details and debit logs
         $all_view = DB::table('payment_histories')
-            ->join('workshops', 'workshops.id', '=', 'payment_histories.job_id') // Join workshops table
-            ->leftJoin('customers', 'customers.id', '=', 'workshops.customer_id') // Left join customers table
-            ->leftJoin('customer_debit_logs', 'customer_debit_logs.payment_history_id', '=', 'payment_histories.id') // Directly join debit logs
-            ->where('payment_histories.job_id', '=', $id) // Filter by job_id
+            ->join('workshops', 'workshops.id', '=', 'payment_histories.job_id')
+            ->leftJoin('customers', 'customers.id', '=', 'workshops.customer_id')
+            ->leftJoin('customer_debit_logs', 'customer_debit_logs.payment_history_id', '=', 'payment_histories.id')
+            ->where('payment_histories.job_id', '=', $id)
             ->select(
                 'payment_histories.*',
                 'customers.*',
@@ -1636,42 +2030,30 @@ class WorkshopController extends Controller
         DB::beginTransaction();
 
         try {
-            // Void the workshop
             $workshop = Workshop::findOrFail($invoiceId);
             $workshop->is_void = true;
             $workshop->save();
-
-            // Void the related invoice
             $invoice = Invoice::where('workshop_id', $invoiceId)->first();
             if ($invoice) {
                 $invoice->is_void = true;
                 $invoice->save();
-
-                // Void related workshop tyres
                 WorkshopTyre::where('workshop_id', $workshop->id)->where('ref_type', 'workshop')
                     ->update(['is_void' => true]);
-
-                // Void related workshop services
                 WorkshopService::where('workshop_id', $workshop->id)->where('ref_type', 'workshop')
                     ->update(['is_void' => true]);
             }
-
-            // Restore tyre quantities to inventory ===
             $workshopTyres = WorkshopTyre::where('workshop_id', $workshop->id)
                 ->where('ref_type', 'workshop')
-                ->where('is_void', true) // Only restore those that were voided
+                ->where('is_void', true)
                 ->get();
 
             foreach ($workshopTyres as $workshopTyre) {
-                // Find the tyre product using product_id, supplier, and EAN for matching
                 $tyreProduct = TyresProduct::where(function ($query) use ($workshopTyre) {
-                    $query->where('product_id', $workshopTyre->product_id)
-                        ->where('tyre_supplier_name', $workshopTyre->supplier)
-                        ->where('tyre_ean', $workshopTyre->product_ean);
+                    $query->where('tyre_ean', $workshopTyre->product_ean)
+                        ->where('tyre_supplier_name', $workshopTyre->supplier);
                 })->first();
 
                 if ($tyreProduct) {
-                    // Restore quantity back to inventory
                     $tyreProduct->tyre_quantity += $workshopTyre->quantity;
                     $tyreProduct->save();
 
@@ -1719,24 +2101,21 @@ class WorkshopController extends Controller
 
     public function trash(Request $request, $id)
     {
-        // Start a database transaction
+        $viewData['header_link'] = HeaderLink::where("menu_id", '1')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
+
         DB::beginTransaction();
         try {
-            // Find the workshop by ID
             $workshop = Workshop::findOrFail($id);
 
             if (!$workshop) {
                 throw new \Exception("Workshop not found.");
             }
-
-            // Roll back tyre quantities in the tyres_product table
             $WorkshopTyre = WorkshopTyre::where('workshop_id', $id)->where('ref_type', 'workshop')->get();
 
             foreach ($WorkshopTyre as $item) {
-                // First, try to find the tyre product using product_id
-                $tyreProduct = TyresProduct::find($item->product_id);
-
-                // If product_id does not match, try matching by ean, sku, or both
+                $tyreProduct = TyresProduct::where('tyre_ean', $item->product_ean)
+                    ->where('tyre_supplier_name', $item->supplier)
+                    ->first();
                 if (!$tyreProduct) {
                     $tyreProduct = TyresProduct::where(function ($query) use ($item) {
                         $query->where('tyre_ean', $item->product_ean)
@@ -1749,50 +2128,33 @@ class WorkshopController extends Controller
                     })->first();
                 }
 
-                // If a matching tyre product is found, roll back the quantity
                 if ($tyreProduct) {
-                    $tyreProduct->tyre_quantity += $item->quantity; // Add back the quantity
+                    $tyreProduct->tyre_quantity += $item->quantity;
                     $tyreProduct->save();
                 } else {
-                    // Log a warning if no matching tyre product is found
                     \Log::warning("Tyre product not found for item: " . json_encode($item));
                 }
             }
 
+           
             // Delete related data
-            Booking::where('workshop_id', $id)->delete(); // Delete booking data
-            WorkshopService::where('workshop_id', $id)->where('ref_type', 'workshop')->delete(); // Delete workshop service data
-            WorkshopTyre::where('workshop_id', $id)->where('ref_type', 'workshop')->delete(); // Delete WorkshopTyre data
-
-            // Delete the invoice if it exists
+            Booking::where('workshop_id', $id)->delete();
+            WorkshopService::where('workshop_id', $id)->where('ref_type', 'workshop')->delete();
+            WorkshopTyre::where('workshop_id', $id)->where('ref_type', 'workshop')->delete();
             $invoice = Invoice::where('workshop_id', $id)->first();
             if ($invoice) {
                 $invoice->delete();
             }
 
-            // Delete customer debit logs associated with the workshop
             CustomerDebitLog::where('workshop_id', $id)->delete();
-
-            // Delete payment history associated with the workshop
             PaymentHistory::where('job_id', $id)->delete();
-
-            // Finally, delete the workshop itself
             $workshop->delete();
-
-            // Commit the transaction
             DB::commit();
-
-            // Flash success message
             $request->session()->flash('message.level', 'danger');
             $request->session()->flash('message.content', 'Workshop was Deleted!');
         } catch (\Exception $e) {
-            // Rollback the transaction in case of an error
             DB::rollBack();
-
-            // Log the error
             \Log::error("Error trashing workshop ID: $id", ['error' => $e->getMessage()]);
-
-            // Flash error message
             session()->flash('status', ['danger', 'Operation Failed!' . $e->getMessage()]);
         }
 
@@ -1826,16 +2188,15 @@ class WorkshopController extends Controller
         $viewData['header_link'] = HeaderLink::where("menu_id", '1')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
 
         // Fetch workshop details
-        $workshop = Workshop::whereId($id)->first(); // Keep as an object
-        // dd($workshop->garage);
+        $workshop = Workshop::whereId($id)->first();
+
         if ($workshop) {
-            // Format discount based on type
             if ($workshop->discount_type === 'percentage' && $workshop->discount_value > 0) {
                 $formattedDiscount = '(' . $workshop->discount_value . '%)';
             } elseif ($workshop->discount_type === 'amount') {
                 $formattedDiscount = '';
             } else {
-                $formattedDiscount = ''; // Default if no discount is set
+                $formattedDiscount = '';
             }
 
             // Add formatted discount to the workshop object
@@ -1861,6 +2222,15 @@ class WorkshopController extends Controller
             $WorkshopService = WorkshopService::where('workshop_id', $workshop->id)
                 ->where('ref_type', 'workshop')
                 ->get();
+            $WorkshopConsumable = WorkshopConsumable::where('workshop_id', $workshop->id)
+                ->where('ref_type', 'workshop')
+                ->get();
+            $WorkshopPart = WorkshopPart::where('workshop_id', $workshop->id)
+                ->where('ref_type', 'workshop')
+                ->get();
+            $WorkshopLabour = WorkshopLabour::where('workshop_id', $workshop->id)
+                ->where('ref_type', 'workshop')
+                ->get();
             $paymentHistory = $this->paymentHistoryService->getPaymentHistory($id);
             $WorkshopVehicle = DB::table('vehicle_details')
                 ->where('vehicle_reg_number', $workshop->vehicle_reg_number)
@@ -1868,41 +2238,24 @@ class WorkshopController extends Controller
             // Pass data to the view
             $viewData['WorkshopTyre'] = $WorkshopTyre;
             $viewData['WorkshopService'] = $WorkshopService;
+            $viewData['WorkshopConsumable'] = $WorkshopConsumable;
+            $viewData['WorkshopPart'] = $WorkshopPart;
+            $viewData['WorkshopLabour'] = $WorkshopLabour;
             $viewData['WorkshopVehicle'] = $WorkshopVehicle;
-            $viewData['workshop'] = $workshop; // Pass the workshop object
+            $viewData['workshop'] = $workshop;
             $viewData['workshopId'] = $workshop->id;
             $viewData['paymentHistory'] = $paymentHistory;
             return view('AutoCare.workshop.view', $viewData);
         } else {
-            // Handle case where no workshop is found
             return redirect()->back()->with('error', 'Workshop not found.');
         }
     }
-    public function viewByWorkshop($id)
-    {
-        $viewData['header_link'] = HeaderLink::where("menu_id", '1')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
-        $getIndivisualWorkshopDetail = Workshop::whereId($id)->first()->toArray();
-        // $WorkshopProduct = DB::table('workshop_products')
-        //     ->join('products', 'products.id', '=', 'workshop_products.product_id')
-        // ->where('workshop_id', $getIndivisualWorkshopDetail['id'])->get();
-        $WorkshopTyre = WorkshopTyre::join('tyres_product', 'tyres_product.product_id', '=', 'workshop_tyres.product_id')
-            ->where('workshop_id', $getIndivisualWorkshopDetail['id'])->where('ref_type', 'workshop')->get();
-
-        // $WorkshopService = DB::table('workshop_services')
-        //     ->join('services', 'services.id', '=', 'workshop_services.service_id')
-        //     ->where('workshop_id', $getIndivisualWorkshopDetail['id'])->get();
-        // $viewData['WorkshopProduct'] = $WorkshopProduct;
-        $viewData['WorkshopTyre'] = $WorkshopTyre;
-        // $viewData['WorkshopService'] = $WorkshopService;
-        $viewData['workshopId'] = "";
-        return view('AutoCare.workshop.view', $viewData)->with($getIndivisualWorkshopDetail);
-    }
+    
     public function viewInvoice($id)
     {
         $viewData['header_link'] = HeaderLink::where("menu_id", '1')->select("link_title", "link_name")->orderBy('id', 'ASC')->get();
         $workshop = Invoice::where('workshop_id', $id)->first();
         if ($workshop) {
-            // Format discount based on type
             if ($workshop->discount_type === 'percentage' && $workshop->discount_value > 0) {
                 $formattedDiscount = '(' . $workshop->discount_value . '%)';
             } elseif ($workshop->discount_type === 'amount') {
@@ -1911,12 +2264,19 @@ class WorkshopController extends Controller
                 $formattedDiscount = ''; // Default if no discount is set
             }
 
-            // Add formatted discount to the workshop object
             $workshop->formatted_discount = $formattedDiscount;
-
             $WorkshopTyre = WorkshopTyre::select('workshop_tyres.*', 'workshop_tyres.description', 'workshop_tyres.quantity', 'workshop_tyres.tax_class_id', 'workshop_tyres.fitting_type as orderType', 'workshop_tyres.price as TyreWorkshopPrice', 'workshop_tyres.product_ean as product_ean', 'workshop_tyres.supplier as tyre_source', 'workshop_tyres.price as UnitExitPrice', 'workshop_tyres.tax_class_id as ProductVat')
                 ->where('workshop_id', $workshop['workshop_id'])->where('ref_type', 'workshop')->get();
             $WorkshopService = DB::table('workshop_services')
+                ->where('workshop_id', $workshop['workshop_id'])
+                ->where('ref_type', 'workshop')->get();
+            $WorkshopConsumable = DB::table('workshop_consumables')
+                ->where('workshop_id', $workshop['workshop_id'])
+                ->where('ref_type', 'workshop')->get();
+            $WorkshopPart = DB::table('workshop_parts')
+                ->where('workshop_id', $workshop['workshop_id'])
+                ->where('ref_type', 'workshop')->get();
+            $WorkshopLabour = DB::table('workshop_labours')
                 ->where('workshop_id', $workshop['workshop_id'])
                 ->where('ref_type', 'workshop')->get();
             $WorkshopVehicle = DB::table('vehicle_details')
@@ -1925,15 +2285,16 @@ class WorkshopController extends Controller
                 ->where('workshop_id', $workshop['workshop_id'])->get();
             $viewData['WorkshopTyre'] = $WorkshopTyre;
             $viewData['WorkshopService'] = $WorkshopService;
+            $viewData['WorkshopConsumable'] = $WorkshopConsumable;
+            $viewData['WorkshopPart'] = $WorkshopPart;
+            $viewData['WorkshopLabour'] = $WorkshopLabour;
             $viewData['WorkshopVehicle'] = $WorkshopVehicle;
             $viewData['workshop'] = $workshop;
             $viewData['workshopId'] = $workshop->id;
             $viewData['paymentHistory'] = $paymentHistory;
             $viewData['workshopId'] = "";
-            // dd($viewData);
             return view('AutoCare.workshop.invoice', $viewData);
         } else {
-            // Handle case where no workshop is found
             return redirect()->back()->with('error', 'Workshop not found.');
         }
     }
@@ -1953,6 +2314,9 @@ class WorkshopController extends Controller
         $workshopTyreData = WorkshopTyre::where('workshop_id', '=', $request->invoice_id)->where('ref_type', 'workshop')->get();
         $workshopServiceData = WorkshopService::where('workshop_id', '=', $request->invoice_id)->where('ref_type', 'workshop')->get();
         $workshopVehicleData = VehicleDetail::where('vehicle_reg_number', '=', $invoice->vehicle_reg_number)->get();
+        $workshopConsumableData = WorkshopConsumable::where('workshop_id', '=', $request->invoice_id)->where('ref_type', 'workshop')->get();
+        $workshopPartData = WorkshopPart::where('workshop_id', '=', $request->invoice_id)->where('ref_type', 'workshop')->get();
+        $workshopLabourData = WorkshopLabour::where('workshop_id', '=', $request->invoice_id)->where('ref_type', 'workshop')->get();
         $paymentHistory = DB::table('customer_debit_logs')->where('workshop_id', $request->invoice_id)->get();
         if ($invoice) {
             // Format discount based on type
@@ -1964,31 +2328,19 @@ class WorkshopController extends Controller
                 $formattedDiscount = '';
             }
 
-            // Add formatted discount to the invoice object
             $invoice->formatted_discount = $formattedDiscount;
         } else {
             $invoice->formatted_discount = "No Data Found";
         }
-        // Fetch and sanitize garage name for folder path
         $garageName = getGarageDetails()->garage_name;
         $safeGarageName = Str::slug($garageName, '_');
-
-        // Define the PDF path dynamically
         $pdfPath = "invoices/{$safeGarageName}/INV-{$invoice->workshop_id}.pdf";
-
-        // Generate the PDF dynamically and save it
-        $pdfContent = PDF::loadView('emails.invoice-pdf', compact('invoice', 'workshopServiceData', 'workshopVehicleData', 'workshopTyreData', 'paymentHistory'))->output();
+        $pdfContent = PDF::loadView('emails.invoice-pdf', compact('invoice', 'workshopServiceData', 'workshopConsumableData','workshopPartData', 'workshopLabourData', 'workshopVehicleData', 'workshopTyreData', 'paymentHistory'))->output();
         Storage::disk('public')->put($pdfPath, $pdfContent);
-
-        // Full path for attachment
         $pdfFullPath = storage_path("app/public/{$pdfPath}");
-
-        // Ensure PDF exists before attaching
         if ($request->attach_pdf && !Storage::disk('public')->exists($pdfPath)) {
             return redirect()->back()->withErrors('PDF generation failed.');
         }
-
-        // Send the email with or without PDF attachment
         Mail::to($request->email_to)
             ->cc($request->email_cc)
             ->send(new InvoiceEmail(
@@ -2014,7 +2366,7 @@ class WorkshopController extends Controller
             } elseif ($invoice->discount_type === 'amount') {
                 $formattedDiscount = '';
             } else {
-                $formattedDiscount = ''; // Default if no discount is set
+                $formattedDiscount = '';
             }
 
             // Add formatted discount to the invoice object
@@ -2024,7 +2376,7 @@ class WorkshopController extends Controller
         }
         // Fetch and sanitize garage name
         $garageName = getGarageDetails()->garage_name;
-        $safeGarageName = Str::slug($garageName, '_'); // Make it a safe folder name
+        $safeGarageName = Str::slug($garageName, '_');
 
         // Define the correct PDF path dynamically
         $pdfPath = "invoices/{$safeGarageName}/INV-{$invoice->workshop_id}.pdf";
@@ -2032,15 +2384,13 @@ class WorkshopController extends Controller
         // Ensure the PDF exists, if not, regenerate it
         if (!Storage::disk('public')->exists($pdfPath)) {
             Log::error("PDF not found at path: {$pdfPath}, generating new PDF.");
-            $this->generateInvoicePdf($id); // Regenerate PDF if missing
+            $this->generateInvoicePdf($id);
         }
 
-        // Final check: If PDF still doesn't exist, return 404
         if (!Storage::disk('public')->exists($pdfPath)) {
             abort(404, 'Invoice PDF not found.');
         }
 
-        // Return the PDF as an inline response
         return response()->file(storage_path("app/public/{$pdfPath}"), [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'inline; filename="invoice.pdf"',
@@ -2049,18 +2399,14 @@ class WorkshopController extends Controller
 
     public function downloadInvoicePdf($id)
     {
-        // Fetch the invoice details
         $invoice = Invoice::where('workshop_id', $id)->firstOrFail();
 
-        // Define the file path
         $pdfPath = "invoices/{$invoice->workshop_id}.pdf";
 
-        // Check if the file exists
         if (!Storage::disk('public')->exists($pdfPath)) {
             abort(404, 'PDF not found.');
         }
 
-        // Return the PDF as a downloadable response
         return response()->download(storage_path("app/public/{$pdfPath}"), 'invoice.pdf', [
             'Content-Type' => 'application/pdf',
         ]);
@@ -2068,44 +2414,39 @@ class WorkshopController extends Controller
 
     public function generateInvoicePdf($invoiceId)
     {
-        // Fetch the invoice details
         $invoice = Invoice::where('workshop_id', $invoiceId)->firstOrFail();
         $workshopTyreData = WorkshopTyre::where('workshop_id', '=', $invoiceId)->where('ref_type', 'workshop')->get();
         $workshopServiceData = WorkshopService::where('workshop_id', '=', $invoiceId)->where('ref_type', 'workshop')->get();
+        $workshopConsumableData = WorkshopConsumable::where('workshop_id', '=', $invoiceId)->where('ref_type', 'workshop')->get();
+        $workshopPartData = WorkshopPart::where('workshop_id', '=', $invoiceId)->where('ref_type', 'workshop')->get();
+        $workshopLabourData = WorkshopLabour::where('workshop_id', '=', $invoiceId)->where('ref_type', 'workshop')->get();
         $workshopVehicleData = VehicleDetail::where('vehicle_reg_number', '=', $invoice->vehicle_reg_number)->get();
         $paymentHistory = DB::table('customer_debit_logs')->where('workshop_id', $invoiceId)->get();
         if ($invoice) {
-            // Format discount based on type
+
             if ($invoice->discount_type === 'percentage' && $invoice->discount_value > 0) {
                 $formattedDiscount = '(' . $invoice->discount_value . '%)';
             } elseif ($invoice->discount_type === 'amount') {
                 $formattedDiscount = '';
             } else {
-                $formattedDiscount = ''; // Default if no discount is set
+                $formattedDiscount = '';
             }
 
-            // Add formatted discount to the invoice object
             $invoice->formatted_discount = $formattedDiscount;
         } else {
             $invoice->formatted_discount = "No Data Found";
         }
-        // Fetch garage details and sanitize the garage name for safe file paths
+
         $garageName = getGarageDetails()->garage_name;
-        $safeGarageName = Str::slug($garageName, '_'); // Convert to a safe folder name
+        $safeGarageName = Str::slug($garageName, '_');
 
-        // Generate the PDF content
-        $pdfContent = PDF::loadView('emails.invoice-pdf', compact('invoice', 'workshopServiceData', 'workshopVehicleData', 'workshopTyreData', 'paymentHistory'))->output();
-
-        // Define the file path dynamically based on garage name
+        $pdfContent = PDF::loadView('emails.invoice-pdf', compact('invoice', 'workshopServiceData', 'workshopConsumableData', 'workshopPartData', 'workshopLabourData', 'workshopVehicleData', 'workshopTyreData', 'paymentHistory'))->output();
+        //dd($pdfContent);
         $pdfPath = "invoices/{$safeGarageName}/INV-{$invoice->workshop_id}.pdf";
 
-        // Ensure the directory exists before saving
         Storage::disk('public')->makeDirectory("invoices/{$safeGarageName}");
-
-        // Save the PDF to the storage/app/public directory
         Storage::disk('public')->put($pdfPath, $pdfContent);
 
-        // Return the full path to the saved PDF
         return storage_path("app/public/{$pdfPath}");
     }
 

@@ -401,7 +401,7 @@
             document.getElementById('add_engine_number').value = vehicleDetails.EngineNumber || '';
             document.getElementById('add_engine_size').value = SmmtDetails.EngineCapacityCc || '';
             document.getElementById('add_engine_code').value = SmmtDetails.EngineDescription || '';
-            document.getElementById('add_vin').value = vehicleDetails.VinLast5 || '';
+            document.getElementById('add_vin').value = vehicleDetails.Vin || '';
             document.getElementById('add_front_tyre_size').value = tyreDetails.Front?.Tyre?.SizeDescription || '';
             document.getElementById('add_rear_tyre_size').value = tyreDetails.Rear?.Tyre?.SizeDescription || '';
             document.getElementById('add_colour').value = color?.ColourDetails?.CurrentColour || '';

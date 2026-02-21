@@ -102,7 +102,7 @@ class CheckoutController extends Controller
         $domain = str_replace('.', '-', request()->getHost());
 
         if (!$garageId) {
-            return redirect()->route('grages')->with('error', 'Please select a garage first.');
+            return response()->json(['error' => 'Please select a garage first'], 404);
         }
         $calenderBook = OrderTypes::where('status', 1)->where('calender_book', 1)->get()
             ->pluck('ordertype_name')
@@ -335,10 +335,8 @@ class CheckoutController extends Controller
         }
         $garageId = Session::get('selected_garage_id');
         if (!$garageId) {
-            return redirect()->route('grages')
-                ->with('error', 'Please select a garage first.');
+            return response()->json(['error' => 'Please select a garage first'], 404);
         }
-
         $calendarSettings = CalendarSetting::where('garage_id', $garageId)->first();
         // $calendarSettings = CalendarSetting::where('default', 1)->first();
         // dd($billin);

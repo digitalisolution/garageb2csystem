@@ -448,6 +448,9 @@ Route::middleware('auth:web')->group(function () {
     Route::get('/AutoCare/api-orders', [ApiOrderController::class, 'viewApiOrders'])->name('viewApiOrders');
 
     Route::get('/AutoCare/get-services', [ServiceController::class, 'getServices']);
+    Route::get('/AutoCare/get-consumables', [ConsumableController::class, 'getconsumables']);  
+    Route::get('/AutoCare/get-parts', [PartController::class, 'getParts']);
+    Route::get('/AutoCare/get-labours', [LabourController::class, 'getLabours']);
 
 
     // Route::get('/calendar-settings', [CalendarSettingController::class, 'getCalendarSettings']);
@@ -506,6 +509,14 @@ Route::middleware('auth:web')->group(function () {
         Route::resource('brand', BrandController::class);
         Route::resource('blog', BlogController::class);
         Route::resource('services', ServiceController::class)->except(['show']);
+        Route::resource('consumables', ConsumableController::class)->except(['show']);
+        Route::resource('parts', PartController::class)->except(['show']);
+        Route::resource('labours', LabourController::class)->except(['show']);
+
+        Route::post('/parts/store', [partController::class, 'store'])->name('AutoCare.parts.store');
+         Route::post('/consumables/store', [ConsumableController::class, 'store'])->name('AutoCare.consumables.store');
+        Route::post('/labours/store', [LabourController::class, 'store'])->name('AutoCare.labours.store');
+
 
 
         Route::resource('vehicles', VehicleDetailController::class);
@@ -880,6 +891,8 @@ Route::put('/AutoCare/garages/{id}/password', 'GaragesController@updatePassword'
     Route::post('/ajax/getProductForworkshop', 'AjaxController@getProductForworkshop');
     Route::post('/ajax/getService', 'AjaxController@getService');
     Route::post('/ajax/getProduct', 'AjaxController@getProduct');
+    Route::post('/ajax/get-garages-list', 'AjaxController@getGaragesList');
+    Route::post('/ajax/get-garage-details', 'AjaxController@getGarageDetails');
     // Route::post('/ajax/TyresProduct', 'AjaxController@TyresProduct');
     Route::post('/ajax/mark-as-read', 'AjaxController@markAsRead')->name('notifications.markAsRead');
     Route::post('/ajax/mark-as-read/{id}', 'AjaxController@markAsReadSingle')->name('notifications.markAsRead.single');

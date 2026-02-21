@@ -55,7 +55,7 @@
                         <td>
                             <span class="text-primary">
                                 <i class="fa fa-user me-1"></i>
-                                {{ $log->user_name ??  $log->customer_name.'/Customer' }}
+                                {{ $log->user->name ?? 'System/User' }}
                             </span>
                         </td>
                         <td>

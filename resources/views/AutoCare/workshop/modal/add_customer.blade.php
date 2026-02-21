@@ -65,7 +65,7 @@
                                 @enderror
                             </div>
                         </div> -->
-                        <div class="item">
+                        <div class="item d-none">
                             <div class="form-group">
                                 <label>Company Name</label>
                                 <input class="form-control" type="text" name="company_name" maxlength="100">
@@ -74,7 +74,7 @@
                                 @enderror
                             </div>
                         </div>
-                        <div class="item">
+                        <div class="item d-none">
                             <div class="form-group">
                                 <label>Website</label>
                                 <input class="form-control" type="text" name="company_website" maxlength="100">

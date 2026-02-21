@@ -202,8 +202,7 @@ class CalendarSettingController extends Controller
     {
         $garageId = Session::get('selected_garage_id');
         if (!$garageId) {
-            return redirect()->route('grages')
-                ->with('error', 'Please select a garage first.');
+            return response()->json(['error' => 'Please select a garage first'], 404);
         }
         $calendarSettings = CalendarSetting::where('garage_id', $garageId)->first();
 

@@ -76,10 +76,8 @@ class AjaxController extends Controller
     {
         $customer_id = $request->customer_id;
 
-        // Enable Query Log (for debugging)
         DB::enableQueryLog();
 
-        // Fetch customer with county and country names
         $customer = Customer::select(
             'customers.*',
             'region_county.name as shipping_address_county',
@@ -115,7 +113,34 @@ class AjaxController extends Controller
 
         return response()->json(['success' => true]);
     }
+public function getGaragesList(Request $request)
+{
+    $garages = DB::table('garages')
+        ->where('garage_status', 1) 
+        ->select('id', 'garage_name') 
+        ->get();
 
+    return response()->json(['success' => true, 'garages' => $garages]);
+}
+
+public function getGarageDetails(Request $request)
+{
+    $garageId = $request->garage_id;
+
+    $garage = DB::table('garages')
+        ->where('id', $garageId)
+        ->first();
+
+    if ($garage) {
+        return response()->json([
+            'success' => true,
+            'fitting_price' => $garage->garage_fitting_charges ?? 0,
+            'vat_class' => $garage->garage_fitting_vat_class ?? 0,
+        ]);
+    }
+
+    return response()->json(['success' => false], 404);
+}
 
     public function createCustomerForWorkshop(Request $request)
     {
@@ -123,23 +148,21 @@ class AjaxController extends Controller
         // Handle POST request for creating a new customer
         if ($request->isMethod('post')) {
             try {
-                // Validate the request (name is required)
                 $validated = $request->validate([
                     // Customer Details
-                    'customer_name' => 'required|string|min:2|max:50', // First Name (Required)
-                    'customer_last_name' => 'nullable|string|min:2|max:50', // Last Name
-                    'customer_email' => 'nullable|email', // Email Address
-                    'customer_contact_number' => 'nullable|string|min:10|max:15', // Telephone
-                    'customer_alt_number' => 'nullable|string|min:10|max:15', // Alternate Telephone
-                    'company_name' => 'nullable|string|max:100', // Company Name
-                    'company_website' => 'nullable|url', // Company Website
-
+                    'customer_name' => 'required|string|min:2|max:50',
+                    'customer_last_name' => 'nullable|string|min:2|max:50',
+                    'customer_email' => 'nullable|email',
+                    'customer_contact_number' => 'nullable|string|min:10|max:15',
+                    'customer_alt_number' => 'nullable|string|min:10|max:15',
+                    'company_name' => 'nullable|string|max:100',
+                    'company_website' => 'nullable|url',
                     // Billing Address
-                    'billing_address_street' => 'nullable|string|min:3|max:100', // Street
-                    'billing_address_city' => 'nullable|string|min:3|max:50', // City
-                    'billing_address_postcode' => 'nullable|string|min:3|max:10', // Postcode
-                    'billing_address_county' => 'nullable|string', // County
-                    'billing_address_country' => 'nullable|string', // Country
+                    'billing_address_street' => 'nullable|string|min:3|max:100',
+                    'billing_address_city' => 'nullable|string|min:3|max:50',
+                    'billing_address_postcode' => 'nullable|string|min:3|max:10',
+                    'billing_address_county' => 'nullable|string',
+                    'billing_address_country' => 'nullable|string',
 
                     // Shipping Address
                     'shipping_address_street' => 'nullable|string|min:3|max:100', // Street
@@ -201,82 +224,7 @@ class AjaxController extends Controller
     }
 
 
-    // public function getPurchase(Request $request)
-    // {
-    //     $product_id = $request->product_id;
-    //     DB::enableQueryLog();
-    //     $purchase = Purchase::where('product_id', $product_id)
-    //         ->orderBy('id', 'DESC')
-    //         ->skip(0)
-    //         ->take(1)
-    //         ->get();
-    //     $laQuery = DB::getQueryLog();
-    //     //  print_r($laQuery);
-    //     DB::disableQueryLog();
-    //     $purchase = json_decode(json_encode($purchase), true);
-    //     return $purchase;
-    //     // ->first()->toArray();
-    // }
-    // public function getService(Request $request)
-    // {
-    //     $service_id = $request->service_id;
-    //     $serviceDetail = Service::whereId($service_id)
-    //         ->orderBy('id', 'DESC')
-    //         ->skip(0)
-    //         ->take(1)
-    //         ->get();
-    //     $serviceDetail = json_decode(json_encode($serviceDetail), true);
-    //     return $serviceDetail;
-    // }
-    // public function getModal(Request $request)
-    // {
-    //     $brandId = $request->brand;
-    //     $allModalList = Modal::where('brand_id', $brandId)->get();
-    //     return json_encode($allModalList);
-    // }
-    // public function getServiceThroughServiceId(Request $request)
-    // {
-    //     $service_type_id = $request->service_type_id;
-    //     $allServiceList = ServiceName::where('service_type_id', $service_type_id)->get();
-    //     return json_encode($allServiceList);
-    // }
-    // public function getServiceTypeForWorkshop(Request $request)
-    // {
-    //     $service_type = $request->service_type;
-    //     $brand = $request->brand;
-    //     $model = $request->model;
-    //     $SericeName = DB::table('services')
-    //         ->where('service_type', '=', $service_type)
-    //         ->where('brand_name', '=', $brand)
-    //         ->where('model_name', '=', $model)
-    //         ->select('services.*')->get();
-    //     return json_encode($SericeName);
-    // }
-    // public function getServiceTypeForWorkshopThroughModel(Request $request)
-    // {
-    //     $model_number = $request->model_number;
-    //     $brand = $request->brand;
-    //     $SericeTypeName = DB::table('services')->join("service_types", "service_types.id", "=", "services.service_type")
-    //         ->where('brand_name', '=', $brand)
-    //         ->where('model_name', '=', $model_number)
-    //         ->select('service_types.id', 'service_types.service_type_name')
-    //         ->distinct()
-    //         ->get();
-    //     return json_encode($SericeTypeName);
-    // }
-    // public function getProductThroughModelAndBrand(Request $request)
-    // {
-    //     $model_number = $request->model_number;
-    //     $brand = $request->brand;
-    //     $Product = DB::table('products')
-    //         ->where('company_name', '=', $brand)
-    //         ->where('model_number', '=', $model_number)
-    //         ->where('products.deleted_at', '=', null)
-    //         ->distinct()
-    //         ->get();
-    //     return json_encode($Product);
-
-    // }
+   
     public function submitSupplierDetail(Request $request)
     {
         $supplierId = $request->supplierId;
