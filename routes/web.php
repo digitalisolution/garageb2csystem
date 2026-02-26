@@ -628,6 +628,7 @@ Route::middleware('auth:web')->group(function () {
     Route::post('/AutoCare/workshop/send-invoice-email', [WorkshopController::class, 'sendInvoiceEmail'])->name('workshop.sendInvoiceEmail');
     Route::get('/invoice/preview/{id}', [WorkshopController::class, 'previewInvoicePdf'])->name('invoice.preview');
     Route::get('/invoice/download/{id}', [WorkshopController::class, 'downloadInvoicePdf'])->name('invoice.download');
+    Route::get('/validate-tyre-stock-by-ean/{ean}/{supplier}', [WorkshopController::class, 'validateTyreStockByEan'])->name('validate.tyre.stock.by.ean');
     // Edit or Add tyre route
     Route::get('/AutoCare/tyres/edit/{product_id?}', [TyresController::class, 'edit'])->name('AutoCare.tyres.edit');
     Route::post('/AutoCare/tyres', [TyresController::class, 'store'])->name('AutoCare.tyres.store'); // For adding new tyres

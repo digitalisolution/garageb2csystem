@@ -308,7 +308,39 @@
     <h5 class="m-0"><strong>Commission Details</strong></h5>
 </div>
 
-<div class="col-lg-4 col-md-6 col-12 form-group">
+<div class="col-lg-2 col-md-6 col-12 form-group">
+    <label for="garage_fitting_charges">Garage Fitting Charge <span class="text-danger">*</span></label>
+    <input
+        type="number"
+        step="0.01"
+        class="form-control"
+        id="garage_fitting_charges"
+        name="garage_fitting_charges"
+        value="{{ old('garage_fitting_charges', $garages->garage_fitting_charges ?? '') }}"
+        required>
+</div>
+<div class="col-lg-2 col-md-6 col-12 form-group">
+    <label for="garage_fitting_vat_class">
+        Garage Fitting VAT <span class="text-danger">*</span>
+    </label>
+
+    <select class="form-control" 
+            id="garage_fitting_vat_class" 
+            name="garage_fitting_vat_class" 
+            required>
+        <option value="9"
+            {{ old('garage_fitting_vat_class', $garages->garage_fitting_vat_class ?? '') == 9 ? 'selected' : '' }}>
+            Inc VAT (20%)
+        </option>
+         <option value="0"
+            {{ old('garage_fitting_vat_class', $garages->garage_fitting_vat_class ?? '') == 0 ? 'selected' : '' }}>
+            Exc VAT (0%)
+        </option>
+
+    </select>
+</div>
+
+<div class="col-lg-2 col-md-6 col-12 form-group">
     <label for="commission_type">Commission Type <span class="text-danger">*</span></label>
     <select
         class="form-control"
@@ -327,43 +359,7 @@
     </select>
 </div>
 
-<div class="col-lg-4 col-md-6 col-12 form-group">
-    <label for="garage_fitting_charges">Garage Fitting Charge <span class="text-danger">*</span></label>
-    <input
-        type="number"
-        step="0.01"
-        class="form-control"
-        id="garage_fitting_charges"
-        name="garage_fitting_charges"
-        value="{{ old('garage_fitting_charges', $garages->garage_fitting_charges ?? '') }}"
-        required>
-</div>
-<div class="col-lg-4 col-md-6 col-12 form-group">
-    <label for="garage_fitting_vat_class">
-        Garage Fitting VAT <span class="text-danger">*</span>
-    </label>
-
-    <select class="form-control" 
-            id="garage_fitting_vat_class" 
-            name="garage_fitting_vat_class" 
-            required>
-
-        <option value="">Select VAT Type</option>
-
-        <option value="0"
-            {{ old('garage_fitting_vat_class', $garages->garage_fitting_vat_class ?? '') == 0 ? 'selected' : '' }}>
-            No VAT
-        </option>
-
-        <option value="9"
-            {{ old('garage_fitting_vat_class', $garages->garage_fitting_vat_class ?? '') == 9 ? 'selected' : '' }}>
-            VAT (20%)
-        </option>
-
-    </select>
-</div>
-
-<div class="col-lg-4 col-md-6 col-12 form-group">
+<div class="col-lg-2 col-md-6 col-12 form-group">
     <label for="commission_price">Commission Price <span class="text-danger">*</span></label>
     <input
         type="number"
@@ -375,7 +371,7 @@
         required>
 </div>
 
-<div class="col-lg-4 col-md-6 col-12 form-group">
+<div class="col-lg-2 col-md-6 col-12 form-group">
     <label for="card_processing_fee">Card Processing Fee (%) <span class="text-danger">*</span></label>
     <input
         type="number"

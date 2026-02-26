@@ -59,7 +59,6 @@ public function index(Request $request)
     $query->orderByDesc('created_at');
 
     $payouts = $query->paginate(20);
-
     $payouts->getCollection()->transform(function ($payout) {
         $payout->tyres_count = $payout->workshop->items()->count() ?? 0;
         return $payout;

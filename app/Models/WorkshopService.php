@@ -26,12 +26,12 @@ class WorkshopService extends Model
 	];
 	// protected $guarded = ['id', 'created_at', 'updated_at','deleted_at'];
 	protected $dates = ['deleted_at'];
-	public function items()
+	public function service()
 	{
-		return $this->hasMany(tblitems::class);
+		return $this->belongsTo(CarService::class, 'service_id');
 	}
-	public function garage()
-{
-    return $this->belongsTo(Garage::class);
-}
+		public function garage()
+	{
+		return $this->belongsTo(Garage::class);
+	}
 }

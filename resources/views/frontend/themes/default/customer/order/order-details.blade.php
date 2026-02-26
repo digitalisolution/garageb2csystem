@@ -386,10 +386,12 @@ $defaultLogoPath = public_path("frontend/themes/theme/img/logo/logo.png");
                         <thead>
                             <tr>
                                 <td><strong>Sub Total</strong></td>
-                                @if($tyre->fitting_type === 'mobile_fitted')
-                                    <td><strong>CallOut Charge({{$tyre->shipping_postcode}})</strong></td>
+                                @if(!empty($tyre) && in_array($tyre->fitting_type, ['mobile_fitted', 'mailorder']))
+                                     <td><strong>CallOut Charge({{$tyre->shipping_postcode}})</strong></td>
                                 @endif
-
+                                @if(!empty($tyre) && in_array($tyre->fitting_type, ['fully_fitted']))
+                                    <td><strong>Garage Fitting Charge</strong></td>
+                                @endif
                                 <td><strong>VAT</strong></td>
                                 <td><strong>Total</strong></td>
                                 <td><strong>Discount{{ $workshop->formatted_discount }}</strong></td>

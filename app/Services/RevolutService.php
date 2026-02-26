@@ -178,92 +178,173 @@ class RevolutService
         });
     }
 
-   protected function createGaragePayoutRecord(Workshop $workshop, string $revolutOrderId)
+//    protected function createGaragePayoutRecord(Workshop $workshop, string $revolutOrderId)
+// {
+//     $grandTotal = $workshop->grandTotal ?? 0;
+//     if ($grandTotal <= 0) {
+//         Log::warning('Workshop has no valid grandTotal - payout skipped', [
+//             'workshop_id' => $workshop->id,
+//             'grandTotal' => $grandTotal,
+//         ]);
+//         return;
+//     }
+
+//     if (!$workshop->relationLoaded('garage')) {
+//         $workshop->load('garage');
+//     }
+
+//     $garage = $workshop->garage;
+
+//     if (!$garage) {
+//         Log::warning('No garage linked to workshop - payout skipped', [
+//             'workshop_id' => $workshop->id,
+//         ]);
+//         return;
+//     }
+
+//     $cardFeePercentage = (float) $garage->card_processing_fee ?? 0;
+
+//     if ($cardFeePercentage < 0 || $cardFeePercentage > 100) {
+//         Log::warning('Invalid card processing fee percentage - using 0%', [
+//             'garage_id' => $garage->id,
+//             'card_processing_fee' => $garage->card_processing_fee,
+//         ]);
+//         $cardFeePercentage = 0;
+//     }
+
+//     $cardProcessingFee = round(($grandTotal * ($cardFeePercentage / 100)), 2);
+//     try {
+//         $platformCommission = $garage->getCommissionAmount($workshop);
+//     } catch (\Exception $e) {
+//         Log::error('Failed to calculate commission', [
+//             'garage_id' => $garage->id,
+//             'error' => $e->getMessage(),
+//             'trace' => $e->getTraceAsString(),
+//         ]);
+//         $platformCommission = 0;
+//     }
+
+//     $payoutAmount = $platformCommission;
+//         $commission = $grandTotal - $platformCommission - $cardProcessingFee;
+
+//     if ($payoutAmount < 0) {
+//         Log::warning('Payout amount negative - set to zero', [
+//             'workshop_id' => $workshop->id,
+//             'grand_total' => $grandTotal,
+//             'commission' => $commission,
+//             'card_fee' => $cardProcessingFee,
+//             'calculated_payout' => $payoutAmount,
+//         ]);
+//         $payoutAmount = 0;
+//     }
+
+//     $payoutAmount = round($payoutAmount, 2);
+
+
+//     // Step 6: Create Payout Record
+//     try {
+//         $payoutRecord = GaragePayout::create([
+//             'garage_id' => $garage->id,
+//             'workshop_id' => $workshop->id,
+//             'customer_paid_amount' => $grandTotal,
+//             'platform_commission' => round($commission, 2),
+//             'card_processing_fee' => $cardProcessingFee,
+//             'payout_amount' => $payoutAmount,
+//             'status' => 'pending',
+//             'revolut_transaction_id' => $revolutOrderId,
+//             'paid_at' => null,
+//         ]);
+//     } catch (\Exception $e) {
+//         Log::error('❌ Failed to create GaragePayout record', [
+//             'workshop_id' => $workshop->id,
+//             'garage_id' => $garage->id,
+//             'error' => $e->getMessage(),
+//             'trace' => $e->getTraceAsString(),
+//         ]);
+//         // Optionally re-throw or handle
+//         throw $e;
+//     }
+// }
+
+protected function createGaragePayoutRecord(Workshop $workshop, string $revolutOrderId)
 {
+   
     $grandTotal = $workshop->grandTotal ?? 0;
+
+  
     if ($grandTotal <= 0) {
-        Log::warning('Workshop has no valid grandTotal - payout skipped', [
-            'workshop_id' => $workshop->id,
-            'grandTotal' => $grandTotal,
-        ]);
+        Log::warning('❌ Grand total is zero or negative. Skipping payout.');
         return;
     }
 
-    if (!$workshop->relationLoaded('garage')) {
-        $workshop->load('garage');
-    }
+    $workshop->loadMissing(['garage', 'items', 'services.service']);
+
 
     $garage = $workshop->garage;
 
     if (!$garage) {
-        Log::warning('No garage linked to workshop - payout skipped', [
-            'workshop_id' => $workshop->id,
-        ]);
+        Log::error('❌ No garage linked to workshop');
         return;
     }
 
-    $cardFeePercentage = (float) $garage->card_processing_fee ?? 0;
+    $totalTyreCommission = 0;
+    $totalServiceCommission = 0;
 
-    if ($cardFeePercentage < 0 || $cardFeePercentage > 100) {
-        Log::warning('Invalid card processing fee percentage - using 0%', [
-            'garage_id' => $garage->id,
-            'card_processing_fee' => $garage->card_processing_fee,
-        ]);
-        $cardFeePercentage = 0;
+    foreach ($workshop->items as $tyre) {
+
+        $fittingPrice   = $tyre->garage_fitting_charges ?? 0;
+        $commissionRate = $garage->commission_price ?? 0;
+
+        if ($garage->commission_type === 'Percentage') {
+
+            $commissionAmount = $fittingPrice * ($commissionRate / 100);
+            $garagePayout = $fittingPrice - $commissionAmount;
+
+        } else {
+
+            $garagePayout = $fittingPrice - $commissionRate;
+        }
+
+        $totalTyreCommission += $garagePayout;
     }
 
+    foreach ($workshop->services as $serviceItem) {
+
+        if (!$serviceItem->service) {
+            Log::warning('Service relation missing', [
+                'service_item_id' => $serviceItem->id
+            ]);
+            continue;
+        }
+
+        $service = $serviceItem->service;
+
+        if ($service->service_commission_price) {
+            $totalServiceCommission += $service->service_commission_price;
+        }
+    }
+
+    $totalCommission = round($totalTyreCommission + $totalServiceCommission, 2);
+    $cardFeePercentage = (float) ($garage->card_processing_fee ?? 0);
     $cardProcessingFee = round(($grandTotal * ($cardFeePercentage / 100)), 2);
-    try {
-        $platformCommission = $garage->getCommissionAmount($workshop);
-    } catch (\Exception $e) {
-        Log::error('Failed to calculate commission', [
-            'garage_id' => $garage->id,
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
-        ]);
-        $platformCommission = 0;
-    }
-
-    $payoutAmount = $platformCommission;
-        $commission = $grandTotal - $platformCommission - $cardProcessingFee;
+    $payoutAmount = round($totalCommission - $cardProcessingFee, 2);
 
     if ($payoutAmount < 0) {
-        Log::warning('Payout amount negative - set to zero', [
-            'workshop_id' => $workshop->id,
-            'grand_total' => $grandTotal,
-            'commission' => $commission,
-            'card_fee' => $cardProcessingFee,
-            'calculated_payout' => $payoutAmount,
-        ]);
+        Log::warning('⚠ Payout negative, setting to zero');
         $payoutAmount = 0;
     }
 
-    $payoutAmount = round($payoutAmount, 2);
-
-
-    // Step 6: Create Payout Record
-    try {
-        $payoutRecord = GaragePayout::create([
-            'garage_id' => $garage->id,
-            'workshop_id' => $workshop->id,
-            'customer_paid_amount' => $grandTotal,
-            'platform_commission' => round($commission, 2),
-            'card_processing_fee' => $cardProcessingFee,
-            'payout_amount' => $payoutAmount,
-            'status' => 'pending',
-            'revolut_transaction_id' => $revolutOrderId,
-            'paid_at' => null,
-        ]);
-    } catch (\Exception $e) {
-        Log::error('❌ Failed to create GaragePayout record', [
-            'workshop_id' => $workshop->id,
-            'garage_id' => $garage->id,
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
-        ]);
-        // Optionally re-throw or handle
-        throw $e;
-    }
+    GaragePayout::create([
+        'garage_id' => $garage->id,
+        'workshop_id' => $workshop->id,
+        'customer_paid_amount' => $grandTotal,
+        'platform_commission' => $totalCommission,
+        'card_processing_fee' => $cardProcessingFee,
+        'payout_amount' => $payoutAmount,
+        'status' => 'pending',
+        'revolut_transaction_id' => $revolutOrderId,
+        'paid_at' => null,
+    ]);
 }
 
     protected function sendOrderConfirmationEmail(array $validated, $orderId)

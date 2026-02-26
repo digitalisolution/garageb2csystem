@@ -127,6 +127,7 @@ class WorkshopController extends Controller
                         'make',
                         'model',
                         'customer_id',
+                        'garage_id',
                         'mileage',
                         'payment_method',
                         'notes',
@@ -182,6 +183,7 @@ class WorkshopController extends Controller
                         'model',
                         'year',
                         'customer_id',
+                        'garage_id',
                         'mileage',
                         'payment_method',
                         'notes',
@@ -260,6 +262,7 @@ class WorkshopController extends Controller
 
                 $WorkshopTyre->fill([
                     'product_id' => $request->product_id[$index] ?? null,
+                    'garage_id' => $request->garage_id ?? null,
                     'product_sku' => $request->tyre_sku[$index] ?? null,
                     'product_type' => $request->product_type ?? null,
                     'description' => $request->tyre_description[$index] ?? null,
@@ -268,6 +271,8 @@ class WorkshopController extends Controller
                     'shipping_postcode' => $request->callout_postcode ?? null,
                     'shipping_price' => $request->callout_charges ?? 0,
                     'shipping_tax_id' => $request->callout_vat ?? 0,
+                    'garage_fitting_charges' => $request->garage_fitting_charges ?? null,
+                    'garage_vat_class' => $request->garage_fitting_vat ?? null,
                     'fitting_type' => $request->fitting_type ?? 'fully_fitted',
                     'margin_rate' => $request->tyre_margin_rate[$index] ?? 0,
                     'tax_class_id' => $request->tyre_vat[$index] ?? 0,

@@ -133,7 +133,7 @@
                             <td>{{ $payout->garage->garage_name }}</td>
                             <td class="fw-bold text-success">£{{ number_format($payout->customer_paid_amount, 2) }}</td>
                             <td class="fw-bold text-success">£{{ number_format($payout->platform_commission, 2) }}</td>
-                            <td class="fw-bold text-success">£{{ number_format($payout->card_processing_fees, 2) }}</td>
+                            <td class="fw-bold text-success">£{{ number_format($payout->card_processing_fee, 2) }}</td>
                             <td class="fw-bold text-success">£{{ number_format($payout->payout_amount, 2) }}</td>
                             <td>
                                 <span class="badge bg-{{ $payout->status == 'completed' ? 'success' : ($payout->status == 'failed' ? 'danger' : 'warning') }}">
