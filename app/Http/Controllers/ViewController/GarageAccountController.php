@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\ViewController;
 
 use App\Models\Workshop;
+use App\Services\GaragePayoutInvoiceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -10,7 +11,7 @@ use App\Models\garage;
 use Carbon\Carbon;
 
 use App\Models\Invoice;
-use App\Models\VehicleDetail;
+use App\Models\GaragePayoutInvoice;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\VerifyMailToCustomer;
 use App\Models\WorkshopTyre;
@@ -325,6 +326,104 @@ public function statements(Request $request)
         'balanceDue',
         'transactions'
     ));
+}
+
+
+public function payoutInvoices(Request $request)
+{
+    $garage = Auth::guard('garage')->user();
+    
+    $baseQuery = GaragePayoutInvoice::with(['garagePayout.workshop'])
+        ->whereHas('garagePayout', function($q) use ($garage) {
+            $q->where('garage_id', $garage->id);
+        });
+    
+    $query = clone $baseQuery;
+    
+    // Filter by status
+    if ($request->filled('status')) {
+        $query->where('status', $request->status);
+    }
+    
+    if ($request->filled('from_date')) {
+        $query->whereDate('issue_date', '>=', $request->from_date);
+    }
+    if ($request->filled('to_date')) {
+        $query->whereDate('issue_date', '<=', $request->to_date);
+    }
+    
+    if ($request->filled('search')) {
+        $search = $request->search;
+        $query->where(function($q) use ($search) {
+            $q->where('invoice_number', 'like', "%{$search}%")
+              ->orWhereHas('garagePayout.workshop', fn($w) => $w->where('id', 'like', "%{$search}%"));
+        });
+    }
+    
+    $invoices = $query->orderBy('issue_date', 'desc')->paginate(15);
+    
+    $statusCounts = GaragePayoutInvoice::selectRaw('status, COUNT(*) as count')
+        ->whereHas('garagePayout', function($q) use ($garage) {
+            $q->where('garage_id', $garage->id);
+        })
+        ->groupBy('status')
+        ->pluck('count', 'status')
+        ->toArray();
+    
+    $statusCounts = array_merge([
+        'issued' => 0,
+        'sent' => 0,
+        'void' => 0,
+    ], $statusCounts);
+    
+    return view('garage.payout', compact('invoices', 'statusCounts'));
+}
+
+public function viewPayoutInvoice(GaragePayoutInvoice $invoice)
+{
+    $garage = Auth::guard('garage')->user();
+    if ($invoice->garagePayout->garage_id !== $garage->id) {
+        abort(403, 'Unauthorized access.');
+    }
+    
+    $invoice->load([
+        'garagePayout.garage',
+        'garagePayout.workshop',
+        'garagePayout.workshop.items',
+        'garagePayout.workshop.services.service'
+    ]);
+    
+    $payout = $invoice->garagePayout;
+    $workshop = $payout->workshop;
+    
+    $data = [
+        'invoice' => $invoice,
+        'payout' => $payout,
+        'garage' => $payout->garage,
+        'workshop' => $workshop,
+        'company' => [
+            'name' => get_option('company_name', config('app.name')),
+            'address' => get_option('company_address', ''),
+            'email' => get_option('company_email', ''),
+            'phone' => get_option('company_phone', ''),
+            'vat_number' => get_option('company_vat_number', ''),
+        ],
+        'issueDate' => $invoice->issue_date?->format('d F Y') ?? now()->format('d F Y'),
+        'dueDate' => $invoice->due_date?->format('d F Y') ?? now()->addDays(30)->format('d F Y'),
+        'isPdf' => false,
+        'isGarageView' => true,
+    ];
+    
+    return view('AutoCare.payouts.payout-invoice', $data);
+}
+
+public function downloadPayoutInvoice(GaragePayoutInvoice $invoice, GaragePayoutInvoiceService $invoiceService)
+{
+    $garage = Auth::guard('garage')->user();
+    if ($invoice->garagePayout->garage_id !== $garage->id) {
+        abort(403, 'Unauthorized access.');
+    }
+    return $invoiceService->download($invoice);
 }
 
 }

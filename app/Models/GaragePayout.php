@@ -63,4 +63,16 @@ class GaragePayout extends Model
             'failure_reason' => $reason,
         ]);
     }
+
+    // Add this method
+public function payoutInvoice()
+{
+    return $this->hasOne(GaragePayoutInvoice::class, 'garage_payout_id');
+}
+
+// Optional: accessor for easy checking
+public function getHasInvoiceAttribute(): bool
+{
+    return $this->invoice !== null;
+}
 }

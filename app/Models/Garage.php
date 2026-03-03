@@ -52,6 +52,7 @@ class Garage extends Authenticatable
         'commission_type',
         'commission_price',
         'garage_fitting_charges',
+        'fitting_charges',
         'garage_fitting_vat_class',
         'card_processing_fee',
     ];

@@ -217,6 +217,25 @@ public function getAccessToken(): string
                 'amount' => $payoutAmount,
                 'tx_id' => $transactionId,
             ]);
+
+            // Generate invoice if service exists
+            if (class_exists(\App\Services\GaragePayoutInvoiceService::class)) {
+                try {
+                    $invoiceService = app(\App\Services\GaragePayoutInvoiceService::class);
+                    $invoiceService->createInvoice($payoutRecord, $transactionId);
+                    
+                    Log::info('Invoice generated for payout', [
+                        'payout_id' => $payoutRecord->id,
+                        'invoice_number' => $invoice->invoice_number ?? 'pending',
+                    ]);
+                } catch (\Exception $e) {
+                    // Don't fail payout if invoice generation fails - log & continue
+                    Log::warning('Invoice generation failed', [
+                        'payout_id' => $payoutRecord->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
             return $data;
         } catch (Exception $e) {
             if ($payoutRecord->status !== 'completed') {

@@ -507,7 +507,7 @@ class CalendarSettingController extends Controller
         )
             ->join('workshops', 'bookings.workshop_id', '=', 'workshops.id')
             ->join('workshop_services', 'workshops.id', '=', 'workshop_services.workshop_id')
-            ->where('bookings.workshop_origin', 'website')
+            ->where('workshops.workshop_origin', 'website')
             ->where('workshops.garage_id', $garageId)
             ->whereRaw('LOWER(workshop_services.service_name) LIKE ?', ['%mot%'])
             ->whereDate('bookings.start', '>=', now()->toDateString())

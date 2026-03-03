@@ -13,6 +13,9 @@
         <li><a href="{{ route('garage.statement') }}"
                 class="{{ request()->routeIs('garage.statement') ? 'active' : '' }}"><i class="fa fa-files-o"></i>
                 Statement</a></li>
+        <li><a href="{{ route('garage.payoutInvoices.index') }}"
+                class="{{ request()->routeIs('garage.payoutInvoices.index') ? 'active' : '' }}"><i class="fa fa-files-o"></i>
+                Payout Invoices</a></li>
         @if (Auth::guard('garage')->check())
             <li class="logout-btn">
                 <a href="{{ route('garage.logout') }}"

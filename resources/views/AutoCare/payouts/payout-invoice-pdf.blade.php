@@ -18,14 +18,14 @@
             line-height: 1.3;
             color: #000;
             background: #fff;
-            font-size: 15px;
+            font-size: 13px;
         }
 
         /* Layout */
         .invoice-container {
-            width: 800px;
-            margin: 50px auto;
-            padding: 50px;
+            width: 600px;
+            margin: 30px auto;
+            padding: 30px;
             border: solid 1px #ccc;
         }
 
@@ -38,7 +38,7 @@
 
         .company-info p {
             margin: 3px 0;
-            font-size: 15px;
+            font-size: 13px;
         }
 
         .invoice-meta {
@@ -53,7 +53,7 @@
 
         .invoice-meta p {
             margin: 4px 0;
-            font-size: 15px;
+            font-size: 13px;
         }
 
         .invoice-meta .invoice-number {
@@ -115,12 +115,12 @@
 
         .totals-table td {
             padding: 7px;
-            font-size: 15px;
+            font-size: 13px;
         }
 
         .totals-table .total {
             font-weight: bold;
-            font-size: 15px;
+            font-size: 13px;
         }
 
         /* Notes & Footer */
@@ -157,7 +157,7 @@
         /* Action Buttons (Screen Only) */
         .action-buttons {
             text-align: center;
-            margin-top: 20px;
+            margin-top: 10px;
         }
 
         .action-buttons .btn {
@@ -165,7 +165,7 @@
             padding: 10px 25px;
             text-decoration: none;
             border-radius: 5px;
-            font-size: 15px;
+            font-size: 13px;
             font-weight: 600;
             transition: all 0.2s;
         }
@@ -201,7 +201,7 @@
 
         .table-suppay {
             width: 100%;
-            margin-top: 30px;
+            margin-top: 20px;
         }
 
         .table-suppay thead tr th,
@@ -219,7 +219,7 @@
         }
 
         .bottom-details {
-            margin: 40px 0;
+            margin: 20px 0;
         }
     </style>
 </head>
@@ -265,27 +265,40 @@
 
         {{-- Header with Logo --}}
         <div class="invoice-header">
-            <h1 style="margin-bottom:15px;">PAYOUT INVOICE</h1>
-            <img src="{{ $logoSrc }}" alt="{{ $garage->garage_name }} Logo" loading="lazy" height="40"
-                style="max-width: 200px; object-fit: contain;">
+            <table width="100%">
+                <tr>
+                    <td><h1 style="margin-bottom:15px;">PAYOUT VAT INVOICE</h1></td>
+                    <td align="right"><img src="{{ $logoSrc }}" alt="{{ $garage->garage_name }} Logo" loading="lazy" height="30"></td>
+                </tr>
+            </table>
         </div>
         <div class="invoice-header">
-            <div class="company-info">
-                <p class="invoice-number"><strong>Invoice Number:</strong> #{{ $invoice->invoice_number }}</p>
-                <p><strong>Issued Date:</strong> {{ $issueDate }}</p>
-                @if($invoice->revolut_transaction_id)
-                    <p><strong>Revolut Tx:</strong><br><small>{{ $invoice->revolut_transaction_id }}</small></p>
-                @endif
-                <span class="status-badge status-{{ $invoice->status }}">
-                    <strong>{{ ucfirst($invoice->status) }}</strong>
-                </span>
-            </div>
-            <div class="invoice-meta">
-                <p><strong>Job Date:</strong> {{ $workshop->created_at?->format('d F Y, h:i A') ?? 'N/A' }}</p>
-                <p><strong>Payment Status:</strong> <span
-                        style="color: {{ $payout->status === 'completed' ? '#27ae60' : '#e74c3c' }}; font-weight: 600;">
-                        {{ ucfirst($payout->status) }}</span></p>
-            </div>
+            <table width="100%">
+                <tr>
+                    <td>
+                        <div class="company-info">
+                            <p class="invoice-number"><strong>Invoice Number:</strong> #{{ $invoice->invoice_number }}</p>
+                            <p><strong>Issued Date:</strong> {{ $date }}</p>
+                            @if($invoice->revolut_transaction_id)
+                                <p><strong>Revolut Tx:</strong><br><small>{{ $invoice->revolut_transaction_id }}</small></p>
+                            @endif
+                            <span class="status-badge status-{{ $invoice->status }}">
+                                <strong>{{ ucfirst($invoice->status) }}</strong>
+                            </span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="invoice-meta">
+                            <p><strong>Job Date:</strong> {{ $workshop->created_at?->format('d F Y, h:i A') ?? 'N/A' }}</p>
+                            <p><strong>Payment Status:</strong> <span
+                                    style="color: {{ $payout->status === 'completed' ? '#27ae60' : '#e74c3c' }}; font-weight: 600;">
+                                    {{ ucfirst($payout->status) }}</span></p>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+            
+            
         </div>
 
         <table cellpadding="0" cellspacing="0" border="0" class="table-suppay">
@@ -314,7 +327,7 @@
                                 United Kingdom</p>
                         </div>
                         @if($payout->garage->garage_vat_number)
-                        <p>VAT No: {{ $payout->garage->garage_vat_number }}</p>
+                            <p>VAT No: {{ $payout->garage->garage_vat_number }}</p>
                         @endif
                     </td>
                 </tr>
@@ -322,7 +335,7 @@
         </table>
 
         {{-- Line Items --}}
-        <table cellpadding="0" cellspacing="0" border="0" class="table-suppay">
+         <table cellpadding="0" cellspacing="0" border="0" class="table-suppay">
             <thead>
                 <tr>
                     <th align="left">Job Ref</th>
@@ -484,7 +497,7 @@
                         $processingFee = $payout->card_processing_fee ?? 0;
                         $amount = ($processingFee + $payout->payout_amount);
                         $vatAmount = $amount - ($amount / 1.2);
-                        $finalTotal = ($grossAmount+$vatAmount) - $processingFee;
+                        $finalTotal = ($grossAmount + $vatAmount) - $processingFee;
                     @endphp
 
                     <tr>
@@ -508,7 +521,7 @@
 
                 @else
                     @php
-                       $grossAmount = $displayLineTotal + $displayTyreCommission;
+                        $grossAmount = $displayLineTotal + $displayTyreCommission;
                         $processingFee = $payout->card_processing_fee ?? 0;
                         $amount = ($processingFee + $payout->payout_amount);
                         $finalTotal = $grossAmount - $processingFee;
@@ -560,24 +573,6 @@
                 </p><br>
             @endif
             <p><strong>Authorised By: Accounts Department, TYRE LAB LTD</strong></p>
-        </div>
-
-        <div class="action-buttons no-print">
-            <a href="{{ route('garage-payout-invoices.download', $invoice) }}" class="btn btn-primary">
-                💾 Download PDF
-            </a>
-            @if($garage->garage_email && auth()->user()?->isAdmin())
-                <form method="POST" action="{{ route('garage-payout-invoices.send', $invoice) }}" class="d-inline">
-                    @csrf
-                    <button type="submit" class="btn btn-secondary"
-                        onclick="return confirm('Send invoice to {{ addslashes($garage->garage_email) }}?')">
-                        📧 Email Invoice
-                    </button>
-                </form>
-            @endif
-            <button onclick="window.print()" class="btn btn-outline">
-                🖨️ Print Invoice
-            </button>
         </div>
     </div>
 

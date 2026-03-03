@@ -135,7 +135,7 @@ public function getGarageDetails(Request $request)
         return response()->json([
             'success' => true,
             'fitting_price' => $garage->garage_fitting_charges ?? 0,
-            'vat_class' => $garage->garage_fitting_vat_class ?? 0,
+            'vat_class' => 9,
         ]);
     }
 

@@ -18,14 +18,14 @@
             line-height: 1.3;
             color: #000;
             background: #fff;
-            font-size: 15px;
+            font-size: 13px;
         }
 
         /* Layout */
         .invoice-container {
-            width: 800px;
-            margin: 50px auto;
-            padding: 50px;
+            width: 600px;
+            margin: 30px auto;
+            padding: 30px;
             border: solid 1px #ccc;
         }
 
@@ -38,7 +38,7 @@
 
         .company-info p {
             margin: 3px 0;
-            font-size: 15px;
+            font-size: 13px;
         }
 
         .invoice-meta {
@@ -53,7 +53,7 @@
 
         .invoice-meta p {
             margin: 4px 0;
-            font-size: 15px;
+            font-size: 13px;
         }
 
         .invoice-meta .invoice-number {
@@ -115,12 +115,12 @@
 
         .totals-table td {
             padding: 7px;
-            font-size: 15px;
+            font-size: 13px;
         }
 
         .totals-table .total {
             font-weight: bold;
-            font-size: 15px;
+            font-size: 13px;
         }
 
         /* Notes & Footer */
@@ -157,7 +157,7 @@
         /* Action Buttons (Screen Only) */
         .action-buttons {
             text-align: center;
-            margin-top: 20px;
+            margin-top: 10px;
         }
 
         .action-buttons .btn {
@@ -165,7 +165,7 @@
             padding: 10px 25px;
             text-decoration: none;
             border-radius: 5px;
-            font-size: 15px;
+            font-size: 13px;
             font-weight: 600;
             transition: all 0.2s;
         }
@@ -201,7 +201,7 @@
 
         .table-suppay {
             width: 100%;
-            margin-top: 30px;
+            margin-top: 20px;
         }
 
         .table-suppay thead tr th,
@@ -219,7 +219,7 @@
         }
 
         .bottom-details {
-            margin: 40px 0;
+            margin: 20px 0;
         }
     </style>
 </head>
@@ -265,27 +265,44 @@
 
         {{-- Header with Logo --}}
         <div class="invoice-header">
-            <h1 style="margin-bottom:15px;">PAYOUT INVOICE</h1>
-            <img src="{{ $logoSrc }}" alt="{{ $garage->garage_name }} Logo" loading="lazy" height="40"
-                style="max-width: 200px; object-fit: contain;">
+            <table width="100%">
+                <tr>
+                    <td><h1 style="margin-bottom:15px;">PAYOUT VAT INVOICE</h1></td>
+                    <td align="right"><img src="{{ $logoSrc }}" alt="{{ $garage->garage_name }} Logo" loading="lazy" height="40" style="max-width: 200px; object-fit: contain;"></td>
+                </tr>
+            </table>
         </div>
         <div class="invoice-header">
-            <div class="company-info">
-                <p class="invoice-number"><strong>Invoice Number:</strong> #{{ $invoice->invoice_number }}</p>
-                <p><strong>Issued Date:</strong> {{ $issueDate }}</p>
-                @if($invoice->revolut_transaction_id)
-                    <p><strong>Revolut Tx:</strong><br><small>{{ $invoice->revolut_transaction_id }}</small></p>
-                @endif
-                <span class="status-badge status-{{ $invoice->status }}">
-                    <strong>{{ ucfirst($invoice->status) }}</strong>
-                </span>
-            </div>
-            <div class="invoice-meta">
-                <p><strong>Job Date:</strong> {{ $workshop->created_at?->format('d F Y, h:i A') ?? 'N/A' }}</p>
-                <p><strong>Payment Status:</strong> <span
-                        style="color: {{ $payout->status === 'completed' ? '#27ae60' : '#e74c3c' }}; font-weight: 600;">
-                        {{ ucfirst($payout->status) }}</span></p>
-            </div>
+            <table width="100%">
+                <tr>
+                    <td>
+                        <div class="company-info">
+                            <p class="invoice-number"><strong>Invoice Number:</strong> #{{ $invoice->invoice_number }}
+                            </p>
+                            <p><strong>Issued Date:</strong> {{ $date }}</p>
+                            @if($invoice->revolut_transaction_id)
+                                <p><strong>Revolut Tx:</strong><br><small>{{ $invoice->revolut_transaction_id }}</small></p>
+                            @endif
+                            <span class="status-badge status-{{ $invoice->status }}">
+                                <strong>{{ ucfirst($invoice->status) }}</strong>
+                            </span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="invoice-meta">
+                            <p><strong>Job Date:</strong> {{ $workshop->created_at?->format('d F Y, h:i A') ?? 'N/A' }}
+                            </p>
+                            <p><strong>Items/Services:</strong>
+                                {{ $payout->tyres_count ?? $workshop->items?->count() ?? 0 }} item(s) processed</p>
+                            <p><strong>Payment Status:</strong> <span
+                                    style="color: {{ $payout->status === 'completed' ? '#27ae60' : '#e74c3c' }}; font-weight: 600;">
+                                    {{ ucfirst($payout->status) }}</span></p>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+
+
         </div>
 
         <table cellpadding="0" cellspacing="0" border="0" class="table-suppay">
@@ -313,9 +330,7 @@
                                 {{ $payout->garage->garage_city }}, {{ $payout->garage->garage_zone }}<br>
                                 United Kingdom</p>
                         </div>
-                        @if($payout->garage->garage_vat_number)
                         <p>VAT No: {{ $payout->garage->garage_vat_number }}</p>
-                        @endif
                     </td>
                 </tr>
             </tbody>
@@ -325,9 +340,9 @@
         <table cellpadding="0" cellspacing="0" border="0" class="table-suppay">
             <thead>
                 <tr>
-                    <th align="left">Job Ref</th>
-                    <th align="left">Description</th>
                     <th class="text-center">Qty</th>
+                    <th align="left">Description</th>
+                    <th align="left">Job Ref</th>
                     <th class="text-right">Unit Price</th>
                     <th class="text-right">Amount</th>
                 </tr>
@@ -341,60 +356,48 @@
                     $hasServices = $services->isNotEmpty();
                     $totalPayout = $payout->payout_amount;
 
+                    // ✅ Check if VAT applies (tax class 9 = VAT registered)
                     $isVatRegistered = isset($payout->garage->garage_fitting_vat_class)
                         && $payout->garage->garage_fitting_vat_class == 9;
-                    $vatRate = 0.20;
+                    $vatRate = 0.20; // 20% UK VAT
 
+                    // Calculate service commission (from related services table)
                     $totalServiceCommission = $services
                         ->reject(fn($ws) => $ws->is_void ?? false)
                         ->sum(fn($ws) => ($ws->service?->service_commission_price ?? 0) * ($ws->service_quantity ?? 1));
-                    $totalTyreCommission = 0;
-                    $totalServiceCommission = 0;
 
-                    foreach ($workshop->items as $tyre) {
+                    // Calculate tyre commission (remaining after services)
+                    $tyreCommission = $hasTyres && $hasServices
+                        ? max(0, $totalPayout - $totalServiceCommission)
+                        : $totalPayout;
 
-                        $fittingPrice = $tyre->garage_fitting_charges ?? 0;
-                        $itemqty = $tyre->quantity ?? 0;
-                        $commissionRate = $payout->garage->commission_price * $itemqty ?? 0;
-
-                        if ($garage->commission_type === 'Percentage') {
-
-                            $commissionAmount = $fittingPrice * ($commissionRate / 100);
-                            $garagePayout = $fittingPrice - $commissionAmount;
-
-                        } else {
-
-                            $garagePayout = $fittingPrice - $commissionRate;
-                        }
-                        $totalTyreCommission += $garagePayout;
-                    }
-
+                    // ✅ Helper function: return net price if VAT registered, else gross
                     $formatPrice = function ($amount) use ($isVatRegistered, $vatRate) {
                         if ($isVatRegistered && $amount > 0) {
-                            return $amount / (1 + $vatRate);
+                            return $amount / (1 + $vatRate); // Remove 20% VAT
                         }
-                        return $amount;
+                        return $amount; // Return as-is
                     };
                 @endphp
 
                 @if($hasTyres)
                     @php
-                        $displayTyreCommission = $formatPrice($totalTyreCommission);
-                        $displayTyreUnitPrice = $hasTyres && $itemqty > 0 ? ($displayTyreCommission / $itemqty) : 0;
+                        $displayTyreCommission = $formatPrice($tyreCommission);
+                        $displayTyreUnitPrice = $hasTyres && $tyresCount > 0 ? ($displayTyreCommission / $tyresCount) : 0;
                     @endphp
                     <tr>
-                        <td>Job-{{ $workshop->id }}</td>
+                        <td class="text-center">{{ $tyresCount }}</td>
                         <td>
                             <strong>Tyre Fitting Commission</strong><br>
                             <small style="color: #666;">
-                                {{ $itemqty }} Tyre(s) Fitted • Job #{{ $workshop->id }}<br>
+                                {{ $tyresCount }} tyre(s) fitted • Job #{{ $workshop->id }}<br>
                                 Processed on {{ $workshop->created_at?->format('d M Y') }}
                                 @if($isVatRegistered)
                                     <br><span style="color:#2980b9;font-size:10px;">(Ex-VAT)</span>
                                 @endif
                             </small>
                         </td>
-                        <td class="text-center">{{ $itemqty }}</td>
+                        <td>#{{ $workshop->id }}</td>
                         <td class="text-right">£{{ number_format($displayTyreUnitPrice, 2) }}</td>
                         <td class="text-right font-bold">£{{ number_format($displayTyreCommission, 2) }}</td>
                     </tr>
@@ -415,12 +418,13 @@
                             $showVatBadge = $isVatRegistered && $taxClass == 9;
                         @endphp
                         <tr>
-                             <td>Job-{{ $workshop->id }}</td>
+                            <td class="text-center">{{ $quantity }}</td>
                             <td>
-                                <strong>{{ $serviceName }}</strong>
+                                <strong>{{ $serviceName }}</strong><br>
                                 <small style="color: #666;">
+                                    {{ ucfirst($ws->fitting_type ?? 'Service') }}
                                     @if($ws->service?->product_type || $ws->product_type)
-                                        <span
+                                        • <span
                                             style="background:#e8f4fd;color:#2980b9;padding:2px 6px;border-radius:3px;font-size:10px;">
                                             {{ e($ws->service?->product_type ?? $ws->product_type) }}
                                         </span>
@@ -430,7 +434,7 @@
                                     @endif
                                 </small>
                             </td>
-                            <td class="text-center">{{ $quantity }}</td>
+                            <td>#{{ $workshop->id }}</td>
                             <td class="text-right">£{{ number_format($displayUnitPrice, 2) }}</td>
                             <td class="text-right font-bold">£{{ number_format($displayLineTotal, 2) }}</td>
                         </tr>
@@ -476,20 +480,21 @@
                 @endif
             </tbody>
         </table>
+        {{-- Totals --}}
         <div class="totals-wrapper">
             <table class="totals-table">
                 @if(isset($payout->garage->garage_fitting_vat_class) && $payout->garage->garage_fitting_vat_class == 9)
                     @php
-                        $grossAmount = $displayLineTotal + $displayTyreCommission;
+                        $grossAmount = $payout->payout_amount;
+                        $netAmount = $grossAmount / 1.20;
+                        $vatAmount = $grossAmount - $netAmount;
                         $processingFee = $payout->card_processing_fee ?? 0;
-                        $amount = ($processingFee + $payout->payout_amount);
-                        $vatAmount = $amount - ($amount / 1.2);
-                        $finalTotal = ($grossAmount+$vatAmount) - $processingFee;
+                        $finalTotal = $grossAmount - $processingFee;
                     @endphp
 
                     <tr>
                         <td class="label" width="70%">Subtotal (Net):</td>
-                        <td class="text-right">£{{ number_format($grossAmount, 2) }}</td>
+                        <td class="text-right">£{{ number_format($netAmount, 2) }}</td>
                     </tr>
                     <tr>
                         <td class="label">VAT (20% - Reverse Charge):</td>
@@ -508,15 +513,13 @@
 
                 @else
                     @php
-                       $grossAmount = $displayLineTotal + $displayTyreCommission;
                         $processingFee = $payout->card_processing_fee ?? 0;
-                        $amount = ($processingFee + $payout->payout_amount);
-                        $finalTotal = $grossAmount - $processingFee;
+                        $finalTotal = $payout->payout_amount - $processingFee;
                     @endphp
 
                     <tr>
                         <td class="label" width="70%">Payout Amount</td>
-                        <td class="text-right">£{{ number_format($grossAmount, 2) }}</td>
+                        <td class="text-right">£{{ number_format($payout->payout_amount, 2) }}</td>
                     </tr>
                     @if($processingFee > 0)
                         <tr>
@@ -539,6 +542,7 @@
             </table>
         </div>
 
+        {{-- Notes Section --}}
         @if($invoice->notes || $payout->notes)
             <div class="notes-section">
                 <h4>📝 Notes</h4>
@@ -553,6 +557,7 @@
         <div class="bottom-details">
             <p><strong>Payment Terms:</strong> 7 Days from Invoice Date</p>
             <p><strong>Bank Name:</strong>{{ $payout->garage->garage_bank_name }}</p>
+            <!-- <p><strong>Account Name:</strong> {{ $payout->garage->garage_bank_name }}</p>x  -->
             <p><strong>Account Number:</strong> {{ $payout->garage->garage_account_number }}</p>
             <p><strong>Sort Code:</strong> {{ $payout->garage->garage_bank_sort_code }}</p><br>
             @if(isset($payout->garage->garage_fitting_vat_class) && $payout->garage->garage_fitting_vat_class == 9)
@@ -560,24 +565,6 @@
                 </p><br>
             @endif
             <p><strong>Authorised By: Accounts Department, TYRE LAB LTD</strong></p>
-        </div>
-
-        <div class="action-buttons no-print">
-            <a href="{{ route('garage-payout-invoices.download', $invoice) }}" class="btn btn-primary">
-                💾 Download PDF
-            </a>
-            @if($garage->garage_email && auth()->user()?->isAdmin())
-                <form method="POST" action="{{ route('garage-payout-invoices.send', $invoice) }}" class="d-inline">
-                    @csrf
-                    <button type="submit" class="btn btn-secondary"
-                        onclick="return confirm('Send invoice to {{ addslashes($garage->garage_email) }}?')">
-                        📧 Email Invoice
-                    </button>
-                </form>
-            @endif
-            <button onclick="window.print()" class="btn btn-outline">
-                🖨️ Print Invoice
-            </button>
         </div>
     </div>
 

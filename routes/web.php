@@ -126,10 +126,8 @@ Route::prefix('payment-assist')->name('paymentassist.')->group(function () {
     Route::match(['GET', 'POST'], '/callback/{invoiceid}', [PaymentAssistController::class, 'handleCallback'])->name('callback');
 });
 
-Route::get('/revolut/pay/{workshopId}', [RevolutController::class, 'makePayment'])
-    ->name('revolut.pay');
-Route::get('/payment/revolut/return', [RevolutController::class, 'return'])
-    ->name('revolut.return');
+Route::get('/revolut/pay/{workshopId}', [RevolutController::class, 'makePayment'])->name('revolut.pay');
+Route::get('/payment/revolut/return', [RevolutController::class, 'return'])->name('revolut.return');
 Route::post('/revolut/webhook', [RevolutController::class, 'webhook']);
 
 // routes/web.php
@@ -138,6 +136,7 @@ Route::get('/revolut/callback', [RevolutBusinessController::class, 'oauthCallbac
 
 Route::post('/revolut-business/payout/{workshop}', [RevolutBusinessController::class, 'payout'])->name('revolut.payout');
 Route::post('/revolut-business/refund/{workshop}', [RevolutBusinessController::class, 'refund'])->name('revolut.refund');
+
 
 //appointment
 // Route::get('/appointment', [AppointmentController::class, 'create'])->name('appointment.create');
@@ -363,6 +362,11 @@ Route::middleware('auth:garage')->group(function () {
     Route::get('/garage/auth/vehicles', [GarageAccountController::class, 'vehicles'])->name('garage.vehicles');
     Route::get('/garage/auth/invoices', [GarageAccountController::class, 'invoices'])->name('garage.invoices');
     Route::get('/garage/auth/statement', [GarageAccountController::class, 'statements'])->name('garage.statement');
+    // Garage Payout Invoices
+    Route::get('/garage/auth/payoutinvoices', [GarageAccountController::class, 'payoutInvoices'])->name('garage.payoutInvoices.index');
+    Route::get('/garage/auth/payoutinvoices/{invoice}/view', [GarageAccountController::class, 'viewPayoutInvoice'])->name('garage.payoutInvoices.view');
+    Route::get('/garage/auth/payoutinvoices/{invoice}/download', [GarageAccountController::class, 'downloadPayoutInvoice'])->name('garage.payoutInvoices.download');
+
 
 
     Route::post('/garage/auth/update-profile', [GarageAccountController::class, 'updateProfile'])->name('garage.update-profile');
@@ -374,7 +378,6 @@ Route::middleware('auth:garage')->group(function () {
     // Route::post('/garage/auth/orders/{id}/verify', [GarageAccountController::class, 'verifyJob'])->name('garage.orders.verify');
     Route::post('/garage/auth/orders/{order}/verify', [GarageAccountController::class, 'verifyJob'])->name('garage.orders.verify')->middleware('auth:garage');
     Route::post('/garage/auth/orders/{order}/resend-code', [GarageAccountController::class, 'resendCode'])->name('garage.orders.resend')->middleware('auth:garage');
-
 
 });
 
@@ -806,8 +809,10 @@ Route::put('/AutoCare/garages/{id}/password', 'GaragesController@updatePassword'
     Route::post('/AutoCare/payouts/{workshop}', [GaragePayoutController::class, 'payout'])->name('AutoCare.payouts.payout');
     Route::post('/AutoCare/payouts/bulk', [GaragePayoutController::class, 'bulkPayout'])->name('AutoCare.payouts.bulk');
 
-    // Route::post('/payouts/bulk', [RevolutBusinessController::class, 'bulkPayout'])
-    // ->name('AutoCare.payouts.bulk');
+   //payout invoice
+    Route::get('/AutoCare/garage-payout-invoices/{invoice}/view', [GaragePayoutController::class, 'view'])->name('garage-payout-invoices.view');
+    Route::get('/AutoCar/garage-payout-invoices/{invoice}/download', [GaragePayoutController::class, 'download'])->name('garage-payout-invoices.download');
+    Route::post('/AutoCare/garage-payout-invoices/{invoice}/send', [GaragePayoutController::class, 'send'])->name('garage-payout-invoices.send');
 
 // Route::post('/payouts/{payout}', [RevolutBusinessController::class, 'payout'])
     // ->name('AutoCare.payouts.payout');

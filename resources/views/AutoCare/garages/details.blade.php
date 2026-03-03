@@ -309,16 +309,17 @@
 </div>
 
 <div class="col-lg-2 col-md-6 col-12 form-group">
-    <label for="garage_fitting_charges">Garage Fitting Charge <span class="text-danger">*</span></label>
+    <label for="fitting_charges">Fitting Charge <span class="text-danger">*</span></label>
     <input
         type="number"
         step="0.01"
         class="form-control"
-        id="garage_fitting_charges"
-        name="garage_fitting_charges"
-        value="{{ old('garage_fitting_charges', $garages->garage_fitting_charges ?? '') }}"
+        id="fitting_charges"
+        name="fitting_charges"
+        value="{{ old('fitting_charges', $garages->fitting_charges ?? '') }}"
         required>
 </div>
+
 <div class="col-lg-2 col-md-6 col-12 form-group">
     <label for="garage_fitting_vat_class">
         Garage Fitting VAT <span class="text-danger">*</span>

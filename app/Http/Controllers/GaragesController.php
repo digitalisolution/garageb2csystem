@@ -296,6 +296,14 @@ class GaragesController extends Controller
                 mkdir($destinationPath, 0755, true);
             }
 
+            $garageFittingCharge = $request->fitting_charges;
+            $vatType = $request->garage_fitting_vat_class;
+            if ($vatType == 9) {
+            $garageFittingCharge = $garageFittingCharge / 1.20;
+            }
+            $validated['garage_fitting_charges'] = round($garageFittingCharge, 2);
+            $validated['garage_fitting_vat_class'] = $vatType;
+
             // Logo
             if ($request->hasFile('garage_logo')) {
                 $logo = $request->file('garage_logo');
@@ -381,7 +389,8 @@ class GaragesController extends Controller
             'garage_revoult_counterparty_id' => 'nullable|string|max:50',
             'commission_type' => 'required|in:Fixed,Percentage',
             'commission_price' => 'required|numeric|min:0',
-            'garage_fitting_charges' => 'required|numeric|min:0',
+            'garage_fitting_charges' => 'nullable|numeric|min:0',
+            'fitting_charges' => 'nullable|numeric|min:0',
             'garage_fitting_vat_class' => 'required|integer|in:0,9',
             'card_processing_fee' => 'required|numeric|min:0',
 
@@ -408,7 +417,6 @@ class GaragesController extends Controller
 
         return redirect()->back()->with('success', 'Password updated successfully!');
     }
-
     public function orders(Request $request, $id)
     {
         $garages = Garage::findOrFail($id);
@@ -418,7 +426,6 @@ class GaragesController extends Controller
 
         return view('AutoCare.garages.orders', compact('workshops', 'garages'));
     }
-
     public function invoices(Request $request, $id)
     {
         $garages = Garage::findOrFail($id);
