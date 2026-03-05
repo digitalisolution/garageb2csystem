@@ -320,7 +320,127 @@
                 </tr>
             </tbody>
         </table>
+@php
+    // Prepare data
+    $tyresCount = $payout->tyres_count ?? $workshop->items?->count() ?? 0;
+    $services = $workshop->services ?? collect();
+    $hasTyres = $tyresCount > 0;
+    $hasServices = $services->isNotEmpty();
+    
+    $isVatRegistered = isset($payout->garage->garage_fitting_vat_class)
+        && $payout->garage->garage_fitting_vat_class == 9;
+    $vatRate = 0.20;
 
+    // Track totals
+    $netTotal = 0;
+    $vatTotal = 0;
+    $processingFee = $payout->card_processing_fee ?? 0;
+
+    // Format helper: returns [net, vat, gross]
+    $calculateVat = function ($amount, $taxClassId) use ($isVatRegistered, $vatRate) {
+        if ($isVatRegistered && $taxClassId == 9 && $amount > 0) {
+            $net = $amount / (1 + $vatRate);
+            $vat = $amount - $net;
+            return ['net' => $net, 'vat' => $vat, 'gross' => $amount];
+        }
+        return ['net' => $amount, 'vat' => 0, 'gross' => $amount];
+    };
+
+    // --- TYRES CALCULATION ---
+    $tyreItems = [];
+    $totalTyreNet = 0;
+    $totalTyreVat = 0;
+
+    if ($hasTyres) {
+        foreach ($workshop->items as $tyre) {
+            $fittingPrice = $tyre->garage_fitting_charges ?? 0;
+            $itemqty = $tyre->quantity ?? 1;
+            $commissionRate = $payout->garage->commission_price ?? 0;
+
+            // Calculate garage payout (commission logic)
+            if ($garage->commission_type === 'Percentage') {
+                $commissionAmount = $fittingPrice * ($commissionRate / 100);
+                $garagePayout = $fittingPrice - $commissionAmount;
+            } else {
+                $garagePayout = $fittingPrice - ($commissionRate * $itemqty);
+            }
+
+            // Get tax class from tyre or fallback to garage default
+            $taxClassId = $tyre->tax_class_id ?? $payout->garage->garage_fitting_vat_class ?? null;
+            $vatData = $calculateVat($garagePayout, $taxClassId);
+
+            $tyreItems[] = [
+                'job_id' => $workshop->id,
+                'description' => 'Tyre Fitting Commission',
+                'quantity' => $itemqty,
+                'gross' => $garagePayout,
+                'net' => $vatData['net'],
+                'vat' => $vatData['vat'],
+                'tax_class_id' => $taxClassId,
+                'unit_net' => $vatData['net'] / $itemqty,
+                'unit_vat' => $vatData['vat'] / $itemqty,
+            ];
+
+            $totalTyreNet += $vatData['net'];
+            $totalTyreVat += $vatData['vat'];
+        }
+    }
+
+    // --- SERVICES CALCULATION ---
+    $serviceItems = [];
+    $totalServiceNet = 0;
+    $totalServiceVat = 0;
+
+    if ($hasServices) {
+        foreach ($services as $ws) {
+            if ($ws->is_void) continue;
+
+            $serviceModel = $ws->service;
+            if (!$serviceModel) {
+                \Log::warning('Service relation missing', ['service_item_id' => $ws->id]);
+                continue;
+            }
+
+            $serviceName = e($ws->service_name ?? 'Service');
+            $quantity = $ws->service_quantity ?? 1;
+            $costPrice = $serviceModel->cost_price ?? 0;
+            $commissionPrice = $ws->service_commission_price ?? 0;
+
+            // Calculate commission amount
+            $lineGross = 0;
+            if ($commissionPrice) {
+                $lineGross = ($costPrice - $commissionPrice) * $quantity;
+            } else {
+                $lineGross = ($ws->service_price ?? 0) * $quantity;
+            }
+
+            // Get tax class
+            $taxClassId = $ws->tax_class_id ?? null;
+            $vatData = $calculateVat($lineGross, $taxClassId);
+
+            $serviceItems[] = [
+                'job_id' => $workshop->id,
+                'name' => $serviceName,
+                'product_type' => $serviceModel->product_type ?? null,
+                'quantity' => $quantity,
+                'gross' => $lineGross,
+                'net' => $vatData['net'],
+                'vat' => $vatData['vat'],
+                'tax_class_id' => $taxClassId,
+                'unit_net' => $vatData['net'] / $quantity,
+                'unit_vat' => $vatData['vat'] / $quantity,
+            ];
+
+            $totalServiceNet += $vatData['net'];
+            $totalServiceVat += $vatData['vat'];
+        }
+    }
+
+    // --- FINAL TOTALS ---
+    $subtotalNet = $totalTyreNet + $totalServiceNet;
+    $subtotalVat = $totalTyreVat + $totalServiceVat;
+    $grandTotal = $subtotalNet + $subtotalVat - $processingFee;
+@endphp
         {{-- Line Items --}}
         <table cellpadding="0" cellspacing="0" border="0" class="table-suppay">
             <thead>
@@ -332,212 +452,159 @@
                     <th class="text-right">Amount</th>
                 </tr>
             </thead>
-            <tbody>
-                @php
-                    // Prepare data
-                    $tyresCount = $payout->tyres_count ?? $workshop->items?->count() ?? 0;
-                    $services = $workshop->services ?? collect();
-                    $hasTyres = $tyresCount > 0;
-                    $hasServices = $services->isNotEmpty();
-                    $totalPayout = $payout->payout_amount;
-
-                    $isVatRegistered = isset($payout->garage->garage_fitting_vat_class)
-                        && $payout->garage->garage_fitting_vat_class == 9;
-                    $vatRate = 0.20;
-
-                    $totalServiceCommission = $services
-                        ->reject(fn($ws) => $ws->is_void ?? false)
-                        ->sum(fn($ws) => ($ws->service?->service_commission_price ?? 0) * ($ws->service_quantity ?? 1));
-                    $totalTyreCommission = 0;
-                    $totalServiceCommission = 0;
-
-                    foreach ($workshop->items as $tyre) {
-
-                        $fittingPrice = $tyre->garage_fitting_charges ?? 0;
-                        $itemqty = $tyre->quantity ?? 0;
-                        $commissionRate = $payout->garage->commission_price * $itemqty ?? 0;
-
-                        if ($garage->commission_type === 'Percentage') {
-
-                            $commissionAmount = $fittingPrice * ($commissionRate / 100);
-                            $garagePayout = $fittingPrice - $commissionAmount;
-
-                        } else {
-
-                            $garagePayout = $fittingPrice - $commissionRate;
-                        }
-                        $totalTyreCommission += $garagePayout;
-                    }
-
-                    $formatPrice = function ($amount) use ($isVatRegistered, $vatRate) {
-                        if ($isVatRegistered && $amount > 0) {
-                            return $amount / (1 + $vatRate);
-                        }
-                        return $amount;
-                    };
-                @endphp
-
-                @if($hasTyres)
-                    @php
-                        $displayTyreCommission = $formatPrice($totalTyreCommission);
-                        $displayTyreUnitPrice = $hasTyres && $itemqty > 0 ? ($displayTyreCommission / $itemqty) : 0;
-                    @endphp
-                    <tr>
-                        <td>Job-{{ $workshop->id }}</td>
-                        <td>
-                            <strong>Tyre Fitting Commission</strong><br>
-                            <small style="color: #666;">
-                                {{ $itemqty }} Tyre(s) Fitted • Job #{{ $workshop->id }}<br>
-                                Processed on {{ $workshop->created_at?->format('d M Y') }}
-                                @if($isVatRegistered)
-                                    <br><span style="color:#2980b9;font-size:10px;">(Ex-VAT)</span>
-                                @endif
-                            </small>
-                        </td>
-                        <td class="text-center">{{ $itemqty }}</td>
-                        <td class="text-right">£{{ number_format($displayTyreUnitPrice, 2) }}</td>
-                        <td class="text-right font-bold">£{{ number_format($displayTyreCommission, 2) }}</td>
-                    </tr>
+           <tbody>
+    {{-- TYRE ITEMS --}}
+    @foreach($tyreItems as $item)
+    <tr>
+        <td>Job-{{ $item['job_id'] }}</td>
+        <td>
+            <strong>{{ $item['description'] }}</strong><br>
+            <small style="color: #666;">
+                {{ $item['quantity'] }} Tyre(s) Fitted • Job #{{ $item['job_id'] }}<br>
+                Processed on {{ $workshop->created_at?->format('d M Y') }}
+                @if($item['tax_class_id'] == 9)
+                    <br><span style="color:#2980b9;font-size:10px;">(VAT 20%)</span>
                 @endif
-
-                @if($hasServices)
-                    @foreach($services as $ws)
-                        @if($ws->is_void) @continue @endif
-                        @php
-                            $serviceName = e($ws->service?->service_name ?? $ws->service_name ?? 'Service');
-                            $quantity = $ws->service_quantity ?? 1;
-                            $grossPrice = $ws->service?->service_commission_price ?? $ws->service_price ?? 0;
-
-                            $displayUnitPrice = $formatPrice($grossPrice);
-                            $displayLineTotal = $displayUnitPrice * $quantity;
-
-                            $taxClass = $ws->service?->tax_class_id ?? $ws->tax_class_id ?? null;
-                            $showVatBadge = $isVatRegistered && $taxClass == 9;
-                        @endphp
-                        <tr>
-                             <td>Job-{{ $workshop->id }}</td>
-                            <td>
-                                <strong>{{ $serviceName }}</strong>
-                                <small style="color: #666;">
-                                    @if($ws->service?->product_type || $ws->product_type)
-                                        <span
-                                            style="background:#e8f4fd;color:#2980b9;padding:2px 6px;border-radius:3px;font-size:10px;">
-                                            {{ e($ws->service?->product_type ?? $ws->product_type) }}
-                                        </span>
-                                    @endif
-                                    @if($showVatBadge)
-                                        <br><span style="color:#2980b9;font-size:10px;">(Ex-VAT)</span>
-                                    @endif
-                                </small>
-                            </td>
-                            <td class="text-center">{{ $quantity }}</td>
-                            <td class="text-right">£{{ number_format($displayUnitPrice, 2) }}</td>
-                            <td class="text-right font-bold">£{{ number_format($displayLineTotal, 2) }}</td>
-                        </tr>
-                    @endforeach
+            </small>
+        </td>
+        <td class="text-center">{{ $item['quantity'] }}</td>
+        <td class="text-right">£{{ number_format($item['unit_net'], 2) }}</td>
+        <td class="text-right">
+            <div style="display:flex;flex-direction:column;align-items:flex-end;">
+                <span class="font-bold">£{{ number_format($item['net'], 2) }}</span>
+                @if($item['vat'] > 0)
+                    <small style="color:#27ae60;">+VAT £{{ number_format($item['vat'], 2) }}</small>
                 @endif
+            </div>
+        </td>
+    </tr>
+    @endforeach
 
-                @if(!$hasTyres && !$hasServices)
-                    @php
-                        $displayAmount = $formatPrice($totalPayout);
-                    @endphp
-                    <tr>
-                        <td class="text-center">1</td>
-                        <td>
-                            <strong>Garage Settlement Payout</strong><br>
-                            <small style="color: #666;">
-                                Commission settlement for Job #{{ $workshop->id }}<br>
-                                Processed on {{ $workshop->created_at?->format('d M Y') }}
-                                @if($isVatRegistered)
-                                    <br><span style="color:#2980b9;font-size:10px;">(Ex-VAT)</span>
-                                @endif
-                            </small>
-                        </td>
-                        <td>#{{ $workshop->id }}</td>
-                        <td class="text-right">£{{ number_format($displayAmount, 2) }}</td>
-                        <td class="text-right font-bold">£{{ number_format($displayAmount, 2) }}</td>
-                    </tr>
+    {{-- SERVICE ITEMS --}}
+    @foreach($serviceItems as $item)
+    <tr>
+        <td>Job-{{ $item['job_id'] }}</td>
+        <td>
+            <strong>{{ $item['name'] }}</strong>
+            <small style="color: #666;">
+                @if($item['product_type'])
+                    <span style="background:#e8f4fd;color:#2980b9;padding:2px 6px;border-radius:3px;font-size:10px;">
+                        {{ e($item['product_type']) }}
+                    </span>
                 @endif
+                @if($item['tax_class_id'] == 9)
+                    <br><span style="color:#2980b9;font-size:10px;">(VAT 20%)</span>
+                @endif
+            </small>
+        </td>
+        <td class="text-center">{{ $item['quantity'] }}</td>
+        <td class="text-right">£{{ number_format($item['unit_net'], 2) }}</td>
+        <td class="text-right">
+            <div style="display:flex;flex-direction:column;align-items:flex-end;">
+                <span class="font-bold">£{{ number_format($item['net'], 2) }}</span>
+                @if($item['vat'] > 0)
+                    <small style="color:#27ae60;">+VAT £{{ number_format($item['vat'], 2) }}</small>
+                @endif
+            </div>
+        </td>
+    </tr>
+    @endforeach
 
-                @if($invoice->metadata && isset($invoice->metadata['breakdown']))
-                    @foreach($invoice->metadata['breakdown'] as $item)
-                        @php
-                            $itemGross = $item['amount'] ?? $item['unit_price'] ?? 0;
-                            $itemDisplay = $formatPrice($itemGross);
-                        @endphp
-                        <tr>
-                            <td class="text-center"><small>{{ $item['qty'] ?? 1 }}</small></td>
-                            <td><small style="color: #888;">↳ {{ e($item['description'] ?? 'Additional item') }}</small></td>
-                            <td><small>-</small></td>
-                            <td class="text-right"><small>£{{ number_format($itemDisplay, 2) }}</small></td>
-                            <td class="text-right"><small>£{{ number_format($itemDisplay, 2) }}</small></td>
-                        </tr>
-                    @endforeach
-                @endif
-            </tbody>
+    {{-- FALLBACK: No items --}}
+    @if(!$hasTyres && !$hasServices)
+        @php
+            $fallbackVat = $calculateVat($payout->payout_amount, $payout->garage->garage_fitting_vat_class ?? null);
+        @endphp
+        <tr>
+            <td class="text-center">1</td>
+            <td>
+                <strong>Garage Settlement Payout</strong><br>
+                <small style="color: #666;">
+                    Commission settlement for Job #{{ $workshop->id }}<br>
+                    Processed on {{ $workshop->created_at?->format('d M Y') }}
+                    @if($payout->garage->garage_fitting_vat_class == 9)
+                        <br><span style="color:#2980b9;font-size:10px;">(VAT 20%)</span>
+                    @endif
+                </small>
+            </td>
+            <td class="text-right">£{{ number_format($fallbackVat['net'], 2) }}</td>
+            <td class="text-right">
+                <div style="display:flex;flex-direction:column;align-items:flex-end;">
+                    <span class="font-bold">£{{ number_format($fallbackVat['net'], 2) }}</span>
+                    @if($fallbackVat['vat'] > 0)
+                        <small style="color:#27ae60;">+VAT £{{ number_format($fallbackVat['vat'], 2) }}</small>
+                    @endif
+                </div>
+            </td>
+        </tr>
+    @endif
+
+    {{-- METADATA BREAKDOWN ITEMS --}}
+    @if($invoice->metadata && isset($invoice->metadata['breakdown']))
+        @foreach($invoice->metadata['breakdown'] as $metaItem)
+            @php
+                $itemGross = $metaItem['amount'] ?? $metaItem['unit_price'] ?? 0;
+                $itemQty = $metaItem['qty'] ?? 1;
+                $itemTaxClass = $metaItem['tax_class_id'] ?? null;
+                $itemVat = $calculateVat($itemGross, $itemTaxClass);
+            @endphp
+            <tr>
+                <td class="text-center"><small>{{ $itemQty }}</small></td>
+                <td><small style="color: #888;">↳ {{ e($metaItem['description'] ?? 'Additional item') }}</small></td>
+                <td class="text-right"><small>£{{ number_format($itemVat['net'], 2) }}</small></td>
+                <td class="text-right">
+                    <small>
+                        £{{ number_format($itemVat['net'], 2) }}
+                        @if($itemVat['vat'] > 0)
+                            <br><span style="color:#27ae60;">+VAT £{{ number_format($itemVat['vat'], 2) }}</span>
+                        @endif
+                    </small>
+                </td>
+            </tr>
+        @endforeach
+    @endif
+</tbody>
         </table>
-        <div class="totals-wrapper">
-            <table class="totals-table">
-                @if(isset($payout->garage->garage_fitting_vat_class) && $payout->garage->garage_fitting_vat_class == 9)
-                    @php
-                        $grossAmount = $displayLineTotal + $displayTyreCommission;
-                        $processingFee = $payout->card_processing_fee ?? 0;
-                        $amount = ($processingFee + $payout->payout_amount);
-                        $vatAmount = $amount - ($amount / 1.2);
-                        $finalTotal = ($grossAmount+$vatAmount) - $processingFee;
-                    @endphp
+       <div class="totals-wrapper">
+    <table class="totals-table">
+        {{-- Subtotal (Net) --}}
+        <tr>
+            <td class="label" width="70%">Subtotal (Net):</td>
+            <td class="text-right">£{{ number_format($subtotalNet, 2) }}</td>
+        </tr>
 
-                    <tr>
-                        <td class="label" width="70%">Subtotal (Net):</td>
-                        <td class="text-right">£{{ number_format($grossAmount, 2) }}</td>
-                    </tr>
-                    <tr>
-                        <td class="label">VAT (20% - Reverse Charge):</td>
-                        <td class="text-right">£{{ number_format($vatAmount, 2) }}</td>
-                    </tr>
-                    @if($processingFee > 0)
-                        <tr>
-                            <td class="label">Processing Fees:</td>
-                            <td class="text-right">-£{{ number_format($processingFee, 2) }}</td>
-                        </tr>
-                    @endif
-                    <tr class="total">
-                        <td><strong>TOTAL PAID:</strong></td>
-                        <td class="text-right"><strong>£{{ number_format($finalTotal, 2) }}</strong></td>
-                    </tr>
+        {{-- VAT Line (only if any VAT applies) --}}
+        @if($subtotalVat > 0)
+        <tr>
+            <td class="label">VAT (20% - Reverse Charge):</td>
+            <td class="text-right" style="color:#27ae60;">£{{ number_format($subtotalVat, 2) }}</td>
+        </tr>
+        @endif
 
-                @else
-                    @php
-                       $grossAmount = $displayLineTotal + $displayTyreCommission;
-                        $processingFee = $payout->card_processing_fee ?? 0;
-                        $amount = ($processingFee + $payout->payout_amount);
-                        $finalTotal = $grossAmount - $processingFee;
-                    @endphp
+        {{-- Processing Fee --}}
+        @if($processingFee > 0)
+        <tr>
+            <td class="label">Processing Fees:</td>
+            <td class="text-right">-£{{ number_format($processingFee, 2) }}</td>
+        </tr>
+        @endif
 
-                    <tr>
-                        <td class="label" width="70%">Payout Amount</td>
-                        <td class="text-right">£{{ number_format($grossAmount, 2) }}</td>
-                    </tr>
-                    @if($processingFee > 0)
-                        <tr>
-                            <td class="label">Processing Fees</td>
-                            <td class="text-right">-£{{ number_format($processingFee, 2) }}</td>
-                        </tr>
-                    @endif
-                    <tr class="total">
-                        <td><strong>TOTAL PAID</strong></td>
-                        <td class="text-right"><strong>£{{ number_format($finalTotal, 2) }}</strong></td>
-                    </tr>
-                    <tr>
-                        <td colspan="2"
-                            style="font-size: 11px; color: #666; padding-top: 10px; border-top: 1px dashed #ccc;">
+        {{-- Grand Total --}}
+        <tr class="total" style="border-top: 2px solid #2c3e50;">
+            <td><strong>TOTAL PAID:</strong></td>
+            <td class="text-right"><strong>£{{ number_format($grandTotal, 2) }}</strong></td>
+        </tr>
 
-                        </td>
-                    </tr>
-                @endif
-
-            </table>
-        </div>
+        {{-- VAT Summary Note --}}
+        @if($subtotalVat > 0 && $isVatRegistered)
+        <tr>
+            <td colspan="2" style="font-size: 11px; color: #666; padding-top: 10px; text-align: right;">
+                <em>VAT calculated per item based on tax_class_id</em>
+            </td>
+        </tr>
+        @endif
+    </table>
+</div>
 
         @if($invoice->notes || $payout->notes)
             <div class="notes-section">

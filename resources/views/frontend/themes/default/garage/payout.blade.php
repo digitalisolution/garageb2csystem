@@ -3,16 +3,18 @@
 @section('content')
 
 @section('content')
-<div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold">🧾 Payout Invoices</h2>
+<div class="pt-60 pb-60">
+<div class="container">
+    @include('garage.menu')
+    <div class="short__item">
+    <div class="bg-gray p-3 text-center rounded mb-4">
+        <div class="d-flex justify-content-between align-items-center ">
+        <h2 class="fw-bold mb-0"> Payout Invoices</h2>
         <a href="{{ route('garage.orders') }}" class="btn btn-outline-secondary">
             ← Back to Orders
         </a>
     </div>
-    
-    @include('garage.menu')
-
+    </div>
     {{-- Status Summary Cards --}}
     <div class="invoice_bank">
         <div class="item">
@@ -32,7 +34,7 @@
             <span class="bg-blue">£{{ number_format($invoices->sum(fn($i)=>$i->amount), 2) }}</span>
         </div>
     </div>
-
+    
     {{-- Filters --}}
     <div class="card shadow-sm mb-4">
         <div class="card-body">
@@ -66,10 +68,9 @@
     </div>
 
     {{-- Invoices Table --}}
-    <div class="card shadow-sm">
-        <div class="card-body table-responsive">
-            <table class="table table-hover align-middle">
-                <thead class="table-light">
+        <div class="table-responsive">
+            <table class="table table-striped binvoice text-center">
+                <thead class="bg-dark text-white">
                     <tr>
                         <th>Invoice #</th>
                         <th>Workshop</th>
@@ -111,14 +112,14 @@
                                 <div class="btn-group btn-group-sm">
                                     <a href="{{ route('garage.payoutInvoices.view', $invoice) }}" 
                                        target="_blank"
-                                       class="btn btn-outline-primary"
+                                       class="btn btn-info btn-sm text-white"
                                        title="View Invoice">
-                                        👁️
+                                        <i class="fa fa-eye"></i>
                                     </a>
                                     <a href="{{ route('garage.payoutInvoices.download', $invoice) }}" 
-                                       class="btn btn-outline-success"
+                                       class="btn btn-dark btn-sm text-white"
                                        title="Download PDF">
-                                        ⬇️
+                                        <i class="fa fa-download"></i>
                                     </a>
                                 </div>
                             </td>
@@ -137,8 +138,7 @@
         <div class="card-footer bg-light">
             {{ $invoices->appends(request()->query())->links() }}
         </div>
-    </div>
+</div>
+</div>
 </div>
 @endsection
-
-<style>.invoice_bank .item{width:315px !important;}</style>

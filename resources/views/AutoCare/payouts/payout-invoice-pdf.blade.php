@@ -268,16 +268,16 @@
             <table width="100%">
                 <tr>
                     <td><h1 style="margin-bottom:15px;">PAYOUT VAT INVOICE</h1></td>
-                    <td align="right"><img src="{{ $logoSrc }}" alt="{{ $garage->garage_name }} Logo" loading="lazy" height="30"></td>
+                    <td align="right"><img src="{{ $logoSrc }}" alt="{{ $garage->garage_name }} Logo" loading="lazy" height="30" style="max-width: 200px; object-fit: contain;"></td>
                 </tr>
             </table>
         </div>
         <div class="invoice-header">
             <table width="100%">
                 <tr>
-                    <td>
+                    <td valign="top">
                         <div class="company-info">
-                            <p class="invoice-number"><strong>Invoice Number:</strong> #{{ $invoice->invoice_number }}</p>
+                            <p class="invoice-number0"><strong>Invoice Number:</strong> #{{ $invoice->invoice_number }}</p>
                             <p><strong>Issued Date:</strong> {{ $date }}</p>
                             @if($invoice->revolut_transaction_id)
                                 <p><strong>Revolut Tx:</strong><br><small>{{ $invoice->revolut_transaction_id }}</small></p>
@@ -287,7 +287,7 @@
                             </span>
                         </div>
                     </td>
-                    <td>
+                    <td valign="top">
                         <div class="invoice-meta">
                             <p><strong>Job Date:</strong> {{ $workshop->created_at?->format('d F Y, h:i A') ?? 'N/A' }}</p>
                             <p><strong>Payment Status:</strong> <span

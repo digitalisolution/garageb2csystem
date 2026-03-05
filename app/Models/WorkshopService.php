@@ -23,6 +23,7 @@ class WorkshopService extends Model
 		'product_type',
 		'service_quantity',
 		'service_price',
+		'service_commission_price'
 	];
 	// protected $guarded = ['id', 'created_at', 'updated_at','deleted_at'];
 	protected $dates = ['deleted_at'];

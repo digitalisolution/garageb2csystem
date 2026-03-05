@@ -584,6 +584,7 @@ class CheckoutController extends Controller
     {
         // Get cart items and booking details from session
         $cartTotalPrice = Session::get('cartTotalPrice', []);
+        dd($cartTotalPrice);
         $cartItems = Session::get('cart', []);
         $localTimezone = 'Europe/London';
         $userOrdertype = session('user_ordertype');
@@ -794,23 +795,30 @@ class CheckoutController extends Controller
                     WorkshopTyre::create($tyreData);
                 }
 
-                // Handle services
-                if ($item['type'] === 'service') {
-                    $serviceData = [
-                        'workshop_id' => $workshopId,
-                        'garage_id' => $garageId,
-                        'service_id' => $item['id'],
-                        'ref_type' => 'workshop',
-                        'service_name' => $item['model'],
-                        'service_price' => $item['price'],
-                        'fitting_type' => $item['fitting_type'],
-                        'service_quantity' => $item['quantity'],
-                        'tax_class_id' => $item['tax_class_id'],
-                        'product_type' => $item['type'],
-                    ];
+                    if ($item['type'] === 'service') {
+                        $service = CarService::find($item['id']);
 
-                    WorkshopService::create($serviceData);
-                }
+                        if (!$service) {
+                            \Log::warning('Service not found', ['service_id' => $item['id']]);
+                            return;
+                        }
+
+                        $serviceData = [
+                            'workshop_id' => $workshopId,
+                            'garage_id' => $garageId,
+                            'service_id' => $item['id'],
+                            'ref_type' => 'workshop',
+                            'service_name' => $item['model'],
+                            'service_price' => $item['price'],
+                            'fitting_type' => $item['fitting_type'],
+                            'service_quantity' => $item['quantity'],
+                            'tax_class_id' => $item['tax_class_id'],
+                            'product_type' => $item['type'],
+                            'service_commission_price' => $service->service_commission_price,
+                        ];
+
+                        WorkshopService::create($serviceData);
+                    }
             } catch (\Exception $e) {
                 Log::error('Error saving cart item:', [
                     'item_key' => $key,

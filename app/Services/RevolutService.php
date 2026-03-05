@@ -319,9 +319,15 @@ protected function createGaragePayoutRecord(Workshop $workshop, string $revolutO
 
         $service = $serviceItem->service;
 
-        if ($service->service_commission_price) {
-            $totalServiceCommission += $service->service_commission_price;
+        if ($serviceItem->service_commission_price) {
+
+        $vatMultiplier = ($service->tax_class_id == 9) ? 1.20 : 1;
+
+        $priceWithVat = $service->cost_price * $vatMultiplier;
+
+        $totalServiceCommission += ($priceWithVat - $serviceItem->service_commission_price);
         }
+
     }
 
     $totalCommission = round($totalTyreCommission + $totalServiceCommission, 2);

@@ -1,9 +1,9 @@
 @extends('layouts.app')
 @section('content')
 	<input type="hidden" id="loadStatement" data-customer-id="{{ $garages->id }}"></input>
-
+<div class="pt-60 pb-60">
 	<div class="container">
-		<div class="bg-white p-3">
+		<div class="bg-white">
 			@include('garage.menu')
 			<div class="short__item">
 				<div class="bg-light p-2 text-center border rounded mb-4">
@@ -153,7 +153,7 @@
 			</div>
 		</div>
 	</div>
-
+</div>
 	<script>
 		$(document).ready(function () {
 			$('#range').change(function () {
