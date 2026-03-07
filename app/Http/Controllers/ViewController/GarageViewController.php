@@ -251,9 +251,7 @@ class GarageViewController extends Controller
     Session::put('selected_garage_name', $garage->garage_name);
     Session::put('garage_fitting_charge', $garage->garage_fitting_charges ?? 0);    
     Session::put('garage_fitting_vat_class', 9);
-
     app(\App\Services\CartTotalService::class)->recalculate();
-
     return redirect()->route('checkout');
 }
 

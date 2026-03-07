@@ -103,7 +103,7 @@ class CartTop extends ViewComponent
                     $shippingPricePerTyre += $shippingPrice * $item['quantity'];
                 }
             }
-            if ($item['fitting_type'] === 'fully_fitted') {
+            if ($item['type'] === 'tyre' && $item['fitting_type'] === 'fully_fitted') {
                 $garageFittingCharges += $item['garageFittingCharge'];
             }
         }
@@ -120,7 +120,6 @@ class CartTop extends ViewComponent
 
 
         $grandTotal = $subTotal + $vatTotal + $shippingPricePerJob + $shippingPricePerTyre + $garageFittingCharges;
-
         return $this->ViewComponent('cart-top', [
             'cartItems' => $this->cartItems,
             'shippingData' => $this->shippingData,

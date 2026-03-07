@@ -68,7 +68,7 @@ class GaragePayoutController extends Controller
             $payout->tyres_count = $payout->workshop->items()->count() ?? 0;
             return $payout;
         });
-
+        // dd($payouts);
         return view('AutoCare.payouts.index', compact(
             'garages',
             'selectedGarage',

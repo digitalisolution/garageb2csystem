@@ -12,17 +12,20 @@ use App\Models\OrderTypes;
 use App\Http\Controllers\MailTyrePricingController;
 use App\Http\Controllers\MobileTyrePricingController;
 use Illuminate\Support\Facades\Session;
+use App\Services\CartTotalService;
 use App\Models\Booking;
 
 class CartController extends Controller
 {
     protected $mailTyrePricingController;
     protected $mobileTyrePricingController;
+    protected $cartTotalService;
 
-    public function __construct(MailTyrePricingController $mailTyrePricingController, MobileTyrePricingController $mobileTyrePricingController)
+    public function __construct(MailTyrePricingController $mailTyrePricingController, MobileTyrePricingController $mobileTyrePricingController, CartTotalService $cartTotalService)
     {
         $this->mailTyrePricingController = $mailTyrePricingController;
         $this->mobileTyrePricingController = $mobileTyrePricingController;
+        $this->cartTotalService = $cartTotalService;
     }
     // public function show()
     // {
@@ -192,6 +195,7 @@ class CartController extends Controller
         // Add or update item in the cart
         if (isset($cart[$cartKey])) {
             if ($type === 'service') {
+
                 return response()->json([
                     'success' => true,
                     'message' => 'Service already in cart',
@@ -284,17 +288,22 @@ class CartController extends Controller
         Session::put('shippingVAT', $shippingVAT);
         Session::save();
 
+
+        $totals = $this->cartTotalService->recalculate();
+
         return response()->json([
             'success' => true,
             'message' => ucfirst($type) . ' added to cart',
             'product' => $cart,
             'totalQuantity' => array_sum(array_column($cart, 'quantity')),
-            'cartSubTotal' => number_format($cartSubTotal, 2),
-            'vatTotal' => number_format($vatTotal, 2),
-            'cartTotalPrice' => number_format($grandTotal, 2),
-            'shippingPricePerJob' => number_format($shippingPricePerJob, 2),
-            'shippingPricePerTyre' => number_format($shippingPricePerTyre, 2),
-            'shippingVAT' => number_format($shippingVAT, 2),
+            'cartSubTotal' => $totals['cartSubTotal'] ?? number_format(Session::get('cartSubTotal', 0), 2),
+            'vatTotal' => $totals['vatTotal'],
+            'cartTotalPrice' => $totals['cartTotalPrice'],
+            'shippingPricePerJob' => number_format(Session::get('shippingPricePerJob', 0), 2),
+            'shippingPricePerTyre' => number_format(Session::get('shippingPricePerTyre', 0), 2),
+            'shippingVAT' => number_format(Session::get('shippingVAT', 0), 2),
+            'garageFittingCharge' => $totals['garageFittingCharge'],
+            'garageFittingVAT' => $totals['garageFittingVAT'],
         ]);
     }
     public function clearCart(Request $request)
@@ -391,19 +400,19 @@ class CartController extends Controller
                     $shippingPricePerTyre += $shippingPrice * $item['quantity'];
                 }
             }
-             if ($item['fitting_type'] === 'mailorder') {
-                        $hasMailorderFitting = true;
-                        $shippingType = $shippingData['ship_type'] ?? 'job';
-                        $shippingPrice = $shippingData['ship_price'] ?? 0;
+            if ($item['fitting_type'] === 'mailorder') {
+                $hasMailorderFitting = true;
+                $shippingType = $shippingData['ship_type'] ?? 'job';
+                $shippingPrice = $shippingData['ship_price'] ?? 0;
 
-                        if ($shippingType === 'job') {
-                            $shippingPricePerJob = max($shippingPricePerJob, $shippingPrice);
-                        } elseif ($shippingType === 'tyre' && $item['type'] === 'tyre') {
-                            $shippingPricePerTyre += $shippingPrice * $item['quantity'];
-                        }
+                if ($shippingType === 'job') {
+                    $shippingPricePerJob = max($shippingPricePerJob, $shippingPrice);
+                } elseif ($shippingType === 'tyre' && $item['type'] === 'tyre') {
+                    $shippingPricePerTyre += $shippingPrice * $item['quantity'];
+                }
             }
             if ($item['fitting_type'] === 'fully_fitted') {
-                        $hasGarageFittingCharge = true;
+                $hasGarageFittingCharge = true;
             }
         }
 
@@ -420,7 +429,7 @@ class CartController extends Controller
             $vatTotal += $shippingVAT;
             $grandTotal += $totalShippingPrice;
         }
-        if($hasGarageFittingCharge && $garageFittingCharges > 0 && $garageVatClass === 9 ){
+        if ($hasGarageFittingCharge && $garageFittingCharges > 0 && $garageVatClass === 9) {
             $garageFittingVAT = $garageFittingCharges * 0.2;
             $vatTotal += $garageFittingVAT;
             $grandTotal += $garageFittingCharges;
@@ -435,23 +444,25 @@ class CartController extends Controller
             'shippingPricePerTyre' => $shippingPricePerTyre,
             'shippingVAT' => $shippingVAT,
             'garageFittingCharge' => $garageFittingCharges,
-            'garageFittingVAT'    => $garageFittingVAT,
-            'garageVatClass'      => $garageVatClass,
+            'garageFittingVAT' => $garageFittingVAT,
+            'garageVatClass' => $garageVatClass,
         ]);
         Session::save();
+        $totals = $this->cartTotalService->recalculate();
 
         return response()->json([
             'success' => true,
             'message' => 'Item updated from cart',
             'cartSubTotal' => number_format($cartSubTotal, 2),
-            'vatTotal' => number_format($vatTotal, 2),
-            'cartTotalPrice' => number_format($grandTotal, 2),
             'remainingItems' => array_sum(array_column($cart, 'quantity')),
             'shippingPricePerJob' => number_format($shippingPricePerJob, 2),
             'shippingPricePerTyre' => number_format($shippingPricePerTyre, 2),
             'shippingVAT' => number_format($shippingVAT, 2),
             'garageFittingCharges' => $garageFittingCharges,
-            'garageFittingVAT' => $garageFittingVAT,
+            'garageFittingCharge' => $totals['garageFittingCharge'],
+            'garageFittingVAT' => $totals['garageFittingVAT'],
+            'vatTotal' => $totals['vatTotal'],
+            'cartTotalPrice' => $totals['cartTotalPrice'],
         ]);
     }
     public function delete(Request $request)
@@ -517,17 +528,20 @@ class CartController extends Controller
                 'shippingVAT' => $shippingVAT,
             ]);
             Session::save();
+            $totals = $this->cartTotalService->recalculate();
             return response()->json([
                 'success' => true,
                 'message' => 'Item removed from cart',
                 'cartSubTotal' => number_format($cartSubTotal, 2),
-                'vatTotal' => number_format($vatTotal, 2),
-                'cartTotalPrice' => number_format($grandTotal, 2),
                 'remainingItems' => array_sum(array_column($cart, 'quantity')),
                 'shippingPricePerJob' => number_format($shippingPricePerJob, 2),
                 'shippingPricePerTyre' => number_format($shippingPricePerTyre, 2),
                 'shippingVAT' => number_format($shippingVAT, 2),
                 'shippingPostcode' => $shippingData['postcode'] ?? '',
+                'garageFittingCharge' => $totals['garageFittingCharge'],
+                'garageFittingVAT' => $totals['garageFittingVAT'],
+                'vatTotal' => $totals['vatTotal'],
+                'cartTotalPrice' => $totals['cartTotalPrice'],
             ]);
         }
 
@@ -599,18 +613,20 @@ class CartController extends Controller
                 'shippingPricePerTyre' => $shippingPricePerTyre,
                 'shippingVAT' => $shippingVAT,
             ]);
-
+            $totals = $this->cartTotalService->recalculate();
             return response()->json([
                 'success' => true,
                 'message' => 'Item removed from cart',
                 'cartSubTotal' => number_format($cartSubTotal, 2),
-                'vatTotal' => number_format($vatTotal, 2),
-                'cartTotalPrice' => number_format($grandTotal, 2),
                 'remainingItems' => array_sum(array_column($cart, 'quantity')),
                 'shippingPricePerJob' => number_format($shippingPricePerJob, 2),
                 'shippingPricePerTyre' => number_format($shippingPricePerTyre, 2),
                 'shippingVAT' => number_format($shippingVAT, 2),
                 'shippingPostcode' => $shippingData['postcode'] ?? '',
+                'garageFittingCharge' => $totals['garageFittingCharge'],
+                'garageFittingVAT' => $totals['garageFittingVAT'],
+                'vatTotal' => $totals['vatTotal'],
+                'cartTotalPrice' => $totals['cartTotalPrice'],
             ]);
         }
 

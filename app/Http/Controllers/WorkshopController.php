@@ -1044,7 +1044,9 @@ class WorkshopController extends Controller
 
                 if ($existing) {
                     if ($existing->qty != $item->quantity) {
-                        $qtyDiff = $item->quantity - $existing->qty;
+                        if ($workshop->workshop_origin === 'Admin') {
+                            $qtyDiff = $item->quantity - $existing->qty;
+                        }
                         $stockType = $qtyDiff > 0 ? 'Decrease' : 'Increase';
                         if ($qtyDiff > 0) {
                         if ($availableQty < $qtyDiff) {
@@ -1078,7 +1080,7 @@ class WorkshopController extends Controller
                         ]);
                     }
                 } else {
-                    if ($availableQty < $item->quantity) {
+                    if ($workshop->workshop_origin === 'Admin' && $availableQty < $item->quantity) {
                         DB::rollBack();
                         return redirect()->back()->with('error', 'Insufficient stock for EAN: ' . $item->product_ean);
                     }

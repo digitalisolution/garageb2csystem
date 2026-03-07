@@ -584,7 +584,7 @@ class CheckoutController extends Controller
     {
         // Get cart items and booking details from session
         $cartTotalPrice = Session::get('cartTotalPrice', []);
-        dd($cartTotalPrice);
+        // dd($cartTotalPrice);
         $cartItems = Session::get('cart', []);
         $localTimezone = 'Europe/London';
         $userOrdertype = session('user_ordertype');

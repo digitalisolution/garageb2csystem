@@ -334,7 +334,7 @@
                                                               <p
                                                                 style="margin-top:14px;font-family:Arial;font-size:12px;text-align:right;color:#3f3f3f;padding-top:0px;margin-top:0;margin-bottom:3px">
                                                                 <span
-                                                                  style="padding-right:0px">£{{ number_format($vatValue + $calloutVat, 2) }}
+                                                                  style="padding-right:0px">£{{ number_format($vatValue + $calloutVat + $garageFittingVAT, 2) }}
                                                                 </span>
                                                               </p>
                                                             </td>

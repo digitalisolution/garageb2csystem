@@ -317,15 +317,10 @@ protected function createGaragePayoutRecord(Workshop $workshop, string $revolutO
             continue;
         }
 
-        $service = $serviceItem->service;
+        if ($serviceItem->service_commission_price && $serviceItem->service_price ) {
+        $servicePrice = $serviceItem->service_price;
 
-        if ($serviceItem->service_commission_price) {
-
-        $vatMultiplier = ($service->tax_class_id == 9) ? 1.20 : 1;
-
-        $priceWithVat = $service->cost_price * $vatMultiplier;
-
-        $totalServiceCommission += ($priceWithVat - $serviceItem->service_commission_price);
+        $totalServiceCommission += ($servicePrice - $serviceItem->service_commission_price);
         }
 
     }
@@ -334,6 +329,7 @@ protected function createGaragePayoutRecord(Workshop $workshop, string $revolutO
     $cardFeePercentage = (float) ($garage->card_processing_fee ?? 0);
     $cardProcessingFee = round(($grandTotal * ($cardFeePercentage / 100)), 2);
     $payoutAmount = round($totalCommission - $cardProcessingFee, 2);
+    $platformCommission = round($grandTotal - $payoutAmount);
 
     if ($payoutAmount < 0) {
         Log::warning('⚠ Payout negative, setting to zero');
@@ -344,7 +340,7 @@ protected function createGaragePayoutRecord(Workshop $workshop, string $revolutO
         'garage_id' => $garage->id,
         'workshop_id' => $workshop->id,
         'customer_paid_amount' => $grandTotal,
-        'platform_commission' => $totalCommission,
+        'platform_commission' => $platformCommission,
         'card_processing_fee' => $cardProcessingFee,
         'payout_amount' => $payoutAmount,
         'status' => 'pending',

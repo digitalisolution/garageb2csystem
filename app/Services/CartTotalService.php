@@ -51,12 +51,14 @@ class CartTotalService
             'cartTotalPrice'      => $grandTotal,
         ]);
 
-        return [
-            'totalFullyFittedTyres' => $totalFullyFittedTyres,
-            'garageFittingCharge'   => number_format($garageFittingCharge, 2),
-            'garageFittingVAT'      => number_format($garageFittingVAT, 2),
-            'vatTotal'              => number_format($vatTotal, 2),
-            'cartTotalPrice'        => number_format($grandTotal, 2),
-        ];
+       // At the end of recalculate(), modify the return array:
+return [
+    'totalFullyFittedTyres' => $totalFullyFittedTyres,
+    'garageFittingCharge'   => number_format($garageFittingCharge, 2),
+    'garageFittingVAT'      => number_format($garageFittingVAT, 2),
+    'vatTotal'              => number_format($vatTotal, 2),
+    'cartTotalPrice'        => number_format($grandTotal, 2),
+    'cartSubTotal'          => number_format($cartSubTotal, 2), // Add this line
+];
     }
 }
