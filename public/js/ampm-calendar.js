@@ -47968,11 +47968,15 @@ function initializeAmPmCalendar(calendarEl, businessHours, blockedEvents, validR
       var _loop = function _loop() {
         var isoDate = d.toISOString().split('T')[0];
         var periods = getDayPeriods(isoDate, businessHours);
+        var validStart = new Date(validRangeStart);
         ['AM', 'PM'].forEach(function (period) {
           if (!periods || !periods[period]) return;
           var periodEndHour = periods[period].end.h;
-          var isToday = isoDate === todayStr;
-          if (isToday && currentHour >= periodEndHour) return;
+          var periodEnd = new Date(isoDate);
+          periodEnd.setHours(periodEndHour, 0, 0, 0);
+
+          // Block slots before validRangeStart
+          if (periodEnd <= validStart) return;
           var status = getPeriodStatus(isoDate, period, blockedEvents, businessHours);
           events.push({
             title: period,

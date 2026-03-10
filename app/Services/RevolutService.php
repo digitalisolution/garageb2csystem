@@ -293,16 +293,17 @@ protected function createGaragePayoutRecord(Workshop $workshop, string $revolutO
     foreach ($workshop->items as $tyre) {
 
         $fittingPrice   = $tyre->garage_fitting_charges ?? 0;
+        $priceExVat = $fittingPrice / 1.20;
         $commissionRate = $garage->commission_price ?? 0;
 
         if ($garage->commission_type === 'Percentage') {
 
-            $commissionAmount = $fittingPrice * ($commissionRate / 100);
-            $garagePayout = $fittingPrice - $commissionAmount;
+            $commissionAmount = $priceExVat * ($commissionRate / 100);
+            $garagePayout = $priceExVat - $commissionAmount;
 
         } else {
 
-            $garagePayout = $fittingPrice - $commissionRate;
+            $garagePayout = $priceExVat - $commissionRate;
         }
 
         $totalTyreCommission += $garagePayout;

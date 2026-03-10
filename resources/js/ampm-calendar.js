@@ -267,29 +267,37 @@ function initializeAmPmCalendar(calendarEl, businessHours, blockedEvents, validR
                 const isoDate = d.toISOString().split('T')[0];
                 const periods = getDayPeriods(isoDate, businessHours);
 
-                ['AM', 'PM'].forEach(period => {
-                    if (!periods || !periods[period]) return;
+                const validStart = new Date(validRangeStart);
 
-                    const periodEndHour = periods[period].end.h;
-                    const isToday = isoDate === todayStr;
-                    if (isToday && currentHour >= periodEndHour) return;
+                    ['AM', 'PM'].forEach(period => {
 
-                    const status = getPeriodStatus(isoDate, period, blockedEvents, businessHours);
+                        if (!periods || !periods[period]) return;
 
-                    events.push({
-                        title: period,
-                        start: isoDate,
-                        allDay: true,
-                        backgroundColor: status.available ? '#6aeb53' : 'red',
-                        borderColor: status.available ? '#6aeb53' : 'red',
-                        extendedProps: {
-                            period,
-                            blocked: !status.available,
-                            date: isoDate,
-                            reason: status.reason || ''
-                        }
+                        const periodEndHour = periods[period].end.h;
+
+                        const periodEnd = new Date(isoDate);
+                        periodEnd.setHours(periodEndHour, 0, 0, 0);
+
+                        // Block slots before validRangeStart
+                        if (periodEnd <= validStart) return;
+
+                        const status = getPeriodStatus(isoDate, period, blockedEvents, businessHours);
+
+                        events.push({
+                            title: period,
+                            start: isoDate,
+                            allDay: true,
+                            backgroundColor: status.available ? '#6aeb53' : 'red',
+                            borderColor: status.available ? '#6aeb53' : 'red',
+                            extendedProps: {
+                                period,
+                                blocked: !status.available,
+                                date: isoDate,
+                                reason: status.reason || ''
+                            }
+                        });
+
                     });
-                });
             }
 
             successCallback(events);
