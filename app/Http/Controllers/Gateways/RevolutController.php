@@ -10,41 +10,6 @@ use App\Services\RevolutService;
 
 class RevolutController extends Controller
 {
-    public function makePayment($workshopId, RevolutService $revolut)
-    {
-        $workshop = Workshop::findOrFail($workshopId);
-
-        $payload = [
-            'amount' => intval($workshop->grandTotal * 100),
-            'currency' => 'GBP',
-            'merchant_order_ext_ref' => (string) $workshop->id,
-            'capture_mode' => 'AUTOMATIC',
-            'merchant_customer_ext_ref' => (string) $workshop->customer_id,
-            'return_url' => route('revolut.success', $workshop->id),
-            'cancel_url' => route('revolut.cancel', $workshop->id),
-        ];
-
-        $response = $revolut->createOrder($payload);
-        $workshop->update([
-            'revolut_order_id' => $response['id'],
-            'payment_status' => 'pending',
-        ]);
-        return redirect($response['public_url']);
-    }
-
-    public function paymentSuccess($id)
-    {
-        $workshop = Workshop::findOrFail($id);
-        $workshop->update(['payment_status' => 'paid']);
-        return view('payments.success', compact('workshop'));
-    }
-
-    public function paymentCancel($id)
-    {
-        $workshop = Workshop::findOrFail($id);
-        $workshop->update(['payment_status' => 'cancelled']);
-        return view('payments.cancel', compact('workshop'));
-    }
 
 public function webhook(Request $request, RevolutService $service)
 {
@@ -118,6 +83,13 @@ public function webhook(Request $request, RevolutService $service)
     }
 
     return response()->json(['ok' => true]);
+}
+
+public function return(Request $request)
+{
+    Log::info('Customer returned from Revolut', $request->all());
+
+    return redirect('/checkout/ordersuccess');
 }
 
 public function checkRevolutStatus($id, RevolutService $revolut)

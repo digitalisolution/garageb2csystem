@@ -53,10 +53,12 @@ class RevolutService
         $payload = [
         'amount' => (int) round($workshop->grandTotal * 100),
         'currency' => 'GBP',
-        'return_url' => route('revolut.return'),
+        'redirect_url' => route('revolut.return'),
         'merchant_order_ext_ref' => 'WS_' . $workshop->id,
         ];
-
+        Log::info('Revolut order payload', [
+            'payload' => $payload
+        ]);
         $response = Http::withToken($this->secret)
             ->withHeaders([
                 'Revolut-Api-Version' => '2024-09-01',
@@ -74,6 +76,9 @@ class RevolutService
         }
 
         $order = $response->json();
+       Log::info('Revolut order response', [
+    'response' => $response->json()
+]);
         // dd($response);
         return redirect()->away($order['checkout_url']);
     }

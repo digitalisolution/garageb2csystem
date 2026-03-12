@@ -130,6 +130,7 @@ Route::get('/revolut/pay/{workshopId}', [RevolutController::class, 'makePayment'
 Route::get('/payment/revolut/return', [RevolutController::class, 'return'])->name('revolut.return');
 Route::post('/revolut/webhook', [RevolutController::class, 'webhook']);
 
+
 // routes/web.php
 Route::get('/revolut-business/oauth', [RevolutBusinessController::class, 'oauthRedirect'])->name('AutoCare.revolut.oauth.redirect');
 Route::get('/revolut/callback', [RevolutBusinessController::class, 'oauthCallback']);
